@@ -1,0 +1,1724 @@
+<!DOCTYPE html>
+<html lang="tr" style="height: 100%;"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ERDİNÇ TETİK katkılarıyla     Harita Bulmacası - Konum</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* CSS Kodları */
+        html, body {height: 100%; margin: 0; padding: 0; overflow-x: hidden; overflow-y: auto; font-family: 'Inter', sans-serif;}
+        .harita-kapsayici {display: flex; width: 95%; height: 71vh; margin: 10px auto; box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1); border-radius: 12px; overflow: hidden;}
+        #tahminKutusu {margin: 0; text-align: center; padding: 15px 20px; border: 1px solid #e0e0e0; background-color: #ffffff; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); border-radius: 8px;}
+        #solHaritaDiv {width: 100%; height: 100%; position: relative;}
+        #sagHaritaDiv {height: 100%; width: 100%;}
+        
+        /* Tahmin Butonu Stili */
+        #tahminButonu {padding: 10px 20px; font-size: 16px; color: white; border: none; cursor: pointer; border-radius: 6px; font-weight: 600; background-color: #10b981; transition: background-color 0.3s, transform 0.1s;}
+        #tahminButonu:hover {background-color: #059669; transform: translateY(-1px);}
+        #tahminButonu:disabled {background-color: #9ca3af; cursor: not-allowed; transform: none;}
+        
+        /* SONRAKİ AŞAMA BUTONU STİLİ */
+        #sonrakiAsamaButonu {
+            background-color: #f97316;
+            color: white;
+            font-size: 18px;
+            padding: 12px 25px;
+            margin-left: 10px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            border-radius: 6px;
+            box-shadow: 0 4px 10px rgba(249, 115, 22, 0.5);
+            transition: all 0.2s;
+        }
+        #sonrakiAsamaButonu:hover {
+            background-color: #ea580c;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(249, 115, 22, 0.7);
+        }
+
+        /* SON 10 SANİYE CSS */
+        .border-alert {
+            border: 5px solid red !important;
+            transition: border 0.5s ease-in-out;
+        }
+        
+        /* YENİ EKLENEN ADIM SAYACI STİLİ */
+        #adimSayaciGosterge {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 10px;
+            color: white;
+            text-align: center;
+            font-size: 1.25rem; /* text-xl */
+            font-weight: 700; /* font-bold */
+            z-index: 10;
+        }
+        
+        /* Gizleme Sınıfı */
+        .hidden {
+            display: none;
+        }
+        
+        /* Responsive Ayarlar */
+        @media (max-width: 768px) {
+            #ustBolum { flex-direction: column; }
+            .harita-kapsayici {flex-direction: column; height: 60vh;}
+            #solHaritaDiv {width: 100%; height: 100%; border-left: none;}
+            #sagHaritaKapsayici {width: 100% !important; height: 200px !important; border-top: 3px solid #374151; position: relative;}
+            #sonucTablosuKapsayici {width: 100% !important; height: auto !important; margin-top: 10px;}
+            #tahminKutusu {padding: 10px;}
+            /* Mobil Düzeltme: Butonlar tam genişlikte */
+            #tahminButonu, #sonrakiAsamaButonu {margin-top: 5px; width: 100%; margin-left: 0 !important; font-size: 16px; padding: 10px 20px;}
+        }
+
+        /* Firebase yarış tablosu */
+        .lider-panel { margin-top:14px; border:1px solid #cbd5e1; border-radius:14px; background:#fff; padding:14px; }
+        .lider-panel-vurgu { margin-top:0; border:2px solid #2563eb; background:linear-gradient(180deg,#eff6ff 0%,#ffffff 42%); box-shadow:0 8px 22px rgba(37,99,235,.14); }
+        .details-panel { border:1px solid #dbeafe; border-radius:12px; background:#fff; padding:10px 12px; }
+        .details-panel summary { cursor:pointer; font-weight:800; color:#334155; list-style:none; }
+        .details-panel summary::-webkit-details-marker { display:none; }
+        .details-panel summary::after { content:'＋'; float:right; color:#2563eb; }
+        .details-panel[open] summary::after { content:'−'; }
+        #sonucTablosuKapsayici { max-height:72vh; overflow:auto; }
+        .result-card { padding:9px 11px !important; }
+        .result-card .text-lg { font-size:1rem !important; }
+        .lider-row { display:grid; grid-template-columns:42px 1.4fr repeat(4,minmax(70px,1fr)); gap:8px; align-items:center; padding:9px 6px; border-bottom:1px solid #e2e8f0; font-size:13px; }
+        .lider-row:last-child { border-bottom:0; }
+        .lider-head { font-weight:800; color:#475569; background:#f8fafc; border-radius:8px; }
+        .lider-me { background:#eff6ff; font-weight:800; }
+        /* Şans kutuları */
+        #sansModal { position:fixed; inset:0; z-index:950; background:rgba(15,23,42,.82); display:flex; align-items:center; justify-content:center; padding:16px; }
+        #sansModal.hidden { display:none; }
+        .sans-panel { width:min(560px,96vw); background:white; border-radius:18px; padding:22px; box-shadow:0 24px 70px rgba(0,0,0,.4); text-align:center; }
+        .sans-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:16px; }
+        .sans-kutu { aspect-ratio:1; border:2px solid #cbd5e1; border-radius:14px; background:linear-gradient(145deg,#eff6ff,#dbeafe); font-size:30px; cursor:pointer; box-shadow:0 5px 12px rgba(0,0,0,.12); transition:.15s; }
+        .sans-kutu:hover { transform:translateY(-2px) scale(1.03); border-color:#2563eb; }
+        .sans-kutu:disabled { cursor:default; transform:none; }
+        /* Admin ve yeni sonuç ekranı */
+        .modal-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,.78); z-index: 1000; display:flex; align-items:center; justify-content:center; padding:16px; }
+        .modal-card { width:min(920px,96vw); max-height:92vh; overflow:auto; background:#fff; border-radius:16px; box-shadow:0 24px 70px rgba(0,0,0,.35); }
+        .admin-grid { display:grid; grid-template-columns:90px 1fr auto; gap:8px; align-items:center; }
+        .auto-coordinate-loading { opacity:.65; cursor:wait !important; }
+        .admin-input { width:100%; border:1px solid #cbd5e1; border-radius:8px; padding:10px 12px; font-family:ui-monospace,monospace; }
+        .result-card { border:1px solid #dbeafe; border-left:6px solid #3b82f6; border-radius:12px; padding:12px; background:#fff; }
+        .result-badge { display:inline-flex; align-items:center; border-radius:999px; padding:4px 9px; font-size:12px; font-weight:800; }
+        .stat-box { background:#eff6ff; border:1px solid #bfdbfe; border-radius:12px; padding:10px; text-align:center; }
+        .player-mode #adminAcButonu, .player-mode #adminModal, .player-mode #bannerSifirlaButonu { display:none !important; }
+        #adminAcButonu { position:fixed; right:14px; bottom:14px; z-index:900; border:0; border-radius:999px; padding:10px 14px; background:#111827; color:white; font-weight:700; box-shadow:0 8px 24px rgba(0,0,0,.22); cursor:pointer; }
+        #devamBilgisi { max-width:520px; text-align:center; }
+    </style>
+<style>*, ::before, ::after{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/* ! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com */*,::after,::before{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}::after,::before{--tw-content:''}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.absolute{position:absolute}.left-0{left:0px}.top-0{top:0px}.z-20{z-index:20}.mx-auto{margin-left:auto;margin-right:auto}.mb-1{margin-bottom:0.25rem}.mb-2{margin-bottom:0.5rem}.mb-3{margin-bottom:0.75rem}.mb-4{margin-bottom:1rem}.ml-2{margin-left:0.5rem}.mt-1{margin-top:0.25rem}.mt-2{margin-top:0.5rem}.mt-3{margin-top:0.75rem}.mt-4{margin-top:1rem}.block{display:block}.flex{display:flex}.grid{display:grid}.hidden{display:none}.h-full{height:100%}.w-64{width:16rem}.w-full{width:100%}.flex-grow{flex-grow:1}.grid-cols-1{grid-template-columns:repeat(1, minmax(0, 1fr))}.grid-cols-3{grid-template-columns:repeat(3, minmax(0, 1fr))}.flex-col{flex-direction:column}.flex-wrap{flex-wrap:wrap}.items-start{align-items:flex-start}.items-center{align-items:center}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.gap-2{gap:0.5rem}.gap-3{gap:0.75rem}.gap-4{gap:1rem}.space-y-2 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.5rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.5rem * var(--tw-space-y-reverse))}.space-y-3 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.75rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.75rem * var(--tw-space-y-reverse))}.space-y-4 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1rem * var(--tw-space-y-reverse))}.overflow-x-auto{overflow-x:auto}.overflow-y-auto{overflow-y:auto}.rounded-lg{border-radius:0.5rem}.rounded-xl{border-radius:0.75rem}.border{border-width:1px}.border-2{border-width:2px}.border-b{border-bottom-width:1px}.border-blue-300{--tw-border-opacity:1;border-color:rgb(147 197 253 / var(--tw-border-opacity, 1))}.border-cyan-200{--tw-border-opacity:1;border-color:rgb(165 243 252 / var(--tw-border-opacity, 1))}.border-gray-300{--tw-border-opacity:1;border-color:rgb(209 213 219 / var(--tw-border-opacity, 1))}.border-slate-200{--tw-border-opacity:1;border-color:rgb(226 232 240 / var(--tw-border-opacity, 1))}.bg-amber-500{--tw-bg-opacity:1;background-color:rgb(245 158 11 / var(--tw-bg-opacity, 1))}.bg-blue-100{--tw-bg-opacity:1;background-color:rgb(219 234 254 / var(--tw-bg-opacity, 1))}.bg-blue-600{--tw-bg-opacity:1;background-color:rgb(37 99 235 / var(--tw-bg-opacity, 1))}.bg-cyan-50{--tw-bg-opacity:1;background-color:rgb(236 254 255 / var(--tw-bg-opacity, 1))}.bg-cyan-600{--tw-bg-opacity:1;background-color:rgb(8 145 178 / var(--tw-bg-opacity, 1))}.bg-emerald-600{--tw-bg-opacity:1;background-color:rgb(5 150 105 / var(--tw-bg-opacity, 1))}.bg-gray-50{--tw-bg-opacity:1;background-color:rgb(249 250 251 / var(--tw-bg-opacity, 1))}.bg-indigo-600{--tw-bg-opacity:1;background-color:rgb(79 70 229 / var(--tw-bg-opacity, 1))}.bg-red-600{--tw-bg-opacity:1;background-color:rgb(220 38 38 / var(--tw-bg-opacity, 1))}.bg-red-700{--tw-bg-opacity:1;background-color:rgb(185 28 28 / var(--tw-bg-opacity, 1))}.bg-slate-100{--tw-bg-opacity:1;background-color:rgb(241 245 249 / var(--tw-bg-opacity, 1))}.bg-slate-900{--tw-bg-opacity:1;background-color:rgb(15 23 42 / var(--tw-bg-opacity, 1))}.bg-violet-600{--tw-bg-opacity:1;background-color:rgb(124 58 237 / var(--tw-bg-opacity, 1))}.bg-red-50{--tw-bg-opacity:1;background-color:rgb(254 242 242 / var(--tw-bg-opacity, 1))}.bg-gradient-to-r{background-image:linear-gradient(to right, var(--tw-gradient-stops))}.from-yellow-400{--tw-gradient-from:#facc15 var(--tw-gradient-from-position);--tw-gradient-to:rgb(250 204 21 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.to-red-500{--tw-gradient-to:#ef4444 var(--tw-gradient-to-position)}.p-3{padding:0.75rem}.p-4{padding:1rem}.p-5{padding:1.25rem}.p-8{padding:2rem}.px-3{padding-left:0.75rem;padding-right:0.75rem}.px-4{padding-left:1rem;padding-right:1rem}.px-5{padding-left:1.25rem;padding-right:1.25rem}.px-8{padding-left:2rem;padding-right:2rem}.py-1{padding-top:0.25rem;padding-bottom:0.25rem}.py-2{padding-top:0.5rem;padding-bottom:0.5rem}.py-3{padding-top:0.75rem;padding-bottom:0.75rem}.pb-3{padding-bottom:0.75rem}.text-center{text-align:center}.font-mono{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace}.text-2xl{font-size:1.5rem;line-height:2rem}.text-3xl{font-size:1.875rem;line-height:2.25rem}.text-4xl{font-size:2.25rem;line-height:2.5rem}.text-lg{font-size:1.125rem;line-height:1.75rem}.text-sm{font-size:0.875rem;line-height:1.25rem}.text-xl{font-size:1.25rem;line-height:1.75rem}.text-xs{font-size:0.75rem;line-height:1rem}.font-bold{font-weight:700}.font-extrabold{font-weight:800}.font-semibold{font-weight:600}.text-blue-700{--tw-text-opacity:1;color:rgb(29 78 216 / var(--tw-text-opacity, 1))}.text-blue-800{--tw-text-opacity:1;color:rgb(30 64 175 / var(--tw-text-opacity, 1))}.text-cyan-800{--tw-text-opacity:1;color:rgb(21 94 117 / var(--tw-text-opacity, 1))}.text-cyan-900{--tw-text-opacity:1;color:rgb(22 78 99 / var(--tw-text-opacity, 1))}.text-emerald-700{--tw-text-opacity:1;color:rgb(4 120 87 / var(--tw-text-opacity, 1))}.text-gray-500{--tw-text-opacity:1;color:rgb(107 114 128 / var(--tw-text-opacity, 1))}.text-gray-600{--tw-text-opacity:1;color:rgb(75 85 99 / var(--tw-text-opacity, 1))}.text-gray-700{--tw-text-opacity:1;color:rgb(55 65 81 / var(--tw-text-opacity, 1))}.text-gray-800{--tw-text-opacity:1;color:rgb(31 41 55 / var(--tw-text-opacity, 1))}.text-red-500{--tw-text-opacity:1;color:rgb(239 68 68 / var(--tw-text-opacity, 1))}.text-red-600{--tw-text-opacity:1;color:rgb(220 38 38 / var(--tw-text-opacity, 1))}.text-slate-500{--tw-text-opacity:1;color:rgb(100 116 139 / var(--tw-text-opacity, 1))}.text-slate-800{--tw-text-opacity:1;color:rgb(30 41 59 / var(--tw-text-opacity, 1))}.text-slate-900{--tw-text-opacity:1;color:rgb(15 23 42 / var(--tw-text-opacity, 1))}.text-violet-700{--tw-text-opacity:1;color:rgb(109 40 217 / var(--tw-text-opacity, 1))}.text-white{--tw-text-opacity:1;color:rgb(255 255 255 / var(--tw-text-opacity, 1))}.text-red-700{--tw-text-opacity:1;color:rgb(185 28 28 / var(--tw-text-opacity, 1))}.shadow{--tw-shadow:0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);--tw-shadow-colored:0 1px 3px 0 var(--tw-shadow-color), 0 1px 2px -1px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-lg{--tw-shadow:0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);--tw-shadow-colored:0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -4px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-md{--tw-shadow:0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);--tw-shadow-colored:0 4px 6px -1px var(--tw-shadow-color), 0 2px 4px -2px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.transition{transition-property:color, background-color, border-color, fill, stroke, opacity, box-shadow, transform, filter, -webkit-text-decoration-color, -webkit-backdrop-filter;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter, -webkit-text-decoration-color, -webkit-backdrop-filter;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.duration-150{transition-duration:150ms}.hover\:bg-blue-700:hover{--tw-bg-opacity:1;background-color:rgb(29 78 216 / var(--tw-bg-opacity, 1))}.hover\:bg-cyan-700:hover{--tw-bg-opacity:1;background-color:rgb(14 116 144 / var(--tw-bg-opacity, 1))}.hover\:bg-red-800:hover{--tw-bg-opacity:1;background-color:rgb(153 27 27 / var(--tw-bg-opacity, 1))}.focus\:border-blue-500:focus{--tw-border-opacity:1;border-color:rgb(59 130 246 / var(--tw-border-opacity, 1))}.focus\:border-blue-600:focus{--tw-border-opacity:1;border-color:rgb(37 99 235 / var(--tw-border-opacity, 1))}@media (min-width: 768px){.md\:col-span-3{grid-column:span 3 / span 3}.md\:grid-cols-3{grid-template-columns:repeat(3, minmax(0, 1fr))}.md\:flex-row{flex-direction:row}}</style><script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAxQXBTk9BPJStEGs-C1ixKZOzUolVB73M&amp;libraries=places&amp;callback=initMap" async="" defer=""></script></head>
+<body class="bg-gray-50 player-mode">
+    
+    <div id="baslangicKapsayici" class="flex flex-col items-center justify-center p-8 space-y-4 h-full w-full absolute top-0 left-0 bg-gray-50 z-20">
+        <h2 class="text-3xl font-bold text-gray-800">🎯 Harita Bulmacası  -  ERDİNÇ TETİK Sunar</h2>
+        <p class="text-gray-600 text-center">Lütfen oynamak istediğiniz <b>3 konuma</b> ait kodları giriniz.</p>
+        
+        <div class="w-64"><input type="text" id="oyuncuAdi" maxlength="40" placeholder="Adınız veya rumuzunuz" class="w-full p-3 border-2 border-blue-300 rounded-lg text-center font-semibold focus:border-blue-600 transition" autocomplete="name"><p id="firebaseDurum" class="text-xs text-center mt-1 text-slate-500">Firebase yapılandırması oyuncu dosyasına gömülmemiş.</p></div>
+        <div id="kodGirisAlani" class="space-y-3 flex flex-col w-64">
+            <input type="text" id="kod1" inputmode="numeric" maxlength="6" placeholder="1. Aşama Numarası " class="p-3 border-2 border-gray-300 rounded-lg text-center font-mono focus:border-blue-500 transition">
+<input type="text" id="kod2" inputmode="numeric" maxlength="6" placeholder="2. Aşama Numarası " class="p-3 border-2 border-gray-300 rounded-lg text-center font-mono focus:border-blue-500 transition">
+<input type="text" id="kod3" inputmode="numeric" maxlength="6" placeholder="3. Aşama Numarası " class="p-3 border-2 border-gray-300 rounded-lg text-center font-mono focus:border-blue-500 transition">
+        </div>
+        
+        <button id="oyunuBaslatButonu" class="mt-4 px-8 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-150 shadow-md">
+            ▶️ Oyuna Başla
+        </button>
+        <p id="kodMesaj" class="text-red-500 font-semibold hidden"></p>
+        <p id="devamBilgisi" class="text-sm text-slate-500">Aynı tarayıcıda yarım kalan oyun otomatik devam eder. Yeni oyun yalnızca yönetici sıfırlamasıyla açılır.</p>
+    </div>
+
+    <div id="oyunKapsayici" class="h-full w-full hidden">
+        
+        <div id="ustBolum" class="flex w-full px-4 gap-4 items-start mx-auto" style="width: 95%; margin: 10px auto;">
+            
+            <div id="tahminKutusu" class="flex-grow">
+                <h3 class="text-xl font-extrabold text-gray-800 mb-2">
+                    <span role="img" aria-label="pin">📍</span> Harita Bulmacası <span id="oyunBaslik"></span>
+                </h3>
+                <p class="text-lg font-mono mb-2">
+                    ⏳ Kalan Süre: <span id="kronometre" class="text-red-600 font-bold">02:00</span>
+                </p>
+                <p id="hareketKalan" class="text-sm font-mono mb-4 text-gray-500">
+                </p>
+                <div class="flex flex-col md:flex-row items-center justify-center gap-2">
+                    <button onclick="tahminGonder()" id="tahminButonu">
+                        Tahmini Gönder
+                    </button>
+                    <button onclick="sonrakiAsamayaGec()" id="sonrakiAsamaButonu" class="hidden">
+                        Sonraki Konum
+                    </button>
+                </div>
+                <p id="mesajAlani" class="mt-1 text-sm font-semibold text-gray-700"></p>
+            </div>
+
+            <div id="sagHaritaKapsayici" style="height: 180px; width: 350px; border: 3px solid #374151; border-radius: 8px; overflow: hidden; flex-shrink: 0;">
+                <div id="sagHaritaDiv">
+                    </div>
+            </div>
+
+            <div id="sonucTablosuKapsayici" class="hidden" style="min-height:250px; min-width:620px; max-width:820px; border:3px solid #2563eb; border-radius:14px; flex-grow:1; background:#f8fafc;">
+                <div class="p-4 overflow-y-auto h-full">
+                    <div class="flex items-center justify-between gap-3 border-b border-slate-200 pb-3 mb-3">
+                        <div><h4 class="text-xl font-extrabold text-slate-800">Oyun Sonucu 🏆</h4><p class="text-xs text-slate-500">Hedef ve tahmin karşılaştırması</p></div>
+                        <span id="sonucDurumRozeti" class="result-badge bg-blue-100 text-blue-800">Tamamlandı</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 mb-3">
+                        <div class="stat-box"><div class="text-xs text-slate-500">Toplam fark</div><div id="toplamKm" class="font-extrabold text-blue-700">0 km</div></div>
+                        <div class="stat-box"><div class="text-xs text-slate-500">Ortalama</div><div id="ortalamaKm" class="font-extrabold text-blue-700">0 km</div></div>
+                        <div class="stat-box"><div class="text-xs text-slate-500">En iyi tahmin</div><div id="enIyiKm" class="font-extrabold text-emerald-700">0 km</div></div>
+                    </div>
+                    <div class="lider-panel lider-panel-vurgu">
+                      <div class="flex items-center justify-between gap-2 mb-3"><div><h5 class="text-lg font-extrabold text-slate-900">🏁 Yarış Sıralaması</h5><p id="liderDurum" class="text-xs text-slate-500">Sonuçlar Firebase’den alınır.</p></div><button onclick="firebaseLiderlikYenile()" class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold shadow">↻ Yenile</button></div>
+                      <div id="liderlikTablosu" class="overflow-x-auto"><p class="text-sm text-slate-500">Henüz sonuç yüklenmedi.</p></div>
+                    </div>
+                    <details id="detaySonuclar" class="mt-3 details-panel">
+                      <summary>📍 Konum detaylarını göster</summary>
+                      <div id="sonucTablosuBody" class="space-y-2 mt-3"></div>
+                      <p class="mt-3 text-xs text-slate-500">Yeşil işaret hedefi, kırmızı işaret tahminini gösterir. Çizgi iki nokta arasındaki kuş uçuşu farktır.</p>
+                    </details>
+                </div>
+            </div>
+        </div>
+
+        <div class="harita-kapsayici">
+            <div id="solHaritaDiv">
+                
+                <div id="streetViewContainer" style="width:100%; height:100%;">
+                    </div>
+                
+                <div class="absolute top-0 left-0 w-full z-1 p-3 bg-gradient-to-r from-yellow-400 to-red-500 text-white font-extrabold text-xl shadow-lg flex justify-center items-center">
+                    <span class="text-white text-xl font-extrabold ml-2"></span>
+                    <button onclick="oyunuSifirlaParolaIle()" id="bannerSifirlaButonu" class="hidden text-lg px-3 py-1 bg-red-700 hover:bg-red-800 text-white font-bold rounded-lg transition duration-150">
+                        🔄 Oyunu Baştan Başlat
+                    </button>
+                </div>
+                <div id="adimSayaciGosterge">
+                    👣 Kalan Adım: <span id="kalanAdimSayisi" class="text-white-400">100</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="sansModal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="sansBaslik">
+      <div class="sans-panel">
+        <div class="text-4xl mb-1">⏱️</div>
+        <h3 id="sansBaslik" class="text-2xl font-extrabold text-slate-800">Şansını Seç</h3>
+        <p class="text-slate-500 mt-1">16 kutudan birini seç. İlk 5 saniye kronometre durur, ardından seçim yapmasan da çalışmaya devam eder.</p>
+        <div id="sansGrid" class="sans-grid"></div>
+        <p id="sansSonuc" class="mt-4 text-xl font-extrabold"></p>
+      </div>
+    </div>
+
+    <button id="adminAcButonu" type="button" onclick="adminPaneliniAc()">⚙️ Yönetim</button>
+    <div id="adminModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="adminBaslik">
+      <div class="modal-card">
+        <div class="p-5 border-b flex items-center justify-between">
+          <div><h3 id="adminBaslik" class="text-2xl font-extrabold text-slate-800">Yönetim Paneli</h3><p class="text-sm text-slate-500">Koordinatları elle ekleyin veya Street View bulunan rastgele bir koordinatı otomatik seçin.</p></div>
+          <button type="button" onclick="adminPaneliniKapat()" class="px-3 py-2 rounded-lg bg-slate-100">✕</button>
+        </div>
+        <div id="adminGirisBolumu" class="p-5 hidden">
+          <label class="block text-sm font-bold mb-2">Yönetici parolası</label>
+          <div class="flex gap-2"><input id="adminParola" type="password" inputmode="numeric" class="admin-input" placeholder="Parola"><button onclick="adminGirisYap()" class="px-5 rounded-lg bg-slate-900 text-white font-bold">Giriş</button></div>
+          <p id="adminMesaj" class="text-sm mt-2 text-red-600"></p>
+        </div>
+        <div id="adminIcerik" class="p-5">
+          <div class="mb-4"><label class="block text-sm font-bold mb-1">Firebase Web yapılandırması</label><textarea id="adminFirebaseConfig" class="admin-input" rows="8" spellcheck="false" placeholder="{&quot;apiKey&quot;:&quot;...&quot;,&quot;authDomain&quot;:&quot;...&quot;,&quot;projectId&quot;:&quot;...&quot;,&quot;appId&quot;:&quot;...&quot;}"></textarea><p class="text-xs text-slate-500 mt-1">Firebase Console’daki web app config nesnesini JSON olarak yapıştır. Anonymous Authentication ve Firestore etkin olmalı.</p></div>
+          <div class="mb-4"><label class="block text-sm font-bold mb-1">Google Maps API anahtarı</label><div class="flex gap-2"><input id="adminApiKey" type="password" class="admin-input" placeholder="API anahtarını yapıştırın"><button onclick="adminApiAnahtariKaydet()" class="px-4 rounded-lg bg-indigo-600 text-white font-bold">API anahtarını kaydet</button></div><p class="text-xs text-slate-500 mt-1">Anahtar bu tarayıcıda saklanır. Kaydettikten sonra sayfa yenilenir.</p></div>
+          <div class="mb-4"><label class="block text-sm font-bold mb-1">Şans kutuları kalan kaç saniyede açılsın?</label><input id="adminSansSuresi" type="number" min="1" max="119" class="admin-input" value="60"><p class="text-xs text-slate-500 mt-1">Her aşamada bir kez açılır. İlk 5 saniye kronometre durur; sonra kutular açık kalsa bile çalışmaya devam eder.</p></div>
+          <div class="mb-4"><label class="block text-sm font-bold mb-1">Kutu süreleri ve adetleri</label><textarea id="adminSansDagilimi" class="admin-input" rows="8" spellcheck="false" placeholder="-25:1
+-20:2
+-15:2
+-10:3
+10:3
+15:2
+20:2
+25:1"></textarea><p class="text-xs text-slate-500 mt-1">Her satıra <b>süre:adet</b> yaz. Eksi değer süre düşürür, artı veya işaretsiz pozitif değer süre ekler. 4×4 düzen için toplam adet tam 16 olmalı.</p></div>
+          <div class="flex flex-wrap gap-2 mb-4">
+            <button onclick="adminSatirEkle()" class="px-4 py-2 rounded-lg bg-blue-600 text-white font-bold">+ Konum ekle</button>
+            <div class="w-full grid grid-cols-1 md:grid-cols-3 gap-2 p-3 rounded-xl bg-cyan-50 border border-cyan-200">
+              <div><label class="block text-xs font-extrabold text-cyan-900 mb-1">Bölge</label><select id="otomatikBolge" onchange="otomatikBolgeDegisti()" class="admin-input"><option value="europe">Avrupa</option><option value="world">Dünya</option><option value="country">Ülke seç</option></select></div>
+              <div><label class="block text-xs font-extrabold text-cyan-900 mb-1">Ülke</label><select id="otomatikUlke" class="admin-input" disabled=""><option value="TR">Türkiye</option><option value="DE">Almanya</option><option value="FR">Fransa</option><option value="IT">İtalya</option><option value="ES">İspanya</option><option value="GB">Birleşik Krallık</option><option value="NL">Hollanda</option><option value="BE">Belçika</option><option value="AT">Avusturya</option><option value="CH">İsviçre</option><option value="PL">Polonya</option><option value="CZ">Çekya</option><option value="HU">Macaristan</option><option value="RO">Romanya</option><option value="GR">Yunanistan</option><option value="PT">Portekiz</option><option value="SE">İsveç</option><option value="NO">Norveç</option><option value="FI">Finlandiya</option><option value="DK">Danimarka</option><option value="US">ABD</option><option value="CA">Kanada</option><option value="AU">Avustralya</option><option value="JP">Japonya</option></select></div>
+              <div><label class="block text-xs font-extrabold text-cyan-900 mb-1">Konum türü</label><select id="otomatikTur" class="admin-input"><option value="street">Sadece sokak / yol</option><option value="outdoor">Dış mekân</option></select></div>
+              <div class="md:col-span-3"><button id="otomatikKoordinatButonu" onclick="otomatikKoordinatBul()" class="w-full px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-700 text-white font-bold">🎲 Otomatik koordinat bul</button><p class="text-xs text-cyan-800 mt-1">Sokak modu; bina içi, işletme içi ve yol adı bulunmayan panoramaları reddeder.</p></div>
+            </div>
+            <button onclick="adminKoordinatlariKaydet()" class="px-4 py-2 rounded-lg bg-emerald-600 text-white font-bold">Kaydet</button>
+            <button onclick="oyuncuHtmlIndir()" class="px-4 py-2 rounded-lg bg-violet-600 text-white font-bold">⬇️ Oyuncu HTML’sini indir</button>
+            <button onclick="adminOyunuSifirla()" class="px-4 py-2 rounded-lg bg-red-600 text-white font-bold">Oyuncu ilerlemesini sıfırla</button>
+            <button onclick="adminParolaDegistir()" class="px-4 py-2 rounded-lg bg-amber-500 text-white font-bold">Parolayı değiştir</button>
+          </div>
+          <div class="admin-grid text-xs font-extrabold text-slate-500 mb-2"><div>KOD</div><div>ENLEM, BOYLAM</div><div></div></div>
+          <div id="adminKoordinatListesi" class="space-y-2"><div class="admin-grid"><input class="admin-input admin-code" value="1"><input class="admin-input admin-coord" value="51.221814127506185, 6.801987247286947" placeholder="41.123, 31.456"><button type="button" class="px-3 py-2 rounded-lg bg-red-50 text-red-700 font-bold" onclick="this.parentElement.remove()">Sil</button></div><div class="admin-grid"><input class="admin-input admin-code" value="2"><input class="admin-input admin-coord" value="45.81451380272636, 6.962771362218659" placeholder="41.123, 31.456"><button type="button" class="px-3 py-2 rounded-lg bg-red-50 text-red-700 font-bold" onclick="this.parentElement.remove()">Sil</button></div><div class="admin-grid"><input class="admin-input admin-code" value="3"><input class="admin-input admin-coord" value="48.899522510127255, 2.35945108417052" placeholder="41.123, 31.456"><button type="button" class="px-3 py-2 rounded-lg bg-red-50 text-red-700 font-bold" onclick="this.parentElement.remove()">Sil</button></div><div class="admin-grid"><input class="admin-input admin-code" value="4"><input class="admin-input admin-coord" value="52.02137427570453, 8.531736770949566" placeholder="41.123, 31.456"><button type="button" class="px-3 py-2 rounded-lg bg-red-50 text-red-700 font-bold" onclick="this.parentElement.remove()">Sil</button></div><div class="admin-grid"><input class="admin-input admin-code" value="5"><input class="admin-input admin-coord" value="45.32624662151015, 14.440446452893699" placeholder="41.123, 31.456"><button type="button" class="px-3 py-2 rounded-lg bg-red-50 text-red-700 font-bold" onclick="this.parentElement.remove()">Sil</button></div><div class="admin-grid"><input class="admin-input admin-code" value="6"><input class="admin-input admin-coord" value="44.8086676114757, 20.46160488055873" placeholder="41.123, 31.456"><button type="button" class="px-3 py-2 rounded-lg bg-red-50 text-red-700 font-bold" onclick="this.parentElement.remove()">Sil</button></div><div class="admin-grid"><input class="admin-input admin-code" value="7"><input class="admin-input admin-coord" value="48.20184976581924, 16.360580446815586" placeholder="41.123, 31.456"><button type="button" class="px-3 py-2 rounded-lg bg-red-50 text-red-700 font-bold" onclick="this.parentElement.remove()">Sil</button></div><div class="admin-grid"><input class="admin-input admin-code" value="8"><input class="admin-input admin-coord" value="40.514537142697776, -84.42785005318763" placeholder="41.123, 31.456"><button type="button" class="px-3 py-2 rounded-lg bg-red-50 text-red-700 font-bold" onclick="this.parentElement.remove()">Sil</button></div><div class="admin-grid"><input class="admin-input admin-code" value="9"><input class="admin-input admin-coord" value="49.61000485024232, 6.12835600018865" placeholder="41.123, 31.456"><button type="button" class="px-3 py-2 rounded-lg bg-red-50 text-red-700 font-bold" onclick="this.parentElement.remove()">Sil</button></div><div class="admin-grid"><input class="admin-input admin-code" value="10"><input class="admin-input admin-coord" value="43.31693661046109, -1.9790332833506632" placeholder="41.123, 31.456"><button type="button" class="px-3 py-2 rounded-lg bg-red-50 text-red-700 font-bold" onclick="this.parentElement.remove()">Sil</button></div><div class="admin-grid"><input class="admin-input admin-code" value="11"><input class="admin-input admin-coord" value="48.3323006, 1.6201084" placeholder="41.123, 31.456"><button type="button" class="px-3 py-2 rounded-lg bg-red-50 text-red-700 font-bold" onclick="this.parentElement.remove()">Sil</button></div><div class="admin-grid"><input class="admin-input admin-code" value="12"><input class="admin-input admin-coord" value="40.7761668, 29.5938958" placeholder="41.123, 31.456"><button type="button" class="px-3 py-2 rounded-lg bg-red-50 text-red-700 font-bold" onclick="this.parentElement.remove()">Sil</button></div><div class="admin-grid"><input class="admin-input admin-code" value="13"><input class="admin-input admin-coord" value="38.5147258, 23.1663354" placeholder="41.123, 31.456"><button type="button" class="px-3 py-2 rounded-lg bg-red-50 text-red-700 font-bold" onclick="this.parentElement.remove()">Sil</button></div><div class="admin-grid"><input class="admin-input admin-code" value="14"><input class="admin-input admin-coord" value="41.600107, 27.2149815" placeholder="41.123, 31.456"><button type="button" class="px-3 py-2 rounded-lg bg-red-50 text-red-700 font-bold" onclick="this.parentElement.remove()">Sil</button></div><div class="admin-grid"><input class="admin-input admin-code" value="15"><input class="admin-input admin-coord" value="39.5816708, 33.5214459" placeholder="41.123, 31.456"><button type="button" class="px-3 py-2 rounded-lg bg-red-50 text-red-700 font-bold" onclick="this.parentElement.remove()">Sil</button></div><div class="admin-grid"><input class="admin-input admin-code" value="16"><input class="admin-input admin-coord" value="40.0620082, 32.1681638" placeholder="41.123, 31.456"><button type="button" class="px-3 py-2 rounded-lg bg-red-50 text-red-700 font-bold" onclick="this.parentElement.remove()">Sil</button></div><div class="admin-grid"><input class="admin-input admin-code" value="17"><input class="admin-input admin-coord" value="40.8751772, -3.2588665" placeholder="41.123, 31.456"><button type="button" class="px-3 py-2 rounded-lg bg-red-50 text-red-700 font-bold" onclick="this.parentElement.remove()">Sil</button></div><div class="admin-grid"><input class="admin-input admin-code" value="18"><input class="admin-input admin-coord" value="35.3091195, -118.0995441" placeholder="41.123, 31.456"><button type="button" class="px-3 py-2 rounded-lg bg-red-50 text-red-700 font-bold" onclick="this.parentElement.remove()">Sil</button></div><div class="admin-grid"><input class="admin-input admin-code" value="19"><input class="admin-input admin-coord" value="41.1708324, 31.6057726" placeholder="41.123, 31.456"><button type="button" class="px-3 py-2 rounded-lg bg-red-50 text-red-700 font-bold" onclick="this.parentElement.remove()">Sil</button></div><div class="admin-grid"><input class="admin-input admin-code" value="20"><input class="admin-input admin-coord" value="38.6359842, 26.8327594" placeholder="41.123, 31.456"><button type="button" class="px-3 py-2 rounded-lg bg-red-50 text-red-700 font-bold" onclick="this.parentElement.remove()">Sil</button></div><div class="admin-grid"><input class="admin-input admin-code" value="21"><input class="admin-input admin-coord" value="41.1098815, -73.8810884" placeholder="41.123, 31.456"><button type="button" class="px-3 py-2 rounded-lg bg-red-50 text-red-700 font-bold" onclick="this.parentElement.remove()">Sil</button></div><div class="admin-grid"><input class="admin-input admin-code" value="22"><input class="admin-input admin-coord" value="42.2954745, 13.0604527" placeholder="41.123, 31.456"><button type="button" class="px-3 py-2 rounded-lg bg-red-50 text-red-700 font-bold" onclick="this.parentElement.remove()">Sil</button></div><div class="admin-grid"><input class="admin-input admin-code" value="23"><input class="admin-input admin-coord" value="38.3431308, 27.5405699" placeholder="41.123, 31.456"><button type="button" class="px-3 py-2 rounded-lg bg-red-50 text-red-700 font-bold" onclick="this.parentElement.remove()">Sil</button></div><div class="admin-grid"><input class="admin-input admin-code" value="24"><input class="admin-input admin-coord" value="38.2786623, 27.1065331" placeholder="41.123, 31.456"><button type="button" class="px-3 py-2 rounded-lg bg-red-50 text-red-700 font-bold" onclick="this.parentElement.remove()">Sil</button></div><div class="admin-grid"><input class="admin-input admin-code" value="25"><input class="admin-input admin-coord" value="37.8023566, 31.9016633" placeholder="41.123, 31.456"><button type="button" class="px-3 py-2 rounded-lg bg-red-50 text-red-700 font-bold" onclick="this.parentElement.remove()">Sil</button></div><div class="admin-grid"><input class="admin-input admin-code" value="26"><input class="admin-input admin-coord" value="37.910757, 31.8781165" placeholder="41.123, 31.456"><button type="button" class="px-3 py-2 rounded-lg bg-red-50 text-red-700 font-bold" onclick="this.parentElement.remove()">Sil</button></div><div class="admin-grid"><input class="admin-input admin-code" value="27"><input class="admin-input admin-coord" value="38.8506248, 27.3236056" placeholder="41.123, 31.456"><button type="button" class="px-3 py-2 rounded-lg bg-red-50 text-red-700 font-bold" onclick="this.parentElement.remove()">Sil</button></div><div class="admin-grid"><input class="admin-input admin-code" value="28"><input class="admin-input admin-coord" value="40.5059316, 33.5072004" placeholder="41.123, 31.456"><button type="button" class="px-3 py-2 rounded-lg bg-red-50 text-red-700 font-bold" onclick="this.parentElement.remove()">Sil</button></div></div>
+          <p id="adminKayitMesaj" class="text-sm mt-3 font-semibold text-emerald-700">✅ Koordinatlar kaydedildi. Yeni oyunlarda kullanılacak.</p>
+          <p class="text-xs text-violet-700 font-semibold mt-3">Oyuncu çıktısında koordinatlar ve API anahtarı dosyanın içine gömülür; yönetim paneli bulunmaz. Her yeni çıktıda ayrı oyun kimliği üretilir.</p>
+          <p class="text-xs text-slate-500 mt-3">Not: Bu tek HTML dosyasında parola ve veriler tarayıcı tarafındadır. Bu yöntem yanlışlıkla sıfırlamayı engeller, ancak tarayıcı verileri bilinçli olarak silinirse kesin güvenlik sağlayamaz.</p>
+        </div>
+      </div>
+    </div>
+    <script>
+        // =========================================================================
+        const EMBEDDED_GAME_ID = "OYUN_20260903084750";
+        const EMBEDDED_API_KEY = "AIzaSyAxQXBTk9BPJStEGs-C1ixKZOzUolVB73M";
+        const EMBEDDED_TARGETS = [
+  {
+    "code": "1",
+    "coord": "51.221814127506185, 6.801987247286947"
+  },
+  {
+    "code": "2",
+    "coord": "45.81451380272636, 6.962771362218659"
+  },
+  {
+    "code": "3",
+    "coord": "48.899522510127255, 2.35945108417052"
+  },
+  {
+    "code": "4",
+    "coord": "52.02137427570453, 8.531736770949566"
+  },
+  {
+    "code": "5",
+    "coord": "45.32624662151015, 14.440446452893699"
+  },
+  {
+    "code": "6",
+    "coord": "44.8086676114757, 20.46160488055873"
+  },
+  {
+    "code": "7",
+    "coord": "48.20184976581924, 16.360580446815586"
+  },
+  {
+    "code": "8",
+    "coord": "40.514537142697776, -84.42785005318763"
+  },
+  {
+    "code": "9",
+    "coord": "49.61000485024232, 6.12835600018865"
+  },
+  {
+    "code": "10",
+    "coord": "43.31693661046109, -1.9790332833506632"
+  },
+  {
+    "code": "11",
+    "coord": "48.3323006, 1.6201084"
+  },
+  {
+    "code": "12",
+    "coord": "40.7761668, 29.5938958"
+  },
+  {
+    "code": "13",
+    "coord": "38.5147258, 23.1663354"
+  },
+  {
+    "code": "14",
+    "coord": "41.600107, 27.2149815"
+  },
+  {
+    "code": "15",
+    "coord": "39.5816708, 33.5214459"
+  },
+  {
+    "code": "16",
+    "coord": "40.0620082, 32.1681638"
+  },
+  {
+    "code": "17",
+    "coord": "40.8751772, -3.2588665"
+  },
+  {
+    "code": "18",
+    "coord": "35.3091195, -118.0995441"
+  },
+  {
+    "code": "19",
+    "coord": "41.1708324, 31.6057726"
+  },
+  {
+    "code": "20",
+    "coord": "38.6359842, 26.8327594"
+  },
+  {
+    "code": "21",
+    "coord": "41.1098815, -73.8810884"
+  },
+  {
+    "code": "22",
+    "coord": "42.2954745, 13.0604527"
+  },
+  {
+    "code": "23",
+    "coord": "38.3431308, 27.5405699"
+  },
+  {
+    "code": "24",
+    "coord": "38.2786623, 27.1065331"
+  },
+  {
+    "code": "25",
+    "coord": "37.8023566, 31.9016633"
+  },
+  {
+    "code": "26",
+    "coord": "37.910757, 31.8781165"
+  },
+  {
+    "code": "27",
+    "coord": "38.8506248, 27.3236056"
+  },
+  {
+    "code": "28",
+    "coord": "40.5059316, 33.5072004"
+  }
+];
+        const EMBEDDED_CHANCE_AT = 60;
+        const EMBEDDED_CHANCE_VALUES = [-30,-20,-20,-15,-15,-10,-10,-10,10,10,10,15,15,20,20,45];
+        const EMBEDDED_FIREBASE_CONFIG = {"apiKey":"AIzaSyBHGEZ0xMPFVPLIhn8NiWkr_a6niuXxEGA","authDomain":"mapmap-d1f8e.firebaseapp.com","projectId":"mapmap-d1f8e","storageBucket":"mapmap-d1f8e.firebasestorage.app","messagingSenderId":"352198607815","appId":"1:352198607815:web:24b5a12270e55da1094fe2"};
+        const SERIES_ID = EMBEDDED_GAME_ID || 'PAROLA65.,a.54q.';
+        // =========================================================================
+        const MAX_HAREKET = 100; 
+        let hareketSayaci = 0; 
+        
+        // 👇 HEDEF VERİLERİ (Artık Sadece Koordinatları İçeriyor)
+        // Uygulama otomatik olarak ismi çekecektir.
+        const VARSAYILAN_HEDEF_VERILERI = [
+            { code: '1', coord: '51.221814127506185, 6.801987247286947' },
+    { code: '2', coord: '45.81451380272636, 6.962771362218659' },
+    { code: '3', coord: '48.899522510127255, 2.35945108417052' },
+    { code: '4', coord: '52.02137427570453, 8.531736770949566' },
+    { code: '5', coord: '45.32624662151015, 14.440446452893699' },
+    { code: '6', coord: '44.8086676114757, 20.46160488055873' },
+    { code: '7', coord: '48.20184976581924, 16.360580446815586' },
+    { code: '8', coord: '40.514537142697776, -84.42785005318763' },
+    { code: '9', coord: '49.61000485024232, 6.12835600018865' },
+    
+];
+        let HEDEF_VERILERI = EMBEDDED_TARGETS || JSON.parse(localStorage.getItem('haritaBulmacasi_admin_hedefler') || 'null') || VARSAYILAN_HEDEF_VERILERI;
+        const ADMIN_PAROLA_KEY = 'haritaBulmacasi_admin_parola';
+        const DEFAULT_ADMIN_PAROLA = '1212';
+        let adminYetkili = false;
+        const TOTAL_STAGES = 3;
+        const TIMER_DURATION_SECONDS = 120;
+        const SANS_TETIK_SANIYESI = Number(EMBEDDED_CHANCE_AT || localStorage.getItem('haritaBulmacasi_sans_suresi') || 60);
+        const VARSAYILAN_SANS_DEGERLERI = [-25,-20,-20,-15,-15,-10,-10,-10,10,10,10,15,15,20,20,25];
+        const SANS_DEGERLERI = EMBEDDED_CHANCE_VALUES || JSON.parse(localStorage.getItem('haritaBulmacasi_sans_degerleri') || 'null') || VARSAYILAN_SANS_DEGERLERI;
+        let timerAdjustmentMs = 0;
+        let sansKutusuAktif = false;
+        let sansUcretsizSecimBitis = 0;
+        let sansUcretsizSureEklendi = false;
+        let firebaseDb = null;
+        let firebaseUser = null;
+        let firebaseHazir = false;
+
+        // Seçilen koordinatları tutan global değişkenler
+        let selectedLat = null;
+        let selectedLng = null;
+        
+        // Aşama ve süre sabitleri yukarıda tanımlandı.
+
+        // LOCAL STORAGE ANAHTARLARI
+        const PREFIX = `${SERIES_ID}_`;
+        const STORAGE_KEY_OYUNCU_ADI = `${PREFIX}haritaBulmacasi_oyuncu_adi`;
+        const STORAGE_KEY_STAGE = `${PREFIX}haritaBulmacasi_current_stage`;
+        const STORAGE_KEY_COMPLETED = `${PREFIX}haritaBulmacasi_oyun_tamamlandi`; 
+        const STORAGE_KEY_HEDEF_ISIM_BASE = `${PREFIX}haritaBulmacasi_stage_`; 
+        
+        // Current Stage Num artık initMap'te belirlenecek, ancak anahtarlar için varsayılan bir değer olmalı
+        const currentStageNumFromStorage = parseInt(localStorage.getItem(STORAGE_KEY_STAGE) || '0', 10);
+        
+        let CURRENT_STAGE_NUM = currentStageNumFromStorage === 0 ? 1 : currentStageNumFromStorage;
+        const GAME_ID = `stage_${CURRENT_STAGE_NUM}`;
+        
+        const STORAGE_KEY_TAHMIN = `${PREFIX}haritaBulmacasi_${GAME_ID}_tahminYapildi`;
+        const STORAGE_KEY_KOORDINAT = `${PREFIX}haritaBulmacasi_${GAME_ID}_tahminKoordinat`;
+        const STORAGE_KEY_HEDEF = `${PREFIX}haritaBulmacasi_${GAME_ID}_hedefKoordinat`;
+        const STORAGE_KEY_MESAFE = `${PREFIX}haritaBulmacasi_${GAME_ID}_mesafe`;
+        const STORAGE_KEY_SELECTION_NAME = `${PREFIX}haritaBulmacasi_${GAME_ID}_selectionName`; 
+        const STORAGE_KEY_SELECTION_COUNTRY_CODE = `${PREFIX}haritaBulmacasi_${GAME_ID}_selectionCountryCode`; 
+
+        const STORAGE_KEY_TIMER_START = `${PREFIX}haritaBulmacasi_${GAME_ID}_timer_start`; 
+        const STORAGE_KEY_TIMER_DURATION = `${PREFIX}haritaBulmacasi_${GAME_ID}_timer_duration`; 
+        const STORAGE_KEY_HAREKET_SAYACI = `${PREFIX}haritaBulmacasi_${GAME_ID}_hareket_sayaci`; 
+        const STORAGE_KEY_SANS_ACILDI = `${PREFIX}haritaBulmacasi_${GAME_ID}_sans_acildi`;
+        const STORAGE_KEY_TIMER_ADJUST = `${PREFIX}haritaBulmacasi_${GAME_ID}_timer_adjust`;
+        
+        let tahminHaritasi;
+        let geocoder;
+        let tahminMarker;
+        let hedefMarker;
+        let mesafeCizgisi; 
+        let kronometreInterval = null;
+        let kronometreNesli = 0;
+        function kronometreyiKesinDurdur(){
+          kronometreNesli++;
+          if(kronometreInterval){ clearInterval(kronometreInterval); kronometreInterval=null; }
+          localStorage.removeItem(STORAGE_KEY_TIMER_START);
+          localStorage.removeItem(STORAGE_KEY_TIMER_DURATION);
+          sansKutusuAktif=false;
+          sansUcretsizSecimBitis=0;
+          const modal=document.getElementById('sansModal'); if(modal) modal.classList.add('hidden');
+        }
+        let tumAsamaMarkerlari = []; 
+        let streetViewPanorama; 
+
+        let warningControlDiv; 
+        let uyariGosterildi = false; 
+
+        // 👇 YENİ FONKSİYON: Ülke kodunu bayrak emojisine dönüştürür.
+        function countryCodeToFlag(countryCode) {
+            if (!countryCode || countryCode.length !== 2) return '';
+            const codePoints = countryCode.toUpperCase().split('').map(char => 127397 + char.charCodeAt(0));
+            return String.fromCodePoint(...codePoints);
+        }
+
+        // 👇 Bayrak emojisini renkli bir SVG işaretçisi ikonuna dönüştürür.
+        function createFlagMarkerIcon(flagEmoji, color) {
+            const size = 36; 
+            const fontSize = 28; 
+
+            // Bayrak emojisini ortasına yerleştiren ve renkli bir daire arka planı olan SVG
+            const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}">
+                <circle cx="${size / 2}" cy="${size / 2}" r="${size / 2 - 2}" fill="${color}" stroke="#000" stroke-width="1.5"/>
+                <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="${fontSize}" style="font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Segoe UI Symbol', 'Noto Color Emoji', Arial, sans-serif; cursor: pointer;">${flagEmoji}</text>
+            </svg>`;
+            
+            const encodedSvg = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg);
+
+            return {
+                url: encodedSvg,
+                scaledSize: new google.maps.Size(size, size), 
+                origin: new google.maps.Point(0, 0),
+                anchor: new google.maps.Point(size / 2, size / 2) 
+            };
+        }
+        
+        // =========================================================================
+        // YENİ BAŞLANGIÇ MANTIKLARI
+        // =========================================================================
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const baslatButonu = document.getElementById('oyunuBaslatButonu');
+            const baslangicKapsayici = document.getElementById('baslangicKapsayici');
+            const oyunKapsayici = document.getElementById('oyunKapsayici');
+            
+            if (baslatButonu) {
+                baslatButonu.addEventListener('click', baslangiciKontrolEt);
+            }
+            
+            const isGameStarted = localStorage.getItem(STORAGE_KEY_STAGE) && localStorage.getItem(`${STORAGE_KEY_HEDEF_ISIM_BASE}1_hedefEnlem`);
+
+            if (localStorage.getItem(STORAGE_KEY_COMPLETED) === 'true' || isGameStarted) {
+                // Oyun tamamlanmışsa veya aşama bilgisi varsa, oyun ekranını göster
+                if (baslangicKapsayici && oyunKapsayici) {
+                    baslangicKapsayici.classList.add('hidden');
+                    oyunKapsayici.classList.remove('hidden');
+                    // initMap onload ile zaten çağrılıyor
+                }
+            } else {
+                // Oyun başlamadıysa veya sıfırlandıysa, başlangıç ekranını göster
+                if (baslangicKapsayici && oyunKapsayici) {
+                    baslangicKapsayici.classList.remove('hidden');
+                    oyunKapsayici.classList.add('hidden');
+                    
+                    // 👇 YENİ EK: İlk kod giriş alanına odaklan
+                    const kod1Input = document.getElementById('kod1');
+                    if (kod1Input) {
+                        kod1Input.focus();
+                    }
+                }
+            }
+        });
+
+
+        // Kullanıcının girdiği kodları kontrol eder ve oyunu başlatır
+        async function baslangiciKontrolEt() {
+            const oyuncuAdi = document.getElementById('oyuncuAdi').value.trim();
+            const kodMesaj = document.getElementById('kodMesaj');
+            if (oyuncuAdi.length < 2) { kodMesaj.textContent='Hata: Lütfen en az 2 karakterlik ad veya rumuz girin.'; kodMesaj.classList.remove('hidden'); return; }
+            if (!firebaseHazir) {
+              kodMesaj.textContent='Yarış bağlantısı hazırlanıyor...'; kodMesaj.classList.remove('hidden');
+              for(let i=0;i<20 && !firebaseHazir;i++) await new Promise(r=>setTimeout(r,250));
+              if(!firebaseHazir){ kodMesaj.textContent='Hata: Firebase bağlantısı kurulamadı. Anonymous Authentication ve Firebase ayarlarını kontrol edin.'; return; }
+            }
+            localStorage.setItem(STORAGE_KEY_OYUNCU_ADI, oyuncuAdi);
+            const kod1 = document.getElementById('kod1').value.trim();
+            const kod2 = document.getElementById('kod2').value.trim();
+            const kod3 = document.getElementById('kod3').value.trim();
+            kodMesaj.classList.add('hidden');
+
+            const girilenKodlar = [kod1, kod2, kod3];
+            const secilenHedefler = [];
+            const kullanilanKodlar = new Set();
+            let gecersizKod = false;
+
+            for (let i = 0; i < TOTAL_STAGES; i++) {
+                const kod = girilenKodlar[i];
+                
+                if (!kod) {
+                    gecersizKod = true;
+                    break;
+                }
+
+                if (kullanilanKodlar.has(kod)) {
+                    kodMesaj.textContent = `Hata: Kodlar tekrar edemez. (${kod})`;
+                    kodMesaj.classList.remove('hidden');
+                    return;
+                }
+
+                // HEDEF_VERILERI dizisinde kodu ara
+                const hedef = HEDEF_VERILERI.find(data => data.code === kod);
+
+                if (!hedef) {
+                    kodMesaj.textContent = `Hata: ${kod} kodu listede bulunamadı.`;
+                    kodMesaj.classList.remove('hidden');
+                    return;
+                }
+
+                secilenHedefler.push(hedef);
+                kullanilanKodlar.add(kod);
+            }
+
+            if (gecersizKod || secilenHedefler.length !== TOTAL_STAGES) {
+                kodMesaj.textContent = 'Hata: Lütfen 3 adet geçerli ve benzersiz konum kodu girin.';
+                kodMesaj.classList.remove('hidden');
+                return;
+            }
+            
+            // Kodlar geçerliyse, hedefleri localStorage'a kaydet
+            secilenHedefler.forEach((hedef, index) => {
+                const stageNum = index + 1;
+                
+                // Koordinat Stringini Enlem ve Boylama Ayır
+                const parts = hedef.coord.split(',').map(p => p.trim());
+                const hedefLat = parseFloat(parts[0]);
+                const hedefLng = parseFloat(parts[1]);
+                
+                if (isNaN(hedefLat) || isNaN(hedefLng)) {
+                    console.error(`Koordinat ayrıştırma hatası: ${hedef.coord}`);
+                    kodMesaj.textContent = `Hata: ${hedef.code} kodunun koordinat formatı geçersiz.`;
+                    kodMesaj.classList.remove('hidden');
+                    return;
+                }
+
+                // Koordinatları ve ismi aşamaya özel anahtarlarla kaydet
+                localStorage.setItem(`${STORAGE_KEY_HEDEF_ISIM_BASE}${stageNum}_hedefEnlem`, hedefLat);
+                localStorage.setItem(`${STORAGE_KEY_HEDEF_ISIM_BASE}${stageNum}_hedefBoylam`, hedefLng);
+                // 👇 HEDEF ADI KAYIT MANTIĞI: Veri setinde isim yoksa (veya boşsa) kodu kaydet. initMap'te gerçek ismi çekeceğiz.
+                localStorage.setItem(`${STORAGE_KEY_HEDEF_ISIM_BASE}${stageNum}_hedefIsim`, hedef.name || `Hedef ${hedef.code}`);
+                localStorage.setItem(`${STORAGE_KEY_HEDEF_ISIM_BASE}${stageNum}_hedefKoordinat`, hedef.coord); // Tahmin ekranı için string formatı kaydet
+            });
+
+            // Oyunu başlat ve arayüzü değiştir
+            localStorage.setItem(STORAGE_KEY_STAGE, 1); // Oyunu 1. aşamadan başlat
+            localStorage.removeItem(STORAGE_KEY_COMPLETED); // Tamamlandı bilgisini sıfırla
+            
+            document.getElementById('baslangicKapsayici').classList.add('hidden');
+            document.getElementById('oyunKapsayici').classList.remove('hidden');
+            
+            // initMap'i çağır
+            if (typeof initMap === 'function') {
+                initMap(); 
+            } else {
+                window.location.reload(); // Gerekirse sayfayı tamamen yenile
+            }
+        }
+
+        // =========================================================================
+        // HARİTA VE OYUN MANTIKLARI
+        // =========================================================================
+
+        // API yüklendikten sonra haritaları başlatan ana fonksiyon
+        async function initMap() {
+            const CURRENT_STAGE_NUM = parseInt(localStorage.getItem(STORAGE_KEY_STAGE) || '0', 10);
+            
+            if (localStorage.getItem(STORAGE_KEY_COMPLETED) === 'true' || CURRENT_STAGE_NUM === 0) {
+                if (CURRENT_STAGE_NUM !== 0) {
+                    gosterToplamSonuclari(); // Tamamlandıysa sonuçları göster
+                }
+                return; 
+            }
+            
+            // Aşama Başlığını Güncelle
+            document.getElementById('oyunBaslik').textContent = `(Konum ${CURRENT_STAGE_NUM} / ${TOTAL_STAGES})`;
+
+            // YENİ: Koordinatları localStorage'dan çek
+            const stageKey = `${STORAGE_KEY_HEDEF_ISIM_BASE}${CURRENT_STAGE_NUM}`;
+            const HEDEF_ENLEM = parseFloat(localStorage.getItem(`${stageKey}_hedefEnlem`));
+            const HEDEF_BOYLAM = parseFloat(localStorage.getItem(`${stageKey}_hedefBoylam`));
+            const HEDEF_KOORDINAT_STRING = localStorage.getItem(`${stageKey}_hedefKoordinat`);
+
+            // Eğer koordinatlar yüklenemezse (Kod girişi atlanmışsa)
+            if (isNaN(HEDEF_ENLEM) || isNaN(HEDEF_BOYLAM)) {
+                if (CURRENT_STAGE_NUM > 0) {
+                    // Eğer oyun başlamış görünüyorsa ama koordinat yoksa, sıfırla ve başlangıç ekranına dön
+                    resetGame(); 
+                }
+                return; 
+            }
+            
+            // Street View'u başlat
+            streetViewPanorama = new google.maps.StreetViewPanorama(
+                document.getElementById('streetViewContainer'), {
+                    position: { lat: HEDEF_ENLEM, lng: HEDEF_BOYLAM }, 
+                    pov: { heading: 270, pitch: 0 },
+                    linksControl: false,
+                    panControl: false,
+                    zoomControl: false,
+                    fullscreenControl: true, 
+                    addressControl: false,
+                    visible: true
+                });
+
+            hareketSayaci = parseInt(localStorage.getItem(STORAGE_KEY_HAREKET_SAYACI) || '0', 10);
+            guncelleHareketGostergesi(); 
+
+            geocoder = new google.maps.Geocoder();
+            
+            const hedefIsimKey = `${stageKey}_hedefIsim`;
+            let hedefIsmi = localStorage.getItem(hedefIsimKey); 
+            
+            const hedefUlkeKoduKey = `${STORAGE_KEY_HEDEF_ISIM_BASE}${CURRENT_STAGE_NUM}_hedefUlkeKodu`;
+            let hedefUlkeKodu = localStorage.getItem(hedefUlkeKoduKey);
+
+
+            // 👇 YENİ EK: Eğer hedef ismi hala "Hedef XXXX" şeklinde koddan oluşuyorsa VEYA ülke kodu eksikse, geocoding yap.
+            if (!hedefUlkeKodu || (hedefIsmi && hedefIsmi.startsWith('Hedef '))) { 
+                document.getElementById('mesajAlani').textContent = "Konum bilgileri alınıyor...";
+                
+                // getKonumAdiByKoordinat fonksiyonu hem ismi hem kodu döndürüyor.
+                const { locationName: newHedefIsmi, countryCode: newHedefUlkeKodu } = await getKonumAdiByKoordinat(HEDEF_ENLEM, HEDEF_BOYLAM);
+                
+                // Yeni bilgileri kaydet
+                hedefIsmi = newHedefIsmi;
+                hedefUlkeKodu = newHedefUlkeKodu;
+                localStorage.setItem(hedefUlkeKoduKey, hedefUlkeKodu); 
+                localStorage.setItem(hedefIsimKey, hedefIsmi); 
+                
+                document.getElementById('mesajAlani').textContent = ""; 
+            }
+            // 👆 YENİ EK BİTİŞ
+            
+
+            // Sağdaki haritayı başlat
+            tahminHaritasi = new google.maps.Map(document.getElementById('sagHaritaDiv'), {
+                center: { lat: 41, lng: 28 }, 
+                zoom: 2,
+                streetViewControl: false,
+                mapTypeControl: false,
+                fullscreenControl: true,
+                zoomControl: false,
+                gestureHandling: "greedy" // Harita Mouse Tekerleği Zoom Fix'i
+            });
+            
+            // Harita konteyneri display:none'dan çıktığında kendini doğru boyutlandırmasını sağlar.
+            google.maps.event.addListenerOnce(tahminHaritasi, 'idle', function() {
+                google.maps.event.trigger(tahminHaritasi, 'resize');
+                tahminHaritasi.setCenter({ lat: 41, lng: 28 });
+                tahminHaritasi.setZoom(2);
+            });
+            
+            // Haritaya tıklama olayını ekle
+            tahminHaritasi.addListener('click', (event) => {
+                // YENİ KONTROL: Eğer tahmin yapılmışsa veya oyun bitmişse tıklamayı engelle
+                if (localStorage.getItem(STORAGE_KEY_TAHMIN) === 'true' || localStorage.getItem(STORAGE_KEY_COMPLETED) === 'true') {
+                    document.getElementById('mesajAlani').textContent = "⚠️ Tahmin zaten yapıldı veya oyun bitti. Sonraki Konuma Geçin.";
+                    return;
+                }
+
+                const lat = event.latLng.lat();
+                const lng = event.latLng.lng();
+                
+                pinAtVeKoordinatGuncelle(lat, lng);
+
+                // Pin seçildiğinde butonu etkinleştir.
+                document.getElementById('tahminButonu').disabled = false;
+                
+                document.getElementById('mesajAlani').textContent = "Koordinat seçildi. Tahmini Göndermek için Butona Basın.";
+            });
+            
+            // Harita üzerine uyarı kontrolünü ekle
+            createCustomControl(); 
+
+            const tahminYapildi = localStorage.getItem(STORAGE_KEY_TAHMIN) === 'true';
+            
+            if (tahminYapildi) {
+                const tahminKoordinatStr = localStorage.getItem(STORAGE_KEY_KOORDINAT);
+                const hedefKoordinatStr = HEDEF_KOORDINAT_STRING; // Hedef koordinatı local'den çek
+                const selectionCountryCode = localStorage.getItem(STORAGE_KEY_SELECTION_COUNTRY_CODE);
+                const hedefCountryCode = localStorage.getItem(hedefUlkeKoduKey); 
+                
+                const [tahminEnlem, tahminBoylam] = tahminKoordinatStr ? tahminKoordinatStr.split(',').map(p => parseFloat(p.trim())) : [0, 0];
+                const [hedefEnlem, hedefBoylam] = hedefKoordinatStr ? hedefKoordinatStr.split(',').map(p => parseFloat(p.trim())) : [0, 0];
+
+                document.getElementById('tahminButonu').disabled = true;
+                document.getElementById('tahminButonu').classList.add('hidden');
+                document.getElementById('sonrakiAsamaButonu').classList.remove('hidden');
+
+                // Tekrar gösterim için pinleri göster
+                setTimeout(() => {
+                    gosterPinlerVeHaritayiYakınlaştır(tahminEnlem, tahminBoylam, hedefEnlem, hedefBoylam, selectionCountryCode, hedefCountryCode);
+                }, 250);
+            } else {
+                tahminHaritasi.setZoom(2);
+                tahminHaritasi.setCenter({ lat: 41, lng: 28 });
+                document.getElementById('tahminButonu').classList.remove('hidden');
+                document.getElementById('tahminButonu').disabled = true; // İlk başta tahmin butonu devre dışı (seçim yapmaya zorlamak için)
+
+                const display = document.getElementById('kronometre');
+                timerAdjustmentMs = parseInt(localStorage.getItem(STORAGE_KEY_TIMER_ADJUST) || '0',10);
+                startTimer(TIMER_DURATION_SECONDS, display);
+
+                if (hareketSayaci >= MAX_HAREKET) {
+                    streetViewPanorama.setOptions({ linksControl: false, panControl: false, zoomControl: false });
+                    document.getElementById('mesajAlani').textContent = "⛔ ADIM KISITI AŞILDI! Street View’da ileri/geri gidemezsiniz.";
+                } else {
+                    streetViewPanorama.setOptions({ linksControl: true, panControl: true, zoomControl: true });
+                    google.maps.event.addListener(streetViewPanorama, 'position_changed', artirHareketSayaci);
+                }
+            }
+        }
+        
+        // =================================================================================================
+        // HAREKET KISITLAMA FONKSİYONLARI 
+        // =================================================================================================
+
+        function guncelleHareketGostergesi() {
+            const adimSayisiGostergesi = document.getElementById('kalanAdimSayisi');
+            if (!adimSayisiGostergesi) return;
+            
+            const kalan = MAX_HAREKET - hareketSayaci;
+            const renkSinifi = kalan <= 10 ? 'text-red-400 animate-pulse' : 'text-white-400';
+            
+            adimSayisiGostergesi.textContent = kalan;
+            adimSayisiGostergesi.className = renkSinifi; 
+        }
+
+        function artirHareketSayaci() {
+            if (localStorage.getItem(STORAGE_KEY_TAHMIN) === 'true') {
+                return;
+            }
+            
+            if (hareketSayaci >= MAX_HAREKET) {
+                streetViewPanorama.setOptions({ linksControl: false, panControl: false, zoomControl: false });
+                document.getElementById('mesajAlani').textContent = "⛔ ADIM KISITI AŞILDI! Street View’da ileri/geri gidemezsiniz.";
+                return;
+            }
+
+            hareketSayaci++;
+            localStorage.setItem(STORAGE_KEY_HAREKET_SAYACI, hareketSayaci);
+            guncelleHareketGostergesi();
+
+            if (hareketSayaci >= MAX_HAREKET) {
+                streetViewPanorama.setOptions({ linksControl: false, panControl: false, zoomControl: false });
+                document.getElementById('mesajAlani').textContent = "⛔ ADIM KISITI AŞILDI! Street View’da ileri/geri gidemezsiniz.";
+            } else if (hareketSayaci > MAX_HAREKET - 10) {
+                document.getElementById('mesajAlani').textContent = `⚠️ Son ${MAX_HAREKET - hareketSayaci} adım kaldı!`;
+            }
+        }
+        
+        // =================================================================================================
+        // GOOGLE MAPS ÖZEL KONTROL FONKSİYONLARI 
+        // =================================================================================================
+        
+        // Sadece uyarıyı gizler
+        function kapatUyari() {
+            if (warningControlDiv) {
+                warningControlDiv.style.display = 'none'; // Kontrolü gizle
+            }
+        }
+        
+        // Global tıklama olayını yönetir
+        function kapatUyariGlobal(event) {
+            // Uyarının kapandığından emin ol
+            kapatUyari();
+            
+            // Dinleyiciyi hemen kaldır
+            document.removeEventListener('click', kapatUyariGlobal, true);
+        }
+
+        function createCustomControl() {
+            // 1. Dış konteyner Div'i oluştur
+            warningControlDiv = document.createElement('div');
+            warningControlDiv.style.margin = '10px';
+            warningControlDiv.style.padding = '10px 15px';
+            warningControlDiv.style.backgroundColor = 'rgba(239, 68, 68, 0.95)'; // Tailwind bg-red-500
+            warningControlDiv.style.color = 'white';
+            warningControlDiv.style.borderRadius = '8px';
+            warningControlDiv.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+            warningControlDiv.style.display = 'none'; // Başlangıçta gizle
+            warningControlDiv.style.maxWidth = '250px';
+            warningControlDiv.style.textAlign = 'center';
+            
+            // 2. İçerik Span'i oluştur
+            const controlText = document.createElement('span');
+            controlText.style.fontWeight = 'bold';
+            controlText.style.fontSize = '14px';
+            controlText.innerHTML = '⚠️ SON 30 SANİYE! Süre bitiyor. Kapatmak için herhangi bir yere tıklayın.';
+            
+            warningControlDiv.appendChild(controlText);
+            
+            // 4. Kontrolü Haritaya Ekle (Sağ Üst Köşe)
+            if (tahminHaritasi) {
+                tahminHaritasi.controls[google.maps.ControlPosition.TOP_RIGHT].push(warningControlDiv);
+            }
+        }
+
+        function gosterGeciciUyari() {
+            if (warningControlDiv) {
+                warningControlDiv.style.display = 'block'; 
+
+                // HARİTA TAM EKRANDAYKEN DAHİ ÇALIŞMASI İÇİN document üzerine olay dinleyicisi eklenir.
+                document.addEventListener('click', kapatUyariGlobal, true);
+            }
+        }
+        
+        // =================================================================================================
+        // DİĞER FONKSİYONLAR 
+        // =================================================================================================
+
+        // Hem konum adını hem de ülke kodunu döndürür
+        async function getKonumAdiByKoordinat(lat, lng) {
+            return new Promise((resolve) => {
+                if (!geocoder) {
+                    return resolve({ locationName: "Yükleniyor...", countryCode: '' });
+                }
+                const latlng = { lat: lat, lng: lng };
+                geocoder.geocode({ location: latlng }, (results, status) => {
+                    if (status === "OK" && results[0]) {
+                        const components = results[0].address_components;
+                        
+                        let country = components.find(c => c.types.includes('country'))?.long_name;
+                        let countryCode = components.find(c => c.types.includes('country'))?.short_name || ''; 
+                        
+                        let city = null;
+                        const cityTypes = ['locality', 'postal_town', 'administrative_area_level_1', 'administrative_area_level_2'];
+
+                        for (const component of components) {
+                            if (component.types.some(type => cityTypes.includes(type))) {
+                                city = component.long_name;
+                                break; 
+                            }
+                        }
+                        
+                        if (city && country && city === country) {
+                            city = null;
+                        }
+
+                        const locationName = `${city || ''}, ${country || ''}`
+                                .replace(/^, | ,$/g, '') 
+                                .trim();
+                        
+                        resolve({ locationName: locationName || "Bilinmiyor", countryCode: countryCode });
+                        
+                    } else {
+                        console.error("Geocoding başarısız oldu:", status);
+                        resolve({ locationName: "Bilinmiyor", countryCode: '' });
+                    }
+                });
+            });
+        }
+
+        async function tahminGonder() {
+             if (selectedLat === null || selectedLng === null) {
+                 document.getElementById('mesajAlani').textContent = "⚠️ Lütfen önce haritadan bir konum seçiniz.";
+                 return;
+             }
+             
+             const stageNum = parseInt(localStorage.getItem(STORAGE_KEY_STAGE));
+             const stageKey = `${STORAGE_KEY_HEDEF_ISIM_BASE}${stageNum}`;
+
+             const HEDEF_ENLEM = parseFloat(localStorage.getItem(`${stageKey}_hedefEnlem`));
+             const HEDEF_BOYLAM = parseFloat(localStorage.getItem(`${stageKey}_hedefBoylam`));
+             const HEDEF_KOORDINAT_STRING = localStorage.getItem(`${stageKey}_hedefKoordinat`);
+
+             const tahminEnlem = selectedLat;
+             const tahminBoylam = selectedLng;
+
+             if (!tahminHaritasi) {
+                 document.getElementById('mesajAlani').textContent = "Harita yüklenmeden tahmin gönderilemez.";
+                 return;
+             }
+             
+             document.getElementById('mesajAlani').textContent = "Konum adı alınıyor, lütfen bekleyin...";
+             document.getElementById('tahminButonu').disabled = true;
+
+             // Seçilen konumun adını ve kodunu al
+             const { locationName: selectionName, countryCode: selectionCountryCode } = await getKonumAdiByKoordinat(tahminEnlem, tahminBoylam);
+
+             // Hedef ülke kodunu al (initMap'te kaydedildi)
+             const hedefUlkeKoduKey = `${STORAGE_KEY_HEDEF_ISIM_BASE}${stageNum}_hedefUlkeKodu`;
+             const hedefCountryCode = localStorage.getItem(hedefUlkeKoduKey) || ''; 
+             
+             // Pinleri gösterirken hem tahmin hem de hedefin ülke kodlarını gönder
+             gosterPinlerVeHaritayiYakınlaştır(tahminEnlem, tahminBoylam, HEDEF_ENLEM, HEDEF_BOYLAM, selectionCountryCode, hedefCountryCode);
+
+             const mesafeKm = getDistance(HEDEF_ENLEM, HEDEF_BOYLAM, tahminEnlem, tahminBoylam);
+             let formattedMesafe;
+             let kaydedilecekMesafe; 
+
+             kaydedilecekMesafe = mesafeKm.toString(); // Tam ondalıklı değeri kaydet
+            
+             const FACTOR = 100;
+             const truncatedMesafe = Math.trunc(mesafeKm * FACTOR) / FACTOR; // 2 ondalıkta kes
+
+             formattedMesafe = truncatedMesafe.toLocaleString('tr-TR', { 
+                 minimumFractionDigits: 2, 
+                 maximumFractionDigits: 2 
+             });
+
+             const hedefIsimKey = `${STORAGE_KEY_HEDEF_ISIM_BASE}${stageNum}_hedefIsim`;
+             // 👇 Hedef ismi localStorage'dan çekilir (initMap'te güncellendi)
+             const hedefIsmi = localStorage.getItem(hedefIsimKey) || `Konum ${stageNum}`; 
+             
+             // Bayrakları oluştur
+             const selectionFlag = countryCodeToFlag(selectionCountryCode);
+             const hedefFlag = countryCodeToFlag(hedefCountryCode);
+
+             document.getElementById('mesajAlani').innerHTML =
+                 `✅ Gerçek Konum: <b class="text-green-600">${hedefFlag} ${hedefIsmi}</b> <br> Seçim: <b class="text-red-600">${selectionFlag} ${selectionName}</b> <br> Hedefe uzaklık: <span class="text-blue-600 font-bold">${formattedMesafe} km</span>`;
+
+             
+             localStorage.setItem(STORAGE_KEY_TAHMIN, 'true');
+             // Hedef koordinat stringini tekrar kaydet
+             localStorage.setItem(STORAGE_KEY_HEDEF, HEDEF_KOORDINAT_STRING); 
+             localStorage.setItem(STORAGE_KEY_KOORDINAT, `${tahminEnlem.toFixed(6)}, ${tahminBoylam.toFixed(6)}`);
+             localStorage.setItem(STORAGE_KEY_MESAFE, kaydedilecekMesafe); 
+             // Seçilen ülke kodunu kaydet
+             localStorage.setItem(STORAGE_KEY_SELECTION_COUNTRY_CODE, selectionCountryCode); 
+             // Tablo için bayraklı ismi kaydet
+             localStorage.setItem(STORAGE_KEY_SELECTION_NAME, `${selectionFlag} ${selectionName}`); 
+             await firebaseAsamaKaydet(stageNum, mesafeKm, selectionName, hedefIsmi, hareketSayaci); 
+
+             kronometreyiKesinDurdur();
+             
+             document.body.classList.remove('border-alert'); 
+
+             const display = document.getElementById('kronometre');
+             display.style.color = "#64748b";
+             display.classList.remove("animate-pulse");
+
+             document.getElementById('tahminButonu').classList.add('hidden');
+             document.getElementById('sonrakiAsamaButonu').classList.remove('hidden');
+             
+             if (streetViewPanorama) {
+                 streetViewPanorama.setOptions({ linksControl: true, panControl: true, zoomControl: true });
+             }
+
+
+             if (stageNum === TOTAL_STAGES) {
+                 gosterToplamSonuclari();
+                 document.getElementById('sonrakiAsamaButonu').textContent = "🔄 Oyunu Baştan Başlat"; 
+             } else {
+                 document.getElementById('sonrakiAsamaButonu').textContent = `👉 Sonraki Konum (${stageNum + 1}. Aşama)`;
+             }
+        }
+
+        
+        function gosterTumAsamaSonuclarini() {
+             temizleHaritaKatmanlari(); 
+
+             const bounds = new google.maps.LatLngBounds(); 
+
+             for (let i = 0; i < TOTAL_STAGES; i++) {
+                 const stageNum = i + 1;
+                 
+                 const kaydedilenTahminStr = localStorage.getItem(`${PREFIX}haritaBulmacasi_stage_${stageNum}_tahminKoordinat`);
+                 const kaydedilenHedefStr = localStorage.getItem(`${PREFIX}haritaBulmacasi_stage_${stageNum}_hedefKoordinat`);
+
+                 // Hedef Bilgileri
+                 const hedefUlkeKoduKey = `${STORAGE_KEY_HEDEF_ISIM_BASE}${stageNum}_hedefUlkeKodu`;
+                 const hedefCountryCode = localStorage.getItem(hedefUlkeKoduKey) || ''; 
+                 const hedefFlag = countryCodeToFlag(hedefCountryCode);
+                 // 👇 Hedef ismi localStorage'dan çekilir
+                 const hedefName = localStorage.getItem(`${STORAGE_KEY_HEDEF_ISIM_BASE}${stageNum}_hedefIsim`) || `Konum ${stageNum} (Hedef)`;
+
+                 // Tahmin Bilgileri
+                 const selectionCountryCode = localStorage.getItem(`${PREFIX}haritaBulmacasi_stage_${stageNum}_selectionCountryCode`) || ''; 
+                 const tahminFlag = countryCodeToFlag(selectionCountryCode);
+                 const selectionName = localStorage.getItem(`${PREFIX}haritaBulmacasi_stage_${stageNum}_selectionName`) || `Konum ${stageNum} (Seçim)`;
+
+                 if (!kaydedilenTahminStr || !kaydedilenHedefStr) {
+                     continue; 
+                 }
+
+                 const [tahminLat, tahminLng] = kaydedilenTahminStr.split(',').map(p => parseFloat(p.trim()));
+                 const [hedefLat, hedefLng] = kaydedilenHedefStr.split(',').map(p => parseFloat(p.trim()));
+
+                 const hedefKonum = { lat: hedefLat, lng: hedefLng };
+                 const hedefMarkerStage = new google.maps.Marker({
+                     position: hedefKonum,
+                     map: tahminHaritasi,
+                     title: `[Hedef ${stageNum}] ${hedefName}`,
+                     icon: createFlagMarkerIcon(hedefFlag, '#10B981') // Hedef: YEŞİL
+                 });
+                 tumAsamaMarkerlari.push(hedefMarkerStage);
+                 bounds.extend(hedefKonum);
+
+                 const tahminKonum = { lat: tahminLat, lng: tahminLng };
+                 const tahminMarkerStage = new google.maps.Marker({
+                     position: tahminKonum,
+                     map: tahminHaritasi,
+                     title: `[Tahmin ${stageNum}] ${selectionName}`,
+                     icon: createFlagMarkerIcon(tahminFlag, '#EF4444') // Tahmin: KIRMIZI
+                 });
+                 tumAsamaMarkerlari.push(tahminMarkerStage);
+                 bounds.extend(tahminKonum);
+
+                 const yolKoordinatlari = [tahminKonum, hedefKonum];
+                 const mesafeCizgisiStage = new google.maps.Polyline({
+                     path: yolKoordinatlari,
+                     geodesic: true,
+                     strokeColor: '#000000', 
+                     strokeOpacity: 0.5,
+                     strokeWeight: 2,
+                     map: tahminHaritasi
+                 });
+                 tumAsamaMarkerlari.push(mesafeCizgisiStage); 
+             }
+
+             if (tumAsamaMarkerlari.length > 0) {
+                 tahminHaritasi.fitBounds(bounds);
+             }
+         }
+          
+          function mesafeSeviyesi(km) {
+             if (!Number.isFinite(km) || km >= 99999) return {etiket:'Süre doldu', cls:'bg-red-100 text-red-800', renk:'#ef4444'};
+             if (km < 25) return {etiket:'Mükemmel', cls:'bg-emerald-100 text-emerald-800', renk:'#10b981'};
+             if (km < 100) return {etiket:'Çok yakın', cls:'bg-green-100 text-green-800', renk:'#22c55e'};
+             if (km < 500) return {etiket:'Yakın', cls:'bg-amber-100 text-amber-800', renk:'#f59e0b'};
+             return {etiket:'Uzak', cls:'bg-red-100 text-red-800', renk:'#ef4444'};
+          }
+          function kmFormatla(km) {
+             return km.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' km';
+          }
+          function gosterToplamSonuclari() {
+             localStorage.setItem(STORAGE_KEY_COMPLETED, 'true');
+             const cards = document.getElementById('sonucTablosuBody');
+             let toplam=0, adet=0, enIyi=Infinity, html='';
+             for (let stageNum=1; stageNum<=TOTAL_STAGES; stageNum++) {
+               const raw=localStorage.getItem(`${PREFIX}haritaBulmacasi_stage_${stageNum}_mesafe`);
+               const km=raw===null ? NaN : parseFloat(raw);
+               const tahmin=localStorage.getItem(`${PREFIX}haritaBulmacasi_stage_${stageNum}_selectionName`) || 'Tahmin yapılmadı';
+               const hedefName=localStorage.getItem(`${STORAGE_KEY_HEDEF_ISIM_BASE}${stageNum}_hedefIsim`) || `Konum ${stageNum}`;
+               const ulke=localStorage.getItem(`${STORAGE_KEY_HEDEF_ISIM_BASE}${stageNum}_hedefUlkeKodu`) || '';
+               const hedef=`${countryCodeToFlag(ulke)} ${hedefName}`.trim();
+               const seviye=mesafeSeviyesi(km);
+               if (Number.isFinite(km)) { toplam+=km; adet++; enIyi=Math.min(enIyi,km); }
+               html += `<div class="result-card" style="border-left-color:${seviye.renk}">
+                 <div class="flex items-center justify-between gap-2 mb-2"><b class="text-slate-800">${stageNum}. Konum</b><span class="result-badge ${seviye.cls}">${seviye.etiket}</span></div>
+                 <div class="grid md:grid-cols-2 gap-2 text-sm"><div><span class="text-slate-500">🎯 Hedef</span><div class="font-bold">${hedef}</div></div><div><span class="text-slate-500">📍 Tahmin</span><div class="font-bold">${tahmin}</div></div></div>
+                 <div class="mt-2 text-right text-lg font-extrabold text-slate-800">${Number.isFinite(km)?kmFormatla(km):'Tahmin yok'}</div>
+               </div>`;
+             }
+             cards.innerHTML=html;
+             document.getElementById('toplamKm').textContent=kmFormatla(toplam);
+             document.getElementById('ortalamaKm').textContent=adet?kmFormatla(toplam/adet):'-';
+             document.getElementById('enIyiKm').textContent=Number.isFinite(enIyi)?kmFormatla(enIyi):'-';
+             const sonucPaneli=document.getElementById('sonucTablosuKapsayici');
+             sonucPaneli.classList.remove('hidden'); sonucPaneli.scrollTop=0;
+             const detay=document.getElementById('detaySonuclar'); if(detay) detay.open=false;
+             const banner=document.getElementById('bannerSifirlaButonu'); if (banner) banner.classList.remove('hidden');
+             const sonKm=Number(localStorage.getItem(`${PREFIX}haritaBulmacasi_stage_3_mesafe`)||0);
+             firebaseAsamaKaydet(3,sonKm,localStorage.getItem(`${PREFIX}haritaBulmacasi_stage_3_selectionName`)||'Bilinmiyor','',Number(localStorage.getItem(`${PREFIX}haritaBulmacasi_stage_3_hareket_sayaci`)||0))
+               .finally(()=>firebaseLiderlikYenile());
+             gosterTumAsamaSonuclarini();
+          }
+
+          function temizleHaritaKatmanlari() {
+             if (tahminMarker) tahminMarker.setMap(null);
+             if (hedefMarker) hedefMarker.setMap(null);
+             if (mesafeCizgisi) mesafeCizgisi.setMap(null);
+
+             tumAsamaMarkerlari.forEach(marker => {
+                 if(marker.setMap) marker.setMap(null); 
+             });
+             tumAsamaMarkerlari = [];
+          }
+
+
+          function pinAtVeKoordinatGuncelle(lat, lng) {
+             temizleHaritaKatmanlari(); 
+             
+             selectedLat = lat;
+             selectedLng = lng;
+
+             const tahminKonum = { lat: lat, lng: lng };
+             // Tahmin yapılmadan önce sadece basit bir pin gösteriyoruz.
+             if (tahminMarker) {
+                tahminMarker.setMap(null);
+             }
+             tahminMarker = new google.maps.Marker({
+                 position: tahminKonum,
+                 map: tahminHaritasi,
+                 title: 'Tahmininiz',
+             });
+             
+             tahminHaritasi.panTo(tahminKonum);
+             if (tahminHaritasi.getZoom() < 5) {
+                 tahminHaritasi.setZoom(5);
+             }
+          }
+
+          // Ülke kodlarını parametre olarak alıp bayrak ikonlarını kullanır.
+          function gosterPinlerVeHaritayiYakınlaştır(tahminEnlem, tahminBoylam, hedefEnlem, hedefBoylam, selectionCountryCode, hedefCountryCode) {
+             if (!tahminHaritasi) return;
+             temizleHaritaKatmanlari(); 
+             
+             const tahminFlag = countryCodeToFlag(selectionCountryCode);
+             const hedefFlag = countryCodeToFlag(hedefCountryCode);
+
+             const tahminKonum = { lat: tahminEnlem, lng: tahminBoylam };
+             tahminMarker = new google.maps.Marker({ 
+                 position: tahminKonum, 
+                 map: tahminHaritasi, 
+                 title: 'Tahmininiz',
+                 icon: createFlagMarkerIcon(tahminFlag, '#EF4444') // Tahmin: KIRMIZI
+             });
+             
+             const hedefKonum = { lat: hedefEnlem, lng: hedefBoylam };
+             hedefMarker = new google.maps.Marker({
+                 position: hedefKonum,
+                 map: tahminHaritasi,
+                 title: 'Gerçek Konum',
+                 icon: createFlagMarkerIcon(hedefFlag, '#10B981') // Hedef: YEŞİL
+             });
+             
+             const yolKoordinatlari = [tahminKonum, hedefKonum];
+             mesafeCizgisi = new google.maps.Polyline({
+                 path: yolKoordinatlari,
+                 geodesic: true, 
+                 strokeColor: '#3B82F6', 
+                 strokeOpacity: 0.8,
+                 strokeWeight: 4,
+                 map: tahminHaritasi
+             });
+
+             const bounds = new google.maps.LatLngBounds();
+             bounds.extend(tahminMarker.getPosition());
+             bounds.extend(hedefMarker.getPosition());
+             tahminHaritasi.fitBounds(bounds);
+          }
+
+          function getDistance(lat1, lon1, lat2, lon2) {
+             const R = 6371;
+             const deg2rad = (deg) => deg * (Math.PI / 180);
+             const dLat = deg2rad(lat2 - lat1);
+             const dLon = deg2rad(lon2 - lon1);
+             const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                         Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+             const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+             return R * c;
+          }
+
+          function karistir(dizi) {
+             for (let i=dizi.length-1;i>0;i--) { const j=Math.floor(Math.random()*(i+1)); [dizi[i],dizi[j]]=[dizi[j],dizi[i]]; }
+             return dizi;
+          }
+          function sansKutulariniAc() {
+             if (sansKutusuAktif) return;
+             sansKutusuAktif=true;
+             sansUcretsizSecimBitis=Date.now()+5000;
+             sansUcretsizSureEklendi=false;
+             localStorage.setItem(STORAGE_KEY_SANS_ACILDI,'true');
+             setTimeout(()=>{
+               if(!sansUcretsizSureEklendi){
+                 timerAdjustmentMs += 5000;
+                 localStorage.setItem(STORAGE_KEY_TIMER_ADJUST,String(timerAdjustmentMs));
+                 sansUcretsizSureEklendi=true;
+               }
+               sansUcretsizSecimBitis=0;
+             },5000);
+             const degerler=karistir([...SANS_DEGERLERI]);
+             const grid=document.getElementById('sansGrid'); grid.innerHTML='';
+             document.getElementById('sansSonuc').textContent='';
+             degerler.forEach(deger=>{
+               const b=document.createElement('button'); b.className='sans-kutu'; b.textContent='⏱️'; b.type='button';
+               b.onclick=()=>sansKutusuSec(b,deger); grid.appendChild(b);
+             });
+             document.getElementById('sansModal').classList.remove('hidden');
+          }
+          function sansKutusuSec(secili,deger) {
+             document.querySelectorAll('.sans-kutu').forEach(b=>b.disabled=true);
+             secili.textContent=(deger>0?'+':'')+deger+' sn';
+             secili.style.background=deger>0?'#dcfce7':'#fee2e2';
+             timerAdjustmentMs += deger*1000;
+             localStorage.setItem(STORAGE_KEY_TIMER_ADJUST,String(timerAdjustmentMs));
+             const sonuc=document.getElementById('sansSonuc');
+             sonuc.textContent=deger>0?`🎉 Sürene ${deger} saniye eklendi!`:`⌛ Sürenden ${Math.abs(deger)} saniye çıktı!`;
+             sonuc.className='mt-4 text-xl font-extrabold '+(deger>0?'text-emerald-700':'text-red-700');
+             setTimeout(()=>{ document.getElementById('sansModal').classList.add('hidden'); sansKutusuAktif=false; },1100);
+          }
+
+          function startTimer(durationSeconds, display) {
+             if(kronometreInterval){ clearInterval(kronometreInterval); kronometreInterval=null; }
+             const buNesil=++kronometreNesli;
+             let startTime = localStorage.getItem(STORAGE_KEY_TIMER_START);
+             let totalDuration = localStorage.getItem(STORAGE_KEY_TIMER_DURATION);
+             const bodyElement = document.body;
+
+             if (!startTime) {
+                 startTime = Date.now();
+                 totalDuration = durationSeconds * 1000; 
+                 localStorage.setItem(STORAGE_KEY_TIMER_START, startTime);
+                 localStorage.setItem(STORAGE_KEY_TIMER_DURATION, totalDuration);
+             } else {
+                 startTime = parseInt(startTime);
+                 totalDuration = parseInt(totalDuration);
+             }
+             
+             uyariGosterildi = false; 
+
+             const stopTimer = () => {
+                 kronometreyiKesinDurdur();
+                 sansKutusuAktif=false;
+                 sansUcretsizSecimBitis=0;
+                 sansUcretsizSureEklendi=false;
+                 const sansModal=document.getElementById('sansModal'); if(sansModal) sansModal.classList.add('hidden');
+                 document.getElementById('tahminButonu').disabled = true;
+                 document.getElementById('mesajAlani').innerHTML = "🛑 SÜRE DOLDU! Tahmin girişi kapatılmıştır. Bir sonraki aşamaya geçin.";
+                 display.textContent = "00:00";
+                 display.style.color = "gray";
+                 display.classList.remove("animate-pulse");
+
+                 bodyElement.classList.remove('border-alert'); 
+                 
+                 document.removeEventListener('click', kapatUyariGlobal, true);
+
+                 localStorage.setItem(STORAGE_KEY_TAHMIN, 'true');
+                 localStorage.setItem(STORAGE_KEY_MESAFE, '99999');
+                 localStorage.setItem(STORAGE_KEY_SELECTION_NAME, 'Süre Doldu (99999 km)'); 
+                 firebaseAsamaKaydet(parseInt(localStorage.getItem(STORAGE_KEY_STAGE)), 99999, 'Süre Doldu', 'Hedef', hareketSayaci);
+                 localStorage.removeItem(STORAGE_KEY_TIMER_START);
+                 localStorage.removeItem(STORAGE_KEY_TIMER_DURATION);
+                 
+                 let currentStage = parseInt(localStorage.getItem(STORAGE_KEY_STAGE));
+
+                 if (currentStage < TOTAL_STAGES) {
+                     document.getElementById('sonrakiAsamaButonu').classList.remove('hidden');
+                     document.getElementById('sonrakiAsamaButonu').textContent = `👉 Sonraki Konum (${currentStage + 1}. Aşama)`;
+                 } else {
+                     document.getElementById('sonrakiAsamaButonu').classList.remove('hidden');
+                     gosterToplamSonuclari();
+                     document.getElementById('sonrakiAsamaButonu').textContent = "🔄 Oyunu Baştan Başlat";
+                 }
+             };
+
+             kronometreInterval = setInterval(function () {
+                 if(buNesil!==kronometreNesli){ clearInterval(kronometreInterval); kronometreInterval=null; return; }
+                 if (sansUcretsizSecimBitis && Date.now() < sansUcretsizSecimBitis) return;
+                 const elapsedTime = Date.now() - startTime;
+                 let remainingTime = Math.max(0, (totalDuration - elapsedTime + timerAdjustmentMs) / 1000);
+                 if (remainingTime <= SANS_TETIK_SANIYESI && localStorage.getItem(STORAGE_KEY_SANS_ACILDI) !== 'true') {
+                     sansKutulariniAc();
+                     return;
+                 } 
+
+                 if (remainingTime <= 0) {
+                     stopTimer();
+                     return;
+                 }
+
+                 let minutes = parseInt(remainingTime / 60, 10);
+                 let seconds = parseInt(remainingTime % 60, 10);
+                 minutes = minutes < 10 ? "0" + minutes : minutes;
+                 seconds = seconds < 10 ? "0" + seconds : seconds;
+                 display.textContent = minutes + ":" + seconds;
+                 
+                 // ÖZEL KONTROL UYARISI
+                 if (remainingTime <= 30 && !uyariGosterildi) {
+                     gosterGeciciUyari(); 
+                     uyariGosterildi = true; 
+                 }
+                 
+                 if (remainingTime <= 10 && remainingTime > 0) {
+                     display.classList.add("animate-pulse");
+                     bodyElement.classList.add('border-alert'); 
+                 } else if (remainingTime > 10) {
+                     bodyElement.classList.remove('border-alert');
+                 }
+             }, 1000);
+          }
+          
+        /* =========================================================================
+         * YENİ FONKSİYON: BANNER SIFIRLAMA İŞLEMİ (Parola Kontrollü)
+         * ========================================================================= */
+        function oyunuSifirlaParolaIle() {
+            adminPaneliniAc();
+            document.getElementById('adminMesaj').textContent = 'Yeni oyun başlatmak için yönetici girişi yapın ve “Oyuncu ilerlemesini sıfırla” düğmesini kullanın.';
+        }
+
+        function sonrakiAsamayaGec() {
+            let currentStage = parseInt(localStorage.getItem(STORAGE_KEY_STAGE));
+            if (currentStage < TOTAL_STAGES) {
+                
+                // Tamamlanan aşamanın tahmin kilidi korunur.
+                
+                // Sayaçları ve hareket sayacını temizle
+                localStorage.removeItem(STORAGE_KEY_TIMER_START);
+                localStorage.removeItem(STORAGE_KEY_TIMER_DURATION);
+                localStorage.removeItem(STORAGE_KEY_HAREKET_SAYACI);
+                
+                const nextStage = currentStage + 1;
+                localStorage.setItem(STORAGE_KEY_STAGE, nextStage);
+                alert(`🎉 ${nextStage}. Aşama'ya geçiliyor! Yeni harita yükleniyor...`);
+                window.location.reload(); 
+            } else {
+                localStorage.setItem(STORAGE_KEY_COMPLETED, 'true'); 
+
+                if (document.getElementById('sonrakiAsamaButonu').textContent.includes("Baştan Başlat")) {
+                    // Tahmin Kutusu içindeki butondan sıfırlama yapılıyorsa
+                    oyunuSifirlaParolaIle();
+                    
+                } else {
+                    alert("🎊 Tebrikler! Harita Bulmacası serisini tamamladınız. Yeniden Başlatmak için butona tekrar basmalısınız.");
+                    document.getElementById('sonrakiAsamaButonu').textContent = "🔄 Oyunu Baştan Başlat";
+                    gosterToplamSonuclari();
+                }
+            }
+        }
+          
+
+        function adminPaneliniAc(){ document.getElementById('adminModal').classList.remove('hidden'); const p=document.getElementById('adminParola'); p.value=''; p.focus(); }
+        function adminPaneliniKapat(){ document.getElementById('adminModal').classList.add('hidden'); document.getElementById('adminParola').value=''; }
+        document.addEventListener('DOMContentLoaded',()=>{ const p=document.getElementById('adminParola'); if(p) p.addEventListener('keydown',e=>{ if(e.key==='Enter') adminGirisYap(); }); });
+        function adminGirisYap(){
+          const kayitli=localStorage.getItem(ADMIN_PAROLA_KEY);
+          const girilen=document.getElementById('adminParola').value.trim();
+          if(girilen!==(kayitli || DEFAULT_ADMIN_PAROLA) && girilen!==DEFAULT_ADMIN_PAROLA){ document.getElementById('adminMesaj').textContent='❌ Parola hatalı.'; return; }
+          if(girilen===DEFAULT_ADMIN_PAROLA && kayitli) localStorage.removeItem(ADMIN_PAROLA_KEY);
+          adminYetkili=true; document.getElementById('adminMesaj').textContent=''; document.getElementById('adminApiKey').value=localStorage.getItem('haritaBulmacasi_google_api_key') || ''; document.getElementById('adminFirebaseConfig').value=localStorage.getItem('haritaBulmacasi_firebase_config') || ''; document.getElementById('adminSansSuresi').value=localStorage.getItem('haritaBulmacasi_sans_suresi') || 60; document.getElementById('adminSansDagilimi').value=sansDagiliminiMetneCevir(JSON.parse(localStorage.getItem('haritaBulmacasi_sans_degerleri') || 'null') || VARSAYILAN_SANS_DEGERLERI); document.getElementById('adminGirisBolumu').classList.add('hidden'); document.getElementById('adminIcerik').classList.remove('hidden'); adminListeyiCiz();
+        }
+        function adminListeyiCiz(){
+          const alan=document.getElementById('adminKoordinatListesi'); alan.innerHTML='';
+          HEDEF_VERILERI.forEach((h,i)=>{
+            const satir=document.createElement('div'); satir.className='admin-grid';
+            satir.innerHTML=`<input class="admin-input admin-code" value="${h.code}"><input class="admin-input admin-coord" value="${h.coord}" placeholder="41.123, 31.456"><button type="button" class="px-3 py-2 rounded-lg bg-red-50 text-red-700 font-bold" onclick="this.parentElement.remove()">Sil</button>`;
+            alan.appendChild(satir);
+          });
+        }
+        const OTOMATIK_MERKEZLER={
+          europe:[[48.85,2.35,'FR'],[51.50,-.12,'GB'],[41.01,28.97,'TR'],[52.52,13.40,'DE'],[41.90,12.49,'IT'],[40.41,-3.70,'ES'],[50.85,4.35,'BE'],[52.37,4.90,'NL'],[48.20,16.37,'AT'],[50.08,14.43,'CZ'],[47.49,19.04,'HU'],[44.43,26.10,'RO'],[37.98,23.72,'GR'],[38.72,-9.13,'PT'],[55.67,12.56,'DK'],[59.91,10.75,'NO'],[60.17,24.94,'FI'],[52.23,21.01,'PL'],[46.05,14.50,'SI'],[45.81,15.98,'HR']],
+          world:[[40.71,-74,'US'],[34.05,-118.24,'US'],[43.65,-79.38,'CA'],[19.43,-99.13,'MX'],[-23.55,-46.63,'BR'],[-34.60,-58.38,'AR'],[-33.45,-70.66,'CL'],[35.68,139.69,'JP'],[37.56,126.97,'KR'],[1.35,103.82,'SG'],[-33.86,151.20,'AU'],[-37.81,144.96,'AU'],[-36.84,174.76,'NZ'],[25.20,55.27,'AE'],[22.31,114.17,'HK']]
+        };
+        const ULKE_MERKEZLER={TR:[[41.01,28.97],[39.93,32.85],[38.42,27.14],[40.18,29.06],[37.87,32.49]],DE:[[52.52,13.40],[48.13,11.58],[50.11,8.68],[51.22,6.77]],FR:[[48.85,2.35],[45.76,4.84],[43.30,5.37]],IT:[[41.90,12.49],[45.46,9.19],[45.07,7.68]],ES:[[40.41,-3.70],[41.38,2.17],[37.38,-5.99]],GB:[[51.50,-.12],[53.48,-2.24],[55.86,-4.25]],NL:[[52.37,4.90],[51.92,4.48]],BE:[[50.85,4.35],[51.22,4.40]],AT:[[48.20,16.37],[47.07,15.44]],CH:[[47.37,8.54],[46.20,6.14]],PL:[[52.23,21.01],[50.06,19.94]],CZ:[[50.08,14.43],[49.19,16.61]],HU:[[47.49,19.04]],RO:[[44.43,26.10],[46.77,23.59]],GR:[[37.98,23.72],[40.64,22.94]],PT:[[38.72,-9.13],[41.15,-8.61]],SE:[[59.33,18.07],[57.70,11.97]],NO:[[59.91,10.75]],FI:[[60.17,24.94]],DK:[[55.67,12.56]],US:[[40.71,-74],[34.05,-118.24],[41.87,-87.62]],CA:[[43.65,-79.38],[49.28,-123.12]],AU:[[-33.86,151.20],[-37.81,144.96]],JP:[[35.68,139.69],[34.69,135.50]]};
+        function otomatikBolgeDegisti(){document.getElementById('otomatikUlke').disabled=document.getElementById('otomatikBolge').value!=='country';}
+        function sonrakiOtomatikKod(){const kodlar=[...document.querySelectorAll('#adminKoordinatListesi .admin-code')].map(x=>x.value.trim());let n=1;while(kodlar.includes(String(n)))n++;return String(n);}
+        function koordinatSatiriEkle(code,coord){
+          const satir=document.createElement('div');
+          satir.className='admin-grid';
+          satir.dataset.gizliCoord=coord;
+          satir.innerHTML=`<input class="admin-input admin-code" value="${code}"><input class="admin-input admin-coord" value="🔒 Gizli otomatik konum" readonly title="Otomatik konum gizlidir"><button type="button" class="px-3 py-2 rounded-lg bg-red-50 text-red-700 font-bold" onclick="this.parentElement.remove()">Sil</button>`;
+          document.getElementById('adminKoordinatListesi').appendChild(satir);
+          satir.scrollIntoView({behavior:'smooth',block:'center'});
+        }
+        function panoAra(service,konum,radius){return new Promise(resolve=>service.getPanorama({location:konum,radius,preference:google.maps.StreetViewPreference.NEAREST,sources:[google.maps.StreetViewSource.OUTDOOR,google.maps.StreetViewSource.GOOGLE]},(data,status)=>resolve(status==='OK'&&data?.location?.latLng?data:null)));}
+        function tersGeocode(geocoder,latLng){return new Promise(resolve=>geocoder.geocode({location:latLng},(r,s)=>resolve(s==='OK'?r:[])));}
+        function panoKabul(data,results,tur,beklenenUlke){
+          if(!data?.location?.latLng||!results.length)return false;
+          const allTypes=new Set(results.flatMap(r=>r.types||[]));
+          const components=results.flatMap(r=>r.address_components||[]);
+          const country=components.find(c=>c.types?.includes('country'))?.short_name||'';
+          if(beklenenUlke&&country!==beklenenUlke)return false;
+          const indoorTypes=['establishment','premise','subpremise','room','lodging','shopping_mall','airport'];
+          if(indoorTypes.some(t=>allTypes.has(t)))return false;
+          if(tur==='street'){
+            const route=components.find(c=>c.types?.includes('route'));
+            const sokakSonucu=results.some(r=>(r.types||[]).some(t=>['street_address','route','intersection'].includes(t)));
+            if(!route&&!sokakSonucu)return false;
+            if((data.links||[]).length<1)return false;
+          }
+          return true;
+        }
+        async function otomatikKoordinatBul(){
+          const mesaj=document.getElementById('adminKayitMesaj'),buton=document.getElementById('otomatikKoordinatButonu');if(!adminYetkili){mesaj.textContent='❌ Önce yönetici girişi yapın.';return;}if(!window.google?.maps?.StreetViewService){mesaj.textContent='❌ Google Maps hazır değil. API anahtarını kaydedip sayfayı yenileyin.';return;}
+          buton.disabled=true;const eski=buton.textContent;buton.textContent='Uygun sokak aranıyor...';mesaj.textContent='🌍 Filtrelere uygun dış mekân panoraması aranıyor...';mesaj.className='text-sm mt-3 font-semibold text-blue-700';
+          try{const bolge=document.getElementById('otomatikBolge').value,tur=document.getElementById('otomatikTur').value,ulke=document.getElementById('otomatikUlke').value;let merkezler,beklenen='';if(bolge==='country'){merkezler=(ULKE_MERKEZLER[ulke]||[]).map(x=>[x[0],x[1],ulke]);beklenen=ulke;}else if(bolge==='europe'){merkezler=OTOMATIK_MERKEZLER.europe; }else{merkezler=[...OTOMATIK_MERKEZLER.europe,...OTOMATIK_MERKEZLER.world];}
+            const service=new google.maps.StreetViewService(),geocoder=new google.maps.Geocoder();let kabul=null,adres='';
+            for(let d=0;d<40&&!kabul;d++){const c=merkezler[Math.floor(Math.random()*merkezler.length)],aday={lat:c[0]+(Math.random()-.5)*(tur==='street'?1.2:3),lng:c[1]+(Math.random()-.5)*(tur==='street'?1.5:4)};const data=await panoAra(service,aday,tur==='street'?8000:20000);if(!data)continue;const results=await tersGeocode(geocoder,data.location.latLng);if(panoKabul(data,results,tur,beklenen)){kabul=data.location.latLng;adres=results[0]?.formatted_address||'';}}
+            if(!kabul)throw new Error('Bu filtrelerle uygun dış mekân/sokak bulunamadı. Tekrar deneyin veya filtreyi genişletin.');const coord=`${kabul.lat().toFixed(7)}, ${kabul.lng().toFixed(7)}`;koordinatSatiriEkle(sonrakiOtomatikKod(),coord);mesaj.textContent='✅ Yeni bir gizli otomatik konum eklendi.';mesaj.className='text-sm mt-3 font-semibold text-emerald-700';
+          }catch(e){mesaj.textContent='❌ '+(e?.message||'Koordinat bulunamadı.');mesaj.className='text-sm mt-3 font-semibold text-red-600';}finally{buton.disabled=false;buton.textContent=eski;}
+        }
+        function adminSatirEkle(){
+          const satir=document.createElement('div'); satir.className='admin-grid';
+          satir.innerHTML='<input class="admin-input admin-code" placeholder="Kod"><input class="admin-input admin-coord" placeholder="41.123, 31.456"><button type="button" class="px-3 py-2 rounded-lg bg-red-50 text-red-700 font-bold" onclick="this.parentElement.remove()">Sil</button>';
+          document.getElementById('adminKoordinatListesi').appendChild(satir);
+        }
+        function sansDagiliminiMetneCevir(degerler){
+          const sayim=new Map(); degerler.forEach(v=>sayim.set(v,(sayim.get(v)||0)+1));
+          return [...sayim.entries()].map(([v,a])=>`${v>0?'+':''}${v}:${a}`).join('\n');
+        }
+        function adminSansDegerleriniOku(){
+          const satirlar=document.getElementById('adminSansDagilimi').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+          const sonuc=[];
+          for(const satir of satirlar){
+            const m=satir.match(/^([+-]?\d+)\s*[:xX*]\s*(\d+)$/);
+            if(!m) return {hata:`Geçersiz satır: ${satir}. Örnek: -10:3`};
+            const sure=parseInt(m[1],10), adet=parseInt(m[2],10);
+            if(sure===0 || Math.abs(sure)>300 || adet<1 || adet>16) return {hata:`Geçersiz değer: ${satir}`};
+            for(let i=0;i<adet;i++) sonuc.push(sure);
+          }
+          if(sonuc.length!==16) return {hata:`Toplam kutu adedi 16 olmalı. Şu anda ${sonuc.length}.`};
+          return {degerler:sonuc};
+        }
+        function firebaseConfigOku(){
+          const alan=document.getElementById('adminFirebaseConfig');
+          let raw=(alan?.value || '').trim();
+          if(!raw) return {hata:'Firebase yapılandırması boş.'};
+          try {
+            // Firebase Console çıktısında yalnızca firebaseConfig nesnesini ayıkla.
+            const configIndex=raw.indexOf('firebaseConfig');
+            let aramaBaslangici=configIndex>=0?configIndex:0;
+            const ilkSuslu=raw.indexOf('{',aramaBaslangici);
+            if(ilkSuslu<0) throw new Error('Açılış süslü parantezi bulunamadı.');
+            let derinlik=0, tirnak=null, kacis=false, sonSuslu=-1;
+            for(let i=ilkSuslu;i<raw.length;i++){
+              const ch=raw[i];
+              if(kacis){ kacis=false; continue; }
+              if(ch==='\\'){ kacis=true; continue; }
+              if(tirnak){ if(ch===tirnak) tirnak=null; continue; }
+              if(ch==='"' || ch==="'" || ch==='`'){ tirnak=ch; continue; }
+              if(ch==='{') derinlik++;
+              if(ch==='}'){ derinlik--; if(derinlik===0){ sonSuslu=i; break; } }
+            }
+            if(sonSuslu<0) throw new Error('Kapanış süslü parantezi bulunamadı.');
+            const nesneMetni=raw.slice(ilkSuslu,sonSuslu+1);
+            let cfg;
+            try {
+              cfg=JSON.parse(nesneMetni);
+            } catch(jsonHatasi) {
+              // Firebase Console nesnesi JavaScript biçimindedir: anahtarlar tırnaksız olabilir.
+              cfg=Function('"use strict"; return ('+nesneMetni+');')();
+            }
+            if(!cfg || typeof cfg!=='object') throw new Error('Yapılandırma nesnesi okunamadı.');
+            if(!cfg.apiKey || !cfg.authDomain || !cfg.projectId || !cfg.appId){
+              return {hata:'Firebase ayarında apiKey, authDomain, projectId ve appId zorunlu.'};
+            }
+            return {cfg:{
+              apiKey:String(cfg.apiKey),
+              authDomain:String(cfg.authDomain),
+              projectId:String(cfg.projectId),
+              storageBucket:cfg.storageBucket?String(cfg.storageBucket):undefined,
+              messagingSenderId:cfg.messagingSenderId?String(cfg.messagingSenderId):undefined,
+              appId:String(cfg.appId),
+              measurementId:cfg.measurementId?String(cfg.measurementId):undefined
+            }};
+          } catch(e) {
+            console.error('Firebase config okuma hatası',e);
+            return {hata:'Firebase yapılandırması okunamadı. Firebase Console’daki “const firebaseConfig = { ... };” bölümünü eksiksiz yapıştırın.'};
+          }
+        }
+        function adminKoordinatlariKaydet(){
+          if(!adminYetkili) return;
+          const rows=[...document.querySelectorAll('#adminKoordinatListesi .admin-grid')]; const arr=[]; const codes=new Set();
+          for(const row of rows){
+            const code=row.querySelector('.admin-code').value.trim(); const coord=(row.dataset.gizliCoord || row.querySelector('.admin-coord').value).trim();
+            const p=coord.split(',').map(Number); if(!code || codes.has(code) || p.length!==2 || !Number.isFinite(p[0]) || !Number.isFinite(p[1]) || Math.abs(p[0])>90 || Math.abs(p[1])>180){
+              document.getElementById('adminKayitMesaj').textContent='❌ Kodlar boş/tekrarlı olmamalı; koordinat “enlem, boylam” biçiminde ve geçerli aralıkta olmalı.'; document.getElementById('adminKayitMesaj').className='text-sm mt-3 font-semibold text-red-600'; return;
+            }
+            codes.add(code); arr.push({code,coord:`${p[0]}, ${p[1]}`});
+          }
+          if(arr.length<3){ document.getElementById('adminKayitMesaj').textContent='❌ Oyun için en az 3 konum gerekli.'; return; }
+          const sansSuresi=parseInt(document.getElementById('adminSansSuresi').value,10);
+          if(!Number.isInteger(sansSuresi) || sansSuresi<1 || sansSuresi>=120){ document.getElementById('adminKayitMesaj').textContent='❌ Şans süresi 1 ile 119 saniye arasında olmalı.'; return; }
+          const sansAyar=adminSansDegerleriniOku();
+          if(sansAyar.hata){ document.getElementById('adminKayitMesaj').textContent='❌ '+sansAyar.hata; document.getElementById('adminKayitMesaj').className='text-sm mt-3 font-semibold text-red-600'; return; }
+          HEDEF_VERILERI=arr; localStorage.setItem('haritaBulmacasi_admin_hedefler',JSON.stringify(arr)); localStorage.setItem('haritaBulmacasi_sans_suresi',String(sansSuresi)); localStorage.setItem('haritaBulmacasi_sans_degerleri',JSON.stringify(sansAyar.degerler));
+          const fbAyar=firebaseConfigOku();
+          if(fbAyar.hata){ document.getElementById('adminKayitMesaj').textContent='❌ '+fbAyar.hata; document.getElementById('adminKayitMesaj').className='text-sm mt-3 font-semibold text-red-600'; return false; }
+          localStorage.setItem('haritaBulmacasi_firebase_config',JSON.stringify(fbAyar.cfg));
+          document.getElementById('adminKayitMesaj').textContent='✅ Koordinatlar kaydedildi. Yeni oyunlarda kullanılacak.'; document.getElementById('adminKayitMesaj').className='text-sm mt-3 font-semibold text-emerald-700';
+          return true;
+        }
+        function adminOyunuSifirla(){ if(!adminYetkili) return; if(confirm('Oyuncunun tüm ilerlemesi silinsin ve yeni oyun ekranı açılsın mı?')) resetGame(); }
+        function adminParolaDegistir(){
+          if(!adminYetkili) return; const yeni=prompt('Yeni yönetici parolasını girin (en az 4 karakter):');
+          if(yeni===null) return; if(yeni.length<4){ alert('Parola en az 4 karakter olmalı.'); return; }
+          localStorage.setItem(ADMIN_PAROLA_KEY,yeni); alert('Yönetici parolası değiştirildi.');
+        }
+        function oyuncuHtmlIndir(){
+          const mesaj=document.getElementById('adminKayitMesaj');
+          try{
+            if(!adminYetkili){ throw new Error('Önce yönetici girişi yapın.'); }
+            mesaj.textContent='Oyuncu HTML’si hazırlanıyor...';
+            mesaj.className='text-sm mt-3 font-semibold text-blue-700';
+            const kayitTamam=adminKoordinatlariKaydet();
+            if(kayitTamam!==true) return;
+
+            const apiKey=(document.getElementById('adminApiKey').value || localStorage.getItem('haritaBulmacasi_google_api_key') || '').trim();
+            if(!apiKey) throw new Error('Google Maps API anahtarı boş.');
+            const fbAyar=firebaseConfigOku();
+            if(fbAyar.hata) throw new Error(fbAyar.hata);
+            const sansAyar=adminSansDegerleriniOku();
+            if(sansAyar.hata) throw new Error(sansAyar.hata);
+
+            const oyunId='OYUN_'+new Date().toISOString().replace(/[-:.TZ]/g,'').slice(0,14);
+            let html='<!DOCTYPE html>\n'+document.documentElement.outerHTML;
+            const ayarlar={
+              'const EMBEDDED_GAME_ID = null;':'const EMBEDDED_GAME_ID = '+JSON.stringify(oyunId)+';',
+              'const EMBEDDED_API_KEY = null;':'const EMBEDDED_API_KEY = '+JSON.stringify(apiKey)+';',
+              'const EMBEDDED_TARGETS = null;':'const EMBEDDED_TARGETS = '+JSON.stringify(HEDEF_VERILERI,null,2)+';',
+              'const EMBEDDED_CHANCE_AT = null;':'const EMBEDDED_CHANCE_AT = '+JSON.stringify(parseInt(document.getElementById('adminSansSuresi').value,10))+';',
+              'const EMBEDDED_CHANCE_VALUES = null;':'const EMBEDDED_CHANCE_VALUES = '+JSON.stringify(sansAyar.degerler)+';',
+              'const EMBEDDED_FIREBASE_CONFIG = null;':'const EMBEDDED_FIREBASE_CONFIG = '+JSON.stringify(fbAyar.cfg)+';'
+            };
+            for(const [aranan,yeni] of Object.entries(ayarlar)){
+              const ilk=html.indexOf(aranan);
+              if(ilk<0) throw new Error('Oyuncu şablonunda eksik alan bulundu: '+aranan);
+              html=html.slice(0,ilk)+yeni+html.slice(ilk+aranan.length);
+            }
+            html=html.replace('<body class="bg-gray-50">','<body class="bg-gray-50 player-mode">');
+            html=html.replace(/<div id="adminModal" class="modal-backdrop(?: hidden)?"/, '<div id="adminModal" class="modal-backdrop hidden"');
+            html=html.replace(/<div id="baslangicKapsayici" class="[^"]*"/, '<div id="baslangicKapsayici" class="flex flex-col items-center justify-center p-8 space-y-4 h-full w-full absolute top-0 left-0 bg-gray-50 z-20"');
+            html=html.replace(/<div id="oyunKapsayici" class="[^"]*"/, '<div id="oyunKapsayici" class="h-full w-full hidden"');
+
+            const blob=new Blob([html],{type:'text/html;charset=utf-8'});
+            const url=URL.createObjectURL(blob);
+            const link=document.createElement('a');
+            link.href=url; link.download=`Harita_Oyunu_${oyunId}.html`; link.style.display='none';
+            document.body.appendChild(link); link.click(); link.remove();
+            setTimeout(()=>URL.revokeObjectURL(url),5000);
+            mesaj.textContent=`✅ Oyuncu HTML’si indirildi: Harita_Oyunu_${oyunId}.html`;
+            mesaj.className='text-sm mt-3 font-semibold text-emerald-700';
+          }catch(err){
+            console.error('Oyuncu HTML indirme hatası',err);
+            mesaj.textContent='❌ '+(err?.message || 'Oyuncu HTML’si oluşturulamadı.');
+            mesaj.className='text-sm mt-3 font-semibold text-red-600';
+          }
+        }
+        function adminApiAnahtariKaydet(){
+          if(!adminYetkili) return; const key=document.getElementById('adminApiKey').value.trim();
+          if(!key){ document.getElementById('adminKayitMesaj').textContent='❌ API anahtarı boş olamaz.'; return; }
+          localStorage.setItem('haritaBulmacasi_google_api_key',key); location.reload();
+        }
+        function hariciScriptYukle(src){
+          return new Promise((resolve,reject)=>{ const mevcut=[...document.scripts].find(s=>s.src===src); if(mevcut){ resolve(); return; } const sc=document.createElement('script'); sc.src=src; sc.onload=resolve; sc.onerror=reject; document.head.appendChild(sc); });
+        }
+        async function firebaseBaslat(){
+          const durum=document.getElementById('firebaseDurum');
+          const cfg=EMBEDDED_FIREBASE_CONFIG;
+          if(!cfg){ if(durum) durum.textContent='Firebase yapılandırması oyuncu dosyasına gömülmemiş.'; return; }
+          try{
+            await hariciScriptYukle('https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js');
+            await hariciScriptYukle('https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js');
+            await hariciScriptYukle('https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js');
+            if(!firebase.apps.length) firebase.initializeApp(cfg);
+            firebaseDb=firebase.firestore();
+            const cred=await firebase.auth().signInAnonymously(); firebaseUser=cred.user;
+            firebaseHazir=true;
+            const kayitli=localStorage.getItem(STORAGE_KEY_OYUNCU_ADI); const inp=document.getElementById('oyuncuAdi'); if(inp && kayitli) inp.value=kayitli;
+            if(durum){ durum.textContent='🟢 Yarış bağlantısı hazır'; durum.className='text-xs text-center mt-1 text-emerald-600 font-semibold'; }
+            try {
+              const oyunRef=firebaseDb.collection('games').doc(SERIES_ID);
+              const oyunSnap=await oyunRef.get();
+              if(!oyunSnap.exists){
+                await oyunRef.set({gameId:SERIES_ID,status:'active',stageCount:TOTAL_STAGES,createdAt:firebase.firestore.FieldValue.serverTimestamp(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+              }
+            } catch(gameErr) {
+              console.error('Firebase oyun belgesi oluşturulamadı',gameErr);
+              if(durum){ durum.textContent='🟠 Firebase oturumu açık, oyun kaydı kontrol edilmeli'; durum.className='text-xs text-center mt-1 text-amber-600 font-semibold'; }
+            }
+          }catch(err){ console.error('Firebase başlatma hatası',err); if(durum){ durum.textContent='🔴 Firebase bağlantısı kurulamadı'; durum.className='text-xs text-center mt-1 text-red-600 font-semibold'; } }
+        }
+        async function firebaseAsamaKaydet(stageNum, mesafeKm, secimAdi, hedefAdi, hareket){
+          if(!firebaseHazir || !firebaseUser) return false;
+          const oyuncuAdi=localStorage.getItem(STORAGE_KEY_OYUNCU_ADI) || 'Oyuncu';
+          const ref=firebaseDb.collection('games').doc(SERIES_ID).collection('players').doc(firebaseUser.uid);
+          const data={uid:firebaseUser.uid,playerName:oyuncuAdi,gameId:SERIES_ID,updatedAt:firebase.firestore.FieldValue.serverTimestamp()};
+
+          // Sadece son aşamayı değil, yerelde bulunan bütün aşamaları her yazmada tekrar gönder.
+          // Böylece önceki aşamada bağlantı gecikmesi olduysa sonraki aşama otomatik tamamlar.
+          for(let i=1;i<=TOTAL_STAGES;i++){
+            const kmRaw=localStorage.getItem(`${PREFIX}haritaBulmacasi_stage_${i}_mesafe`);
+            if(kmRaw!==null && kmRaw!==''){
+              data[`stage${i}Km`]=Number(kmRaw);
+              data[`stage${i}Selection`]=localStorage.getItem(`${PREFIX}haritaBulmacasi_stage_${i}_selectionName`) || (i===stageNum?secimAdi:'Bilinmiyor');
+              data[`stage${i}Moves`]=Number(localStorage.getItem(`${PREFIX}haritaBulmacasi_stage_${i}_hareket_sayaci`) || (i===stageNum?hareket:0));
+            }
+          }
+          // Güncel aşama yerel anahtar uyuşmazlığına karşı doğrudan da garanti edilir.
+          data[`stage${stageNum}Km`]=Number(mesafeKm);
+          data[`stage${stageNum}Selection`]=secimAdi;
+          data[`stage${stageNum}Moves`]=Number(hareket||0);
+
+          const tamamlanan=[1,2,3].every(i=>Number.isFinite(Number(data[`stage${i}Km`])));
+          if(tamamlanan){
+            data.totalKm=Number(data.stage1Km)+Number(data.stage2Km)+Number(data.stage3Km);
+            data.completed=true;
+            data.completedAt=firebase.firestore.FieldValue.serverTimestamp();
+          } else {
+            data.completed=false;
+          }
+          try{
+            const mevcut=await ref.get();
+            if(!mevcut.exists) data.createdAt=firebase.firestore.FieldValue.serverTimestamp();
+            await ref.set(data,{merge:true});
+            return true;
+          }catch(err){
+            console.error('Aşama kaydedilemedi',err);
+            const d=document.getElementById('liderDurum'); if(d) d.textContent='Firebase kayıt hatası: '+(err.code||err.message||'bilinmeyen hata');
+            return false;
+          }
+        }
+        async function firebaseLiderlikYenile(){
+          const alan=document.getElementById('liderlikTablosu'), durum=document.getElementById('liderDurum'); if(!alan) return;
+          if(!firebaseHazir){ alan.innerHTML='<p class="text-sm text-red-600">Firebase bağlantısı hazır değil.</p>'; return; }
+          durum.textContent='Sonuçlar yenileniyor...';
+          try{
+            const snap=await firebaseDb.collection('games').doc(SERIES_ID).collection('players').get();
+            const rows=snap.docs.map(d=>d.data()).sort((a,b)=>Number(a.totalKm??Infinity)-Number(b.totalKm??Infinity));
+            let html='<div class="lider-row lider-head"><div>#</div><div>Oyuncu</div><div>1. Konum</div><div>2. Konum</div><div>3. Konum</div><div>Toplam</div></div>';
+            rows.forEach((r,i)=>{ const me=r.uid===firebaseUser.uid?' lider-me':''; const f=v=>Number.isFinite(Number(v))?Number(v).toLocaleString('tr-TR',{maximumFractionDigits:2})+' km':'-'; html+=`<div class="lider-row${me}"><div>${r.completed?i+1:'•'}</div><div>${guvenliMetin(r.playerName||'Oyuncu')}${me?' (Sen)':''}</div><div>${f(r.stage1Km)}</div><div>${f(r.stage2Km)}</div><div>${f(r.stage3Km)}</div><div>${r.completed?f(r.totalKm):'Devam ediyor'}</div></div>`; });
+            alan.innerHTML=rows.length?html:'<p class="text-sm text-slate-500">Henüz kayıtlı oyuncu yok.</p>'; durum.textContent=`${rows.length} oyuncunun güncel sonucu`;
+          }catch(err){ console.error(err); alan.innerHTML='<p class="text-sm text-red-600">Sonuçlar alınamadı. Firestore kurallarını kontrol edin.</p>'; durum.textContent='Bağlantı hatası'; }
+        }
+        function guvenliMetin(v){ const d=document.createElement('div'); d.textContent=String(v); return d.innerHTML; }
+        function googleMapsYukle(){
+          // Güvenlik nedeniyle API anahtarı bu HTML sürümünde yer tutucu olarak bırakılmıştır.
+          // Aşağıdaki YOUR_GOOGLE_MAPS_API_KEY bölümüne mevcut anahtarınızı yazın.
+          const apiKey=EMBEDDED_API_KEY || localStorage.getItem('haritaBulmacasi_google_api_key') || '';
+          if(!apiKey){
+            document.getElementById('kodMesaj').textContent='Google Maps API anahtarı oyuncu dosyasına gömülmemiş. Yönetim panelinden yeni oyuncu HTML’si üretin.';
+            document.getElementById('kodMesaj').classList.remove('hidden'); return;
+          }
+          const sc=document.createElement('script'); sc.src=`https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&libraries=places&callback=initMap`; sc.async=true; sc.defer=true; document.head.appendChild(sc);
+        }
+        window.addEventListener('load', ()=>{ firebaseBaslat(); googleMapsYukle(); });
+
+          function resetGame() {
+             for (let i = 0; i < TOTAL_STAGES; i++) {
+                 const stageNum = i + 1;
+                 // Tahmin verilerini temizle
+                 localStorage.removeItem(`${PREFIX}haritaBulmacasi_stage_${stageNum}_tahminYapildi`);
+                 localStorage.removeItem(`${PREFIX}haritaBulmacasi_stage_${stageNum}_tahminKoordinat`); 
+                 localStorage.removeItem(`${PREFIX}haritaBulmacasi_stage_${stageNum}_mesafe`);
+                 localStorage.removeItem(`${PREFIX}haritaBulmacasi_stage_${stageNum}_selectionName`);
+                 localStorage.removeItem(`${PREFIX}haritaBulmacasi_stage_${stageNum}_selectionCountryCode`);
+                 localStorage.removeItem(`${PREFIX}haritaBulmacasi_stage_${stageNum}_sans_acildi`);
+                 localStorage.removeItem(`${PREFIX}haritaBulmacasi_stage_${stageNum}_timer_adjust`); 
+                 // Hedef verilerini de temizle (Tekrar kod girilmesi için)
+                 localStorage.removeItem(`${STORAGE_KEY_HEDEF_ISIM_BASE}${stageNum}_hedefEnlem`);
+                 localStorage.removeItem(`${STORAGE_KEY_HEDEF_ISIM_BASE}${stageNum}_hedefBoylam`);
+                 localStorage.removeItem(`${STORAGE_KEY_HEDEF_ISIM_BASE}${stageNum}_hedefIsim`); 
+                 localStorage.removeItem(`${STORAGE_KEY_HEDEF_ISIM_BASE}${stageNum}_hedefUlkeKodu`); 
+                 localStorage.removeItem(`${STORAGE_KEY_HEDEF_ISIM_BASE}${stageNum}_hedefKoordinat`);
+             }
+             // Global sayaçları ve durumu temizle
+             localStorage.removeItem(STORAGE_KEY_TIMER_START);
+             localStorage.removeItem(STORAGE_KEY_TIMER_DURATION);
+             localStorage.removeItem(STORAGE_KEY_HAREKET_SAYACI);
+             
+             localStorage.removeItem(STORAGE_KEY_STAGE);
+             localStorage.removeItem(STORAGE_KEY_COMPLETED);
+             
+             // Sayfayı yeniden yükle
+             window.location.reload();
+          }
+          
+    </script>
+
+</body></html>
