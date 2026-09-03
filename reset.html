@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Harita Oyunu Kurtarma</title>
+<style>
+body{font-family:Arial,sans-serif;background:#eef2ff;margin:0;min-height:100vh;display:grid;place-items:center;color:#0f172a}.card{width:min(520px,92vw);background:#fff;border-radius:18px;padding:28px;box-shadow:0 20px 60px #0f172a22;text-align:center}button,a{display:block;width:100%;box-sizing:border-box;margin-top:12px;padding:13px;border:0;border-radius:10px;font-weight:900;text-decoration:none;cursor:pointer}.primary{background:#4f46e5;color:#fff}.secondary{background:#e2e8f0;color:#0f172a}.ok{color:#047857;font-weight:800;margin-top:14px}.small{font-size:12px;color:#64748b;line-height:1.5}</style>
+</head>
+<body><div class="card"><h1>🛟 Harita Oyunu Kurtarma</h1><p>Bu işlem yalnızca tarayıcıdaki takılı kalan aktif oyun ve aşama kayıtlarını temizler.</p><button class="primary" onclick="temizleVeDon()">Aktif oyunu temizle ve ana menüye dön</button><a class="secondary" href="./">Hiçbir şey silmeden oyuna dön</a><div id="msg"></div><p class="small">Firebase Authentication oturumu, admin UID belgesi ve Firestore’daki oyun sonuçları silinmez.</p></div>
+<script>
+function temizleVeDon(){
+ const aktif=localStorage.getItem('haritaAktifOyunId');
+ if(aktif){
+  Object.keys(localStorage).forEach(k=>{
+   if(k.startsWith(aktif+'_')||k.startsWith(aktif+'-'))localStorage.removeItem(k);
+  });
+ }
+ localStorage.removeItem('haritaAktifOyunId');
+ localStorage.removeItem('haritaAktifOyunTargets');
+ document.getElementById('msg').className='ok';
+ document.getElementById('msg').textContent='✓ Aktif oyun kaydı temizlendi. Ana menü açılıyor...';
+ setTimeout(()=>location.href='./?reset='+Date.now(),500);
+}
+</script></body></html>
