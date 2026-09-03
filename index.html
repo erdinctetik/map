@@ -267,7 +267,7 @@
         const EMBEDDED_CHANCE_AT = null;
         const EMBEDDED_CHANCE_VALUES = null;
         const EMBEDDED_FIREBASE_CONFIG = {"apiKey":"AIzaSyBHGEZ0xMPFVPLIhn8NiWkr_a6niuXxEGA","authDomain":"mapmap-d1f8e.firebaseapp.com","projectId":"mapmap-d1f8e","storageBucket":"mapmap-d1f8e.firebasestorage.app","messagingSenderId":"352198607815","appId":"1:352198607815:web:24b5a12270e55da1094fe2"};
-        const SERIES_ID = EMBEDDED_GAME_ID || localStorage.getItem('haritaAktifOyunId') || 'LOBBY';
+        const SERIES_ID = EMBEDDED_GAME_ID || sessionStorage.getItem('haritaAktifOyunId') || 'LOBBY';
         // =========================================================================
         const MAX_HAREKET = 100; 
         let hareketSayaci = 0; 
@@ -286,7 +286,7 @@
     { code: '9', coord: '49.61000485024232, 6.12835600018865' },
     
 ];
-        let HEDEF_VERILERI = EMBEDDED_TARGETS || JSON.parse(localStorage.getItem('haritaAktifOyunTargets') || 'null') || JSON.parse(localStorage.getItem('haritaBulmacasi_admin_hedefler') || 'null') || VARSAYILAN_HEDEF_VERILERI;
+        let HEDEF_VERILERI = EMBEDDED_TARGETS || JSON.parse(sessionStorage.getItem('haritaAktifOyunTargets') || 'null') || JSON.parse(localStorage.getItem('haritaBulmacasi_admin_hedefler') || 'null') || VARSAYILAN_HEDEF_VERILERI;
         const ADMIN_PAROLA_KEY = 'haritaBulmacasi_admin_parola';
         const DEFAULT_ADMIN_PAROLA = '1212';
         let adminYetkili = false;
@@ -1626,17 +1626,17 @@ function oyunYerelKayitlariniTemizle(oyunId){
   Object.keys(localStorage).forEach(key=>{if(prefixes.some(p=>key.startsWith(p)))localStorage.removeItem(key);});
 }
 function aktifYerelOyunuTemizle(){
-  const eskiOyunId=localStorage.getItem('haritaAktifOyunId');
+  const eskiOyunId=sessionStorage.getItem('haritaAktifOyunId');
   oyunYerelKayitlariniTemizle(eskiOyunId);
-  localStorage.removeItem('haritaAktifOyunId');
-  localStorage.removeItem('haritaAktifOyunTargets');
+  sessionStorage.removeItem('haritaAktifOyunId');
+  sessionStorage.removeItem('haritaAktifOyunTargets');
 }
 function yeniOyunYerelHazirlik(gameId,targets,playerName){
-  const eskiOyunId=localStorage.getItem('haritaAktifOyunId');
+  const eskiOyunId=sessionStorage.getItem('haritaAktifOyunId');
   if(eskiOyunId&&eskiOyunId!==gameId)oyunYerelKayitlariniTemizle(eskiOyunId);
   oyunYerelKayitlariniTemizle(gameId);
-  localStorage.setItem('haritaAktifOyunId',gameId);
-  localStorage.setItem('haritaAktifOyunTargets',JSON.stringify(targets||[]));
+  sessionStorage.setItem('haritaAktifOyunId',gameId);sessionStorage.setItem('haritaTekSeferlikBaslatma','1');
+  sessionStorage.setItem('haritaAktifOyunTargets',JSON.stringify(targets||[]));
   localStorage.setItem(gameId+'_haritaBulmacasi_oyuncu_adi',playerName);
   localStorage.setItem(gameId+'_haritaBulmacasi_current_stage','1');
   localStorage.removeItem(gameId+'_haritaBulmacasi_completed');
@@ -1683,17 +1683,17 @@ async function adminYeniOyunAc(){
 async function arsivSonuclariniAc(id,name){const snap=await firebaseDb.collection('games').doc(id).collection('players').get(),rows=snap.docs.map(d=>d.data()).filter(x=>x.completed).sort((a,b)=>Number(a.totalKm)-Number(b.totalKm));const modal=document.createElement('div');modal.className='archive-modal';modal.onclick=e=>{if(e.target===modal)modal.remove()};modal.innerHTML=`<div class="archive-dialog"><button style="float:right" onclick="this.closest('.archive-modal').remove()">✕</button><h2>${name}</h2><table><thead><tr><th>#</th><th>Oyuncu</th><th>1. Konum</th><th>2. Konum</th><th>3. Konum</th><th>Toplam</th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td>${i+1}</td><td>${dinamikTemizMetin(r.playerName)}</td><td>${Number(r.stage1Km||0).toFixed(2)}</td><td>${Number(r.stage2Km||0).toFixed(2)}</td><td>${Number(r.stage3Km||0).toFixed(2)}</td><td><b>${Number(r.totalKm||0).toFixed(2)} km</b></td></tr>`).join('')}</tbody></table></div>`;document.body.appendChild(modal)}
 function dinamikAnaMenuyeDon(){aktifYerelOyunuTemizle();location.reload();}
 function oyunSonuMenuyeDon(){if(localStorage.getItem(STORAGE_KEY_COMPLETED)!=='true')return;aktifYerelOyunuTemizle();location.reload();}
-function dinamikEkranKarari(){const active=localStorage.getItem('haritaAktifOyunId');if(!active||SERIES_ID==='LOBBY'){document.getElementById('dinamikAnaMenu').classList.remove('hidden');document.getElementById('baslangicKapsayici').classList.add('hidden');document.getElementById('oyunKapsayici').classList.add('hidden');dinamikAnaMenuyuYukle()}else{document.getElementById('dinamikAnaMenu').classList.add('hidden');const completed=localStorage.getItem(STORAGE_KEY_COMPLETED)==='true';if(completed){document.getElementById('menuyeDonButonu')?.classList.remove('hidden')}}}
+function dinamikEkranKarari(){const active=sessionStorage.getItem('haritaAktifOyunId');if(!active||SERIES_ID==='LOBBY'){document.getElementById('dinamikAnaMenu').classList.remove('hidden');document.getElementById('baslangicKapsayici').classList.add('hidden');document.getElementById('oyunKapsayici').classList.add('hidden');dinamikAnaMenuyuYukle()}else{document.getElementById('dinamikAnaMenu').classList.add('hidden');const completed=localStorage.getItem(STORAGE_KEY_COMPLETED)==='true';if(completed){document.getElementById('menuyeDonButonu')?.classList.remove('hidden')}}}
 window.addEventListener('load',()=>setTimeout(dinamikEkranKarari,400));
 const dinamikObs=new MutationObserver(()=>{if(typeof STORAGE_KEY_COMPLETED!=='undefined'&&localStorage.getItem(STORAGE_KEY_COMPLETED)==='true')document.getElementById('menuyeDonButonu')?.classList.remove('hidden')});dinamikObs.observe(document.documentElement,{subtree:true,attributes:true,childList:true});
 </script><script id="dinamikAcilisKurtarma">/* DINAMIK_ACILIS_KURTARMA_V3 */
 (function(){
  function temizle(id){if(!id)return;Object.keys(localStorage).forEach(k=>{if(k.startsWith(id+'_')||k.startsWith(id+'-'))localStorage.removeItem(k)});}
- window.aktifYerelOyunuTemizle=function(){const id=localStorage.getItem('haritaAktifOyunId');temizle(id);localStorage.removeItem('haritaAktifOyunId');localStorage.removeItem('haritaAktifOyunTargets');};
+ window.aktifYerelOyunuTemizle=function(){const id=sessionStorage.getItem('haritaAktifOyunId');temizle(id);sessionStorage.removeItem('haritaAktifOyunId');sessionStorage.removeItem('haritaAktifOyunTargets');};
  window.dinamikAnaMenuyeDon=function(){aktifYerelOyunuTemizle();location.reload();};
  window.oyunSonuMenuyeDon=function(){aktifYerelOyunuTemizle();location.reload();};
  function anaMenuyuGoster(){
-  const active=localStorage.getItem('haritaAktifOyunId');
+  const active=sessionStorage.getItem('haritaAktifOyunId');
   const menu=document.getElementById('dinamikAnaMenu'),start=document.getElementById('baslangicKapsayici'),game=document.getElementById('oyunKapsayici');
   if(!active){if(menu)menu.classList.remove('hidden');if(start)start.classList.add('hidden');if(game)game.classList.add('hidden');if(typeof dinamikAnaMenuyuYukle==='function')dinamikAnaMenuyuYukle();}
   else{if(menu)menu.classList.add('hidden');}
@@ -1701,8 +1701,31 @@ const dinamikObs=new MutationObserver(()=>{if(typeof STORAGE_KEY_COMPLETED!=='un
  const eskiGir=window.dinamikOyunaGir;
  window.dinamikOyunaGir=async function(gameId){
   const msg=document.getElementById('dinamikMesaj'),name=(document.getElementById('dinamikOyuncuAdi')?.value||'').trim();if(name.length<2){if(msg)msg.textContent='En az 2 karakterlik ad veya rumuz gir.';return;}
-  try{const ref=firebaseDb.collection('games').doc(gameId),gs=await ref.get(),g=gs.data();if(!g||g.status!=='active'){if(msg)msg.textContent='Bu oyun artık açık değil.';return;}const pr=ref.collection('players').doc(firebaseUser.uid),ps=await pr.get();if(ps.exists&&ps.data().completed===true){if(msg)msg.textContent='Bu oyunu daha önce tamamladın; tekrar giriş kapalı.';return;}const targets=Array.isArray(g.targets)?g.targets:[];if(targets.length!==3)throw Error('Oyunun üç hedefi bulunamadı.');const old=localStorage.getItem('haritaAktifOyunId');if(old&&old!==gameId)temizle(old);temizle(gameId);localStorage.setItem('haritaAktifOyunId',gameId);localStorage.setItem('haritaAktifOyunTargets',JSON.stringify(targets));localStorage.setItem(gameId+'_haritaBulmacasi_oyuncu_adi',name);let stage=1;if(ps.exists&&Number.isFinite(Number(ps.data().stage1Km)))stage=2;if(ps.exists&&Number.isFinite(Number(ps.data().stage2Km)))stage=3;localStorage.setItem(gameId+'_haritaBulmacasi_current_stage',String(stage));targets.forEach((h,i)=>{const n=i+1,parts=String(h.coord).split(','),base=gameId+'_haritaBulmacasi_stage_'+n;localStorage.setItem(base+'_hedefEnlem',String(Number(parts[0])));localStorage.setItem(base+'_hedefBoylam',String(Number(parts[1])));localStorage.setItem(base+'_hedefKoordinat',String(h.coord));localStorage.setItem(base+'_hedefIsim','Hedef '+(h.code||n));});if(!ps.exists)await pr.set({uid:firebaseUser.uid,gameId,playerName:name,completed:false,createdAt:firebase.firestore.FieldValue.serverTimestamp(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});location.reload();}catch(e){if(msg)msg.textContent='Oyuna giriş hatası: '+e.message;}
+  try{const ref=firebaseDb.collection('games').doc(gameId),gs=await ref.get(),g=gs.data();if(!g||g.status!=='active'){if(msg)msg.textContent='Bu oyun artık açık değil.';return;}const pr=ref.collection('players').doc(firebaseUser.uid),ps=await pr.get();if(ps.exists&&ps.data().completed===true){if(msg)msg.textContent='Bu oyunu daha önce tamamladın; tekrar giriş kapalı.';return;}const targets=Array.isArray(g.targets)?g.targets:[];if(targets.length!==3)throw Error('Oyunun üç hedefi bulunamadı.');const old=sessionStorage.getItem('haritaAktifOyunId');if(old&&old!==gameId)temizle(old);temizle(gameId);sessionStorage.setItem('haritaAktifOyunId',gameId);sessionStorage.setItem('haritaTekSeferlikBaslatma','1');sessionStorage.setItem('haritaAktifOyunTargets',JSON.stringify(targets));localStorage.setItem(gameId+'_haritaBulmacasi_oyuncu_adi',name);let stage=1;if(ps.exists&&Number.isFinite(Number(ps.data().stage1Km)))stage=2;if(ps.exists&&Number.isFinite(Number(ps.data().stage2Km)))stage=3;localStorage.setItem(gameId+'_haritaBulmacasi_current_stage',String(stage));targets.forEach((h,i)=>{const n=i+1,parts=String(h.coord).split(','),base=gameId+'_haritaBulmacasi_stage_'+n;localStorage.setItem(base+'_hedefEnlem',String(Number(parts[0])));localStorage.setItem(base+'_hedefBoylam',String(Number(parts[1])));localStorage.setItem(base+'_hedefKoordinat',String(h.coord));localStorage.setItem(base+'_hedefIsim','Hedef '+(h.code||n));});if(!ps.exists)await pr.set({uid:firebaseUser.uid,gameId,playerName:name,completed:false,createdAt:firebase.firestore.FieldValue.serverTimestamp(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});location.reload();}catch(e){if(msg)msg.textContent='Oyuna giriş hatası: '+e.message;}
  };
  document.addEventListener('DOMContentLoaded',()=>setTimeout(anaMenuyuGoster,250));window.addEventListener('load',()=>setTimeout(anaMenuyuGoster,700));
+})();</script><script id="gameIdStoragePatch">/* GAMEID_LOCALSTORAGE_YOK_V4 */
+(function(){
+ // Eski sürümlerden kalan kalıcı yönlendirme anahtarlarını bir kez temizle.
+ localStorage.removeItem('haritaAktifOyunId');
+ localStorage.removeItem('haritaAktifOyunTargets');
+ // Oyuna Gir tıklamasının oluşturduğu ilk yeniden yüklemede geçici bilgiyi koru.
+ // Oyun sayfası kurulduktan sonra işareti kaldır. Bundan sonraki F5 ana menüyü açar.
+ window.addEventListener('load',function(){
+  if(sessionStorage.getItem('haritaTekSeferlikBaslatma')==='1'){
+   sessionStorage.removeItem('haritaTekSeferlikBaslatma');
+  }else{
+   sessionStorage.removeItem('haritaAktifOyunId');
+   sessionStorage.removeItem('haritaAktifOyunTargets');
+   const menu=document.getElementById('dinamikAnaMenu');
+   const start=document.getElementById('baslangicKapsayici');
+   const game=document.getElementById('oyunKapsayici');
+   if(menu){menu.classList.remove('hidden');if(start)start.classList.add('hidden');if(game)game.classList.add('hidden');if(typeof dinamikAnaMenuyuYukle==='function')setTimeout(dinamikAnaMenuyuYukle,300);}
+  }
+ });
+ // Menüye dönüşte geçici oyun bağını temizle.
+ const eskiMenu=window.dinamikAnaMenuyeDon;
+ window.dinamikAnaMenuyeDon=function(){sessionStorage.removeItem('haritaAktifOyunId');sessionStorage.removeItem('haritaAktifOyunTargets');sessionStorage.removeItem('haritaTekSeferlikBaslatma');location.reload();};
+ window.oyunSonuMenuyeDon=window.dinamikAnaMenuyeDon;
 })();</script></body>
 </html>
