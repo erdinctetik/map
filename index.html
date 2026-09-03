@@ -1608,7 +1608,7 @@
           }
           
     </script>
-<script id="dinamikOyunScript">/* DINAMIK_OYUN_SISTEMI_V1 */
+<script id="dinamikOyunScript">/* DINAMIK_OYUN_SISTEMI_V1 | YENI_OYUN_GECIS_FIX_V2 */
 let dinamikOyunlar=[];
 function dinamikDbHazirBekle(){return new Promise((resolve,reject)=>{let n=0;const t=setInterval(()=>{if(firebaseHazir&&firebaseDb&&firebaseUser){clearInterval(t);resolve()}else if(++n>80){clearInterval(t);reject(Error('Firebase bağlantısı kurulamadı.'))}},250)})}
 function dinamikTemizMetin(v){const d=document.createElement('div');d.textContent=String(v||'');return d.innerHTML}
@@ -1620,25 +1620,69 @@ async function dinamikAnaMenuyuYukle(){
  const arsiv=document.getElementById('oyunArsivi');arsiv.innerHTML=dinamikOyunlar.filter(g=>g.status!=='active').map(g=>`<div class="archive-item"><div><b>${dinamikTemizMetin(g.name||g.id)}</b><div style="font-size:12px;color:#64748b">${g.status==='closed'?'Tamamlandı':'Arşiv'}</div></div><button onclick="arsivSonuclariniAc('${g.id}','${dinamikTemizMetin(g.name||g.id)}')">Sonuçları Gör</button></div>`).join('')||'<p style="color:#64748b">Henüz geçmiş oyun yok.</p>';
  }catch(e){document.getElementById('dinamikMesaj').textContent='Hata: '+e.message}
 }
+function oyunYerelKayitlariniTemizle(oyunId){
+  if(!oyunId)return;
+  const prefixes=[oyunId+'_',oyunId+'-'];
+  Object.keys(localStorage).forEach(key=>{if(prefixes.some(p=>key.startsWith(p)))localStorage.removeItem(key);});
+}
+function aktifYerelOyunuTemizle(){
+  const eskiOyunId=localStorage.getItem('haritaAktifOyunId');
+  oyunYerelKayitlariniTemizle(eskiOyunId);
+  localStorage.removeItem('haritaAktifOyunId');
+  localStorage.removeItem('haritaAktifOyunTargets');
+}
+function yeniOyunYerelHazirlik(gameId,targets,playerName){
+  const eskiOyunId=localStorage.getItem('haritaAktifOyunId');
+  if(eskiOyunId&&eskiOyunId!==gameId)oyunYerelKayitlariniTemizle(eskiOyunId);
+  oyunYerelKayitlariniTemizle(gameId);
+  localStorage.setItem('haritaAktifOyunId',gameId);
+  localStorage.setItem('haritaAktifOyunTargets',JSON.stringify(targets||[]));
+  localStorage.setItem(gameId+'_haritaBulmacasi_oyuncu_adi',playerName);
+  localStorage.setItem(gameId+'_haritaBulmacasi_current_stage','1');
+  localStorage.removeItem(gameId+'_haritaBulmacasi_completed');
+  localStorage.removeItem(gameId+'_haritaBulmacasi_oyun_tamamlandi');
+}
 async function dinamikOyunaGir(gameId){
- const msg=document.getElementById('dinamikMesaj'),name=(document.getElementById('dinamikOyuncuAdi').value||'').trim();if(name.length<2){msg.textContent='En az 2 karakterlik ad veya rumuz gir.';return}
- const gameRef=firebaseDb.collection('games').doc(gameId),game=(await gameRef.get()).data();if(!game||game.status!=='active'){msg.textContent='Bu oyun artık açık değil.';return}
- const playerRef=gameRef.collection('players').doc(firebaseUser.uid),ps=await playerRef.get();
- if(ps.exists&&ps.data().completed===true){msg.textContent='Bu oyunu daha önce tamamladın; tekrar giriş kapalı.';return}
- localStorage.setItem('haritaAktifOyunId',gameId);localStorage.setItem('haritaAktifOyunTargets',JSON.stringify(game.targets||[]));localStorage.setItem(gameId+'_haritaBulmacasi_oyuncu_adi',name);
- if(!ps.exists)await playerRef.set({uid:firebaseUser.uid,gameId,playerName:name,completed:false,createdAt:firebase.firestore.FieldValue.serverTimestamp(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
- const p=game.targets||[];p.forEach((h,i)=>{const n=i+1,[lat,lng]=String(h.coord).split(',').map(Number),base=gameId+'_haritaBulmacasi_stage_'+n;localStorage.setItem(base+'_hedefEnlem',lat);localStorage.setItem(base+'_hedefBoylam',lng);localStorage.setItem(base+'_hedefKoordinat',h.coord);localStorage.setItem(base+'_hedefIsim','Hedef '+(h.code||n))});
- const pd=ps.exists?ps.data():{};let stage=1;if(Number.isFinite(Number(pd.stage1Km)))stage=2;if(Number.isFinite(Number(pd.stage2Km)))stage=3;localStorage.setItem(gameId+'_haritaBulmacasi_current_stage',stage);location.reload();
+ const msg=document.getElementById('dinamikMesaj');
+ const name=(document.getElementById('dinamikOyuncuAdi').value||'').trim();
+ if(name.length<2){msg.textContent='En az 2 karakterlik ad veya rumuz gir.';return;}
+ try{
+  const gameRef=firebaseDb.collection('games').doc(gameId);
+  const gameSnap=await gameRef.get();
+  const game=gameSnap.data();
+  if(!game||game.status!=='active'){msg.textContent='Bu oyun artık açık değil.';return;}
+  const playerRef=gameRef.collection('players').doc(firebaseUser.uid);
+  const ps=await playerRef.get();
+  if(ps.exists&&ps.data().completed===true){msg.textContent='Bu oyunu daha önce tamamladın; tekrar giriş kapalı.';return;}
+  const targets=Array.isArray(game.targets)?game.targets:[];
+  if(targets.length!==3){msg.textContent='Açık oyunun üç hedefi bulunamadı.';return;}
+  yeniOyunYerelHazirlik(gameId,targets,name);
+  if(!ps.exists){await playerRef.set({uid:firebaseUser.uid,gameId,playerName:name,completed:false,createdAt:firebase.firestore.FieldValue.serverTimestamp(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});}
+  else{
+   const pd=ps.data();let stage=1;
+   if(Number.isFinite(Number(pd.stage1Km)))stage=2;
+   if(Number.isFinite(Number(pd.stage2Km)))stage=3;
+   localStorage.setItem(gameId+'_haritaBulmacasi_current_stage',String(stage));
+  }
+  targets.forEach((h,i)=>{
+   const n=i+1,[lat,lng]=String(h.coord).split(',').map(Number),base=gameId+'_haritaBulmacasi_stage_'+n;
+   localStorage.setItem(base+'_hedefEnlem',String(lat));
+   localStorage.setItem(base+'_hedefBoylam',String(lng));
+   localStorage.setItem(base+'_hedefKoordinat',String(h.coord));
+   localStorage.setItem(base+'_hedefIsim','Hedef '+(h.code||n));
+  });
+  location.reload();
+ }catch(e){msg.textContent='Oyuna giriş hatası: '+e.message;}
 }
 async function adminYeniOyunAc(){
  const msg=document.getElementById('oyunYonetimMesaj'),name=(document.getElementById('yeniOyunAdi').value||'').trim(),codes=(document.getElementById('yeniOyunKodlari').value||'').split(/[ ,;]+/).filter(Boolean);if(name.length<2){msg.textContent='Oyun adını yaz.';return}if(codes.length!==3||new Set(codes).size!==3){msg.textContent='Üç farklı konum kodu gir. Örnek: 1, 4, 6';return}
  const targets=codes.map(c=>HEDEF_VERILERI.find(h=>String(h.code)===String(c)));if(targets.some(x=>!x)){msg.textContent='Kodlardan biri koordinat listesinde yok.';return}
  try{const all=await firebaseDb.collection('games').get();for(const d of all.docs){if(d.id!=='LOBBY'&&d.data().status==='active')await d.ref.update({status:'closed',updatedAt:firebase.firestore.FieldValue.serverTimestamp()})}
- const id='OYUN_'+Date.now(),now=firebase.firestore.FieldValue.serverTimestamp();await firebaseDb.collection('games').doc(id).set({gameId:id,name,status:'active',stageCount:3,targets:targets.map(x=>({code:String(x.code),coord:String(x.coord)})),createdAt:now,updatedAt:now});msg.textContent='✅ Yeni oyun açıldı: '+name;localStorage.removeItem('haritaAktifOyunId');setTimeout(()=>{adminPaneliniKapat();dinamikAnaMenuyeDon()},500)}catch(e){msg.textContent='❌ '+e.message+' | Admin UID yetkisini Firestore’da kontrol et.'}
+ const id='OYUN_'+Date.now(),now=firebase.firestore.FieldValue.serverTimestamp();await firebaseDb.collection('games').doc(id).set({gameId:id,name,status:'active',stageCount:3,targets:targets.map(x=>({code:String(x.code),coord:String(x.coord)})),createdAt:now,updatedAt:now});msg.textContent='✅ Yeni oyun açıldı: '+name;aktifYerelOyunuTemizle();setTimeout(()=>{adminPaneliniKapat();dinamikAnaMenuyeDon()},500)}catch(e){msg.textContent='❌ '+e.message+' | Admin UID yetkisini Firestore’da kontrol et.'}
 }
 async function arsivSonuclariniAc(id,name){const snap=await firebaseDb.collection('games').doc(id).collection('players').get(),rows=snap.docs.map(d=>d.data()).filter(x=>x.completed).sort((a,b)=>Number(a.totalKm)-Number(b.totalKm));const modal=document.createElement('div');modal.className='archive-modal';modal.onclick=e=>{if(e.target===modal)modal.remove()};modal.innerHTML=`<div class="archive-dialog"><button style="float:right" onclick="this.closest('.archive-modal').remove()">✕</button><h2>${name}</h2><table><thead><tr><th>#</th><th>Oyuncu</th><th>1. Konum</th><th>2. Konum</th><th>3. Konum</th><th>Toplam</th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td>${i+1}</td><td>${dinamikTemizMetin(r.playerName)}</td><td>${Number(r.stage1Km||0).toFixed(2)}</td><td>${Number(r.stage2Km||0).toFixed(2)}</td><td>${Number(r.stage3Km||0).toFixed(2)}</td><td><b>${Number(r.totalKm||0).toFixed(2)} km</b></td></tr>`).join('')}</tbody></table></div>`;document.body.appendChild(modal)}
-function dinamikAnaMenuyeDon(){localStorage.removeItem('haritaAktifOyunId');localStorage.removeItem('haritaAktifOyunTargets');location.reload()}
-function oyunSonuMenuyeDon(){if(localStorage.getItem(STORAGE_KEY_COMPLETED)!=='true')return;dinamikAnaMenuyeDon()}
+function dinamikAnaMenuyeDon(){aktifYerelOyunuTemizle();location.reload();}
+function oyunSonuMenuyeDon(){if(localStorage.getItem(STORAGE_KEY_COMPLETED)!=='true')return;aktifYerelOyunuTemizle();location.reload();}
 function dinamikEkranKarari(){const active=localStorage.getItem('haritaAktifOyunId');if(!active||SERIES_ID==='LOBBY'){document.getElementById('dinamikAnaMenu').classList.remove('hidden');document.getElementById('baslangicKapsayici').classList.add('hidden');document.getElementById('oyunKapsayici').classList.add('hidden');dinamikAnaMenuyuYukle()}else{document.getElementById('dinamikAnaMenu').classList.add('hidden');const completed=localStorage.getItem(STORAGE_KEY_COMPLETED)==='true';if(completed){document.getElementById('menuyeDonButonu')?.classList.remove('hidden')}}}
 window.addEventListener('load',()=>setTimeout(dinamikEkranKarari,400));
 const dinamikObs=new MutationObserver(()=>{if(typeof STORAGE_KEY_COMPLETED!=='undefined'&&localStorage.getItem(STORAGE_KEY_COMPLETED)==='true')document.getElementById('menuyeDonButonu')?.classList.remove('hidden')});dinamikObs.observe(document.documentElement,{subtree:true,attributes:true,childList:true});
