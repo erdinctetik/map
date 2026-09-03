@@ -1704,106 +1704,25 @@ const dinamikObs=new MutationObserver(()=>{if(typeof STORAGE_KEY_COMPLETED!=='un
   try{const ref=firebaseDb.collection('games').doc(gameId),gs=await ref.get(),g=gs.data();if(!g||g.status!=='active'){if(msg)msg.textContent='Bu oyun artık açık değil.';return;}const pr=ref.collection('players').doc(firebaseUser.uid),ps=await pr.get();if(ps.exists&&ps.data().completed===true){if(msg)msg.textContent='Bu oyunu daha önce tamamladın; tekrar giriş kapalı.';return;}const targets=Array.isArray(g.targets)?g.targets:[];if(targets.length!==3)throw Error('Oyunun üç hedefi bulunamadı.');const old=localStorage.getItem('haritaAktifOyunId');if(old&&old!==gameId)temizle(old);temizle(gameId);localStorage.setItem('haritaAktifOyunId',gameId);localStorage.setItem('haritaAktifOyunTargets',JSON.stringify(targets));localStorage.setItem(gameId+'_haritaBulmacasi_oyuncu_adi',name);let stage=1;if(ps.exists&&Number.isFinite(Number(ps.data().stage1Km)))stage=2;if(ps.exists&&Number.isFinite(Number(ps.data().stage2Km)))stage=3;localStorage.setItem(gameId+'_haritaBulmacasi_current_stage',String(stage));targets.forEach((h,i)=>{const n=i+1,parts=String(h.coord).split(','),base=gameId+'_haritaBulmacasi_stage_'+n;localStorage.setItem(base+'_hedefEnlem',String(Number(parts[0])));localStorage.setItem(base+'_hedefBoylam',String(Number(parts[1])));localStorage.setItem(base+'_hedefKoordinat',String(h.coord));localStorage.setItem(base+'_hedefIsim','Hedef '+(h.code||n));});if(!ps.exists)await pr.set({uid:firebaseUser.uid,gameId,playerName:name,completed:false,createdAt:firebase.firestore.FieldValue.serverTimestamp(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});location.reload();}catch(e){if(msg)msg.textContent='Oyuna giriş hatası: '+e.message;}
  };
  document.addEventListener('DOMContentLoaded',()=>setTimeout(anaMenuyuGoster,250));window.addEventListener('load',()=>setTimeout(anaMenuyuGoster,700));
-})();</script><script id="tekOyunlukTamamlamaFix">
-/* TEK OYUNLUK KULLANICI KILIDI | ADMIN VE ANA MENU SERBEST */
+})();</script><script id="oyunSonuKesinFixV3">
+/* OYUN SONU VE ANA MENU KESIN FIX V3 */
 (function(){
-  const BITEN_OYUNLAR_KEY='haritaBulmacasi_tamamlanan_oyunlar_v1';
-
-  function bitenOyunlariOku(){
-    try{return JSON.parse(localStorage.getItem(BITEN_OYUNLAR_KEY)||'{}')||{};}catch(e){return {};}
-  }
-  function bitenOyunlariYaz(veri){localStorage.setItem(BITEN_OYUNLAR_KEY,JSON.stringify(veri));}
-  function oyunTamamlanmisMi(gameId){return !!bitenOyunlariOku()[gameId];}
-  function oyunSonucunuKaliciIsaretle(){
-    const gameId=localStorage.getItem('haritaAktifOyunId');
-    if(!gameId || gameId==='LOBBY') return;
-    const p=gameId+'_';
-    const km1=Number(localStorage.getItem(p+'haritaBulmacasi_stage_1_mesafe'));
-    const km2=Number(localStorage.getItem(p+'haritaBulmacasi_stage_2_mesafe'));
-    const km3=Number(localStorage.getItem(p+'haritaBulmacasi_stage_3_mesafe'));
-    if(![km1,km2,km3].every(Number.isFinite)) return;
-    const oyun=(window.dinamikOyunlar||[]).find(x=>x.id===gameId);
-    const kayitlar=bitenOyunlariOku();
-    kayitlar[gameId]={
-      gameId,
-      gameName:oyun?.name||gameId,
-      playerName:localStorage.getItem(p+'haritaBulmacasi_oyuncu_adi')||'Oyuncu',
-      stage1Km:km1,stage2Km:km2,stage3Km:km3,totalKm:km1+km2+km3,
-      completedAt:new Date().toISOString()
-    };
-    bitenOyunlariYaz(kayitlar);
-  }
-  function aktifOyunOturumunuKapat(){
-    const id=localStorage.getItem('haritaAktifOyunId');
-    if(id){
-      Object.keys(localStorage).forEach(k=>{
-        if(k.startsWith(id+'_')||k.startsWith(id+'-')) localStorage.removeItem(k);
-      });
-    }
-    localStorage.removeItem('haritaAktifOyunId');
-    localStorage.removeItem('haritaAktifOyunTargets');
-  }
-  function km(v){return Number(v||0).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2})+' km';}
-  function oynadiklarimiCiz(){
-    const menu=document.querySelector('.dinamik-home-card');
-    const arsivBaslik=menu?.querySelector('.archive-title');
-    if(!menu||!arsivBaslik) return;
-    let bolum=document.getElementById('oynadigimOyunlarBolumu');
-    if(!bolum){
-      bolum=document.createElement('div');
-      bolum.id='oynadigimOyunlarBolumu';
-      arsivBaslik.before(bolum);
-    }
-    const kayitlar=Object.values(bitenOyunlariOku()).sort((a,b)=>String(b.completedAt||'').localeCompare(String(a.completedAt||'')));
-    bolum.innerHTML='<div class="archive-title">✅ Oynadığım Oyunlar</div>'+
-      (kayitlar.length?kayitlar.map(r=>`<div class="archive-item"><div><b>${dinamikTemizMetin(r.gameName||r.gameId)}</b><div style="font-size:12px;color:#64748b">${dinamikTemizMetin(r.playerName)} · Toplam: <b>${km(r.totalKm)}</b></div></div><button type="button" data-oyun-id="${dinamikTemizMetin(r.gameId)}">Kendi Sonucum</button></div>`).join(''):'<p style="color:#64748b">Bu tarayıcıda henüz tamamlanan oyun yok.</p>');
-    bolum.querySelectorAll('button[data-oyun-id]').forEach(b=>b.onclick=()=>{
-      const r=bitenOyunlariOku()[b.dataset.oyunId];
-      if(!r)return;
-      alert(`${r.gameName}\n\n1. Konum: ${km(r.stage1Km)}\n2. Konum: ${km(r.stage2Km)}\n3. Konum: ${km(r.stage3Km)}\n\nToplam: ${km(r.totalKm)}`);
-    });
-    const active=(window.dinamikOyunlar||[]).find(g=>g.status==='active');
-    if(active&&oyunTamamlanmisMi(active.id)){
-      const alan=document.getElementById('aktifOyunAlani');
-      if(alan) alan.innerHTML=`<div class="active-game" style="border-color:#94a3b8;background:#f8fafc"><div>✅ TAMAMLANDI</div><h2 style="color:#475569">${dinamikTemizMetin(active.name||active.id)}</h2><p>Bu oyunu bu tarayıcıda tamamladın. Yeniden giriş kapalıdır.</p></div>`;
-    }
-  }
-
-  const eskiToplam=window.gosterToplamSonuclari;
-  window.gosterToplamSonuclari=function(){
-    const sonuc=eskiToplam.apply(this,arguments);
-    oyunSonucunuKaliciIsaretle();
-    document.getElementById('menuyeDonButonu')?.classList.remove('hidden');
-    return sonuc;
-  };
-
-  const eskiGir=window.dinamikOyunaGir;
-  window.dinamikOyunaGir=async function(gameId){
-    const msg=document.getElementById('dinamikMesaj');
-    if(oyunTamamlanmisMi(gameId)){
-      if(msg) msg.textContent='Bu oyunu bu tarayıcıda tamamladın. Aynı oyuna tekrar giremezsin.';
-      return;
-    }
-    return eskiGir.apply(this,arguments);
-  };
-
-  window.oyunSonuMenuyeDon=function(){
-    oyunSonucunuKaliciIsaretle();
-    aktifOyunOturumunuKapat();
-    location.reload();
-  };
-  window.dinamikAnaMenuyeDon=function(){
-    aktifOyunOturumunuKapat();
-    location.reload();
-  };
-
-  const eskiMenuYukle=window.dinamikAnaMenuyuYukle;
-  window.dinamikAnaMenuyuYukle=async function(){
-    const sonuc=await eskiMenuYukle.apply(this,arguments);
-    oynadiklarimiCiz();
-    return sonuc;
-  };
+ const DONE='haritaBulmacasi_tamamlanan_oyunlar_v1';
+ const gid=()=>localStorage.getItem('haritaAktifOyunId');
+ const key=(id,s)=>id+'_haritaBulmacasi_'+s;
+ function read(){try{return JSON.parse(localStorage.getItem(DONE)||'{}')||{}}catch(e){return {}}}
+ function vals(id){return [1,2,3].map(i=>Number(localStorage.getItem(key(id,'stage_'+i+'_mesafe'))))}
+ function finish(){const id=gid();if(!id)return false;const v=vals(id);if(!v.every(Number.isFinite))return false;const d=read(),g=(window.dinamikOyunlar||[]).find(x=>x.id===id);d[id]={gameId:id,gameName:g?.name||id,playerName:localStorage.getItem(key(id,'oyuncu_adi'))||'Oyuncu',stage1Km:v[0],stage2Km:v[1],stage3Km:v[2],totalKm:v.reduce((a,b)=>a+b,0),completedAt:new Date().toISOString()};localStorage.setItem(DONE,JSON.stringify(d));localStorage.setItem(key(id,'oyun_tamamlandi'),'true');return true}
+ function show(){if(!finish())return false;try{gosterToplamSonuclari()}catch(e){console.error(e)}const p=document.getElementById('sonucTablosuKapsayici');if(p){p.classList.remove('hidden');p.style.display='block'}const b=document.getElementById('menuyeDonButonu');if(b){b.classList.remove('hidden');b.style.display='inline-block';b.textContent='🏠 Ana Sayfaya Dön'}const n=document.getElementById('sonrakiAsamaButonu');if(n)n.classList.add('hidden');return true}
+ function clearActive(){const id=gid();if(id)Object.keys(localStorage).forEach(k=>{if(k.startsWith(id+'_')||k.startsWith(id+'-'))localStorage.removeItem(k)});localStorage.removeItem('haritaAktifOyunId');localStorage.removeItem('haritaAktifOyunTargets')}
+ window.oyunSonuMenuyeDon=function(){finish();clearActive();location.reload()};
+ window.dinamikAnaMenuyeDon=function(){clearActive();location.reload()};
+ const oldNext=window.sonrakiAsamayaGec;window.sonrakiAsamayaGec=function(){const id=gid(),st=id?Number(localStorage.getItem(key(id,'current_stage'))||0):0;if(st>=3||id&&vals(id).every(Number.isFinite)){show();return}return oldNext.apply(this,arguments)};
+ const oldJoin=window.dinamikOyunaGir;window.dinamikOyunaGir=async function(id){if(read()[id]){const m=document.getElementById('dinamikMesaj');if(m)m.textContent='Bu oyunu tamamladın; tekrar giriş kapalı.';return}return oldJoin.apply(this,arguments)};
+ function played(){const host=document.querySelector('.dinamik-home-card'),title=host?.querySelector('.archive-title');if(!host||!title)return;let x=document.getElementById('oynadiklarim');if(!x){x=document.createElement('div');x.id='oynadiklarim';title.before(x)}const a=Object.values(read()).sort((a,b)=>String(b.completedAt).localeCompare(String(a.completedAt)));x.innerHTML='<div class="archive-title">✅ Oynadığım Oyunlar</div>'+(a.length?a.map(r=>`<div class="archive-item"><div><b>${dinamikTemizMetin(r.gameName)}</b><div style="font-size:12px;color:#64748b">${dinamikTemizMetin(r.playerName)} · ${Number(r.totalKm).toLocaleString('tr-TR',{maximumFractionDigits:2})} km</div></div></div>`).join(''):'<p style="color:#64748b">Henüz tamamlanan oyun yok.</p>');const active=(window.dinamikOyunlar||[]).find(g=>g.status==='active');if(active&&read()[active.id])document.getElementById('aktifOyunAlani').innerHTML=`<div class="active-game" style="border-color:#94a3b8;background:#f8fafc"><h2 style="color:#475569">${dinamikTemizMetin(active.name||active.id)}</h2><p>Bu oyunu tamamladın. Tekrar giriş kapalıdır.</p></div>`}
+ const oldMenu=window.dinamikAnaMenuyuYukle;window.dinamikAnaMenuyuYukle=async function(){const r=await oldMenu.apply(this,arguments);played();return r};
+ window.addEventListener('load',()=>setTimeout(()=>{const id=gid();if(id&&vals(id).every(Number.isFinite))show()},1000));
 })();
-</script>
-</body>
+
+</script></body>
 </html>
