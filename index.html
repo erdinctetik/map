@@ -1684,10 +1684,10 @@ async function anaSayfayiYukle(){
   const ps=await firebaseDb.collection('games').doc(g.id).collection('players').doc(firebaseUser.uid).get();
   const p=ps.exists?ps.data():null;
   let durum='Oynanmadı',sinif='unplayed',buton='';
-  if(p?.completed){durum='Oynandı';sinif='played';buton=`<button class="game-action skor-ac" data-game-id="${temizMetin(g.id)}" data-game-name="${temizMetin(g.name||g.id)}">Skor Tablosu</button>`;}
+  if(p?.completed){durum='Oynandı';sinif='played';buton=`<button class="game-action" onclick="skorTablosunuAc('${g.id}',${JSON.stringify(g.name||g.id)})">Skor Tablosu</button>`;}
   else if(p){durum='Devam ediyor';sinif='progress';buton=`<button class="game-action" onclick="oyunaDevamEt('${g.id}')">Devam Et</button>`;}
   else if(g.status==='active'){buton=`<button class="game-action" onclick="oyunaKatil('${g.id}')">Oyuna Gir</button>`;}
-  else{buton=`<button class="game-action skor-ac" data-game-id="${temizMetin(g.id)}" data-game-name="${temizMetin(g.name||g.id)}">Skor Tablosu</button>`;}
+  else{buton=`<button class="game-action" onclick="skorTablosunuAc('${g.id}',${JSON.stringify(g.name||g.id)})">Skor Tablosu</button>`;}
   html+=`<div class="game-card ${g.status==='active'?'active':''}"><div><b>${temizMetin(g.name||g.id)}</b><div><span class="badge ${sinif}">${durum}</span> <small>${g.status==='active'?'Açık oyun':'Geçmiş oyun'}</small></div></div>${buton}</div>`;
  }
  document.getElementById('hubGames').innerHTML=html+(oyunListesi.length?'':'<p>Henüz oyun yok.</p>');
@@ -1730,12 +1730,6 @@ async function adminYeniOyunAc(){
  try{const all=await firebaseDb.collection('games').get();for(const d of all.docs)if(d.data().status==='active')await d.ref.update({status:'closed',updatedAt:firebase.firestore.FieldValue.serverTimestamp()});const gameId='OYUN_'+Date.now();await firebaseDb.collection('games').doc(gameId).set({gameId,name,status:'active',stageCount:3,targets:targets.map(x=>({code:String(x.code),coord:String(x.coord)})),createdAt:firebase.firestore.FieldValue.serverTimestamp(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});msg.textContent='✅ Yeni oyun açıldı.';setTimeout(()=>{adminPaneliniKapat();anaSayfayiYukle();},300);}catch(e){msg.textContent='❌ '+e.message+' | Admin UID belgesini kontrol et.';}
 }
 function createNewGame(){return adminYeniOyunAc();}
-document.addEventListener('click',function(e){
- const b=e.target.closest&&e.target.closest('.skor-ac');
- if(!b)return;
- e.preventDefault();
- skorTablosunuAc(b.dataset.gameId,b.dataset.gameName).catch(err=>{console.error(err);alert('Skor tablosu açılamadı: '+(err.message||err));});
-});
 const asilTahminGonder=tahminGonder;
 tahminGonder=async function(){const asama=Number(localStorage.getItem(STORAGE_KEY_STAGE)||0);await asilTahminGonder.apply(this,arguments);if(asama===3){document.getElementById('sonrakiAsamaButonu')?.classList.add('hidden');document.querySelector('.home-btn')?.classList.remove('hidden');}}
 
@@ -1809,5 +1803,75 @@ tahminGonder=async function(){const asama=Number(localStorage.getItem(STORAGE_KE
   document.addEventListener('click',function(e){const b=e.target.closest?.('#adminAcButonu,button[onclick="adminPaneliniAc()"]');if(b){e.preventDefault();e.stopImmediatePropagation();panelAc();}},true);
 })();
 </script>
-</body>
+<script id="oyunYonetimiDetayKonumFix">
+/* OYUN YONETIMI + DETAY + KONUM ADI FIX */
+(function(){
+  function esc(v){const d=document.createElement('div');d.textContent=String(v??'');return d.innerHTML;}
+  async function adresBul(coord){
+    const [lat,lng]=String(coord||'').split(',').map(Number);
+    if(!Number.isFinite(lat)||!Number.isFinite(lng)) return 'Koordinat geçersiz';
+    if(!window.google?.maps?.Geocoder) return 'Google Geocoding hazır değil';
+    return new Promise(resolve=>new google.maps.Geocoder().geocode({location:{lat,lng}},(r,s)=>{
+      if(s!=='OK'||!r?.length){resolve('Adres bulunamadı');return;}
+      const comps=r.flatMap(x=>x.address_components||[]);
+      const pick=types=>comps.find(c=>types.some(t=>c.types?.includes(t)))?.long_name||'';
+      const il=pick(['locality','postal_town','administrative_area_level_2','administrative_area_level_1']);
+      const ulke=pick(['country']);
+      resolve([il,ulke].filter(Boolean).join(', ')||r[0].formatted_address||'Adres bulunamadı');
+    }));
+  }
+  window.oyunDetayiniAc=async function(id){
+    try{
+      const gs=await firebaseDb.collection('games').doc(id).get();if(!gs.exists)throw new Error('Oyun bulunamadı');
+      const g=gs.data(),targets=g.targets||[];
+      const rows=[];for(let i=0;i<targets.length;i++){const t=targets[i];rows.push(`<tr><td>${i+1}</td><td>${esc(t.code||'')}</td><td>${esc(t.coord||'')}</td><td>${esc(t.address||await adresBul(t.coord))}</td></tr>`);}
+      const x=document.createElement('div');x.className='score-pop';x.onclick=e=>{if(e.target===x)x.remove()};
+      x.innerHTML=`<div class="score-box"><button style="float:right" onclick="this.closest('.score-pop').remove()">✕</button><h2>${esc(g.name||id)}</h2><p><b>Durum:</b> ${g.status==='active'?'Açık':'Kapalı'}</p><table><tr><th>#</th><th>Kod</th><th>Koordinat</th><th>İl / Ülke</th></tr>${rows.join('')}</table></div>`;document.body.appendChild(x);
+    }catch(e){alert('Oyun detayı açılamadı: '+e.message);}
+  };
+  window.adminOyunDurumuDegistir=async function(id,status){
+    try{
+      if(status==='active'){
+        const all=await firebaseDb.collection('games').get();
+        for(const d of all.docs)if(d.id!==id&&d.data().status==='active')await d.ref.update({status:'closed',updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+      }
+      await firebaseDb.collection('games').doc(id).update({status,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+      await anaSayfayiYukle();adminOyunListesiniYukle();
+    }catch(e){alert('İşlem yapılamadı: '+e.message);}
+  };
+  window.adminOyunuSil=async function(id){
+    if(!confirm('Bu oyun ve bağlı skor görünümü silinsin mi?'))return;
+    try{await firebaseDb.collection('games').doc(id).delete();await anaSayfayiYukle();adminOyunListesiniYukle();}
+    catch(e){alert('Oyun silinemedi. Firestore Rules içinde games silme yetkisi gerekli: '+e.message);}
+  };
+  window.adminOyunListesiniYukle=async function(){
+    const host=document.getElementById('adminOyunYonetimListesi');if(!host||!firebaseHazir)return;
+    const snap=await firebaseDb.collection('games').get();
+    const games=snap.docs.map(d=>({id:d.id,...d.data()})).filter(g=>g.id!=='LOBBY').sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+    host.innerHTML=games.length?games.map(g=>`<div class="archive-item"><div><b>${esc(g.name||g.id)}</b><div style="font-size:12px;color:#64748b">${g.status==='active'?'Açık':'Kapalı'} · ${esc(g.id)}</div></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button onclick="oyunDetayiniAc('${esc(g.id)}')">Detay</button>${g.status==='active'?`<button onclick="adminOyunDurumuDegistir('${esc(g.id)}','closed')">Kapat</button>`:`<button onclick="adminOyunDurumuDegistir('${esc(g.id)}','active')">Aç</button>`}<button style="background:#dc2626;color:white" onclick="adminOyunuSil('${esc(g.id)}')">Sil</button></div></div>`).join(''):'<p>Oyun yok.</p>';
+  };
+  function adminBolumuEkle(){
+    const box=document.querySelector('.dinamik-admin-box');if(!box||document.getElementById('adminOyunYonetimListesi'))return;
+    const div=document.createElement('div');div.innerHTML='<div class="archive-title">🗂️ Aç/Kapat/Sil</div><div id="adminOyunYonetimListesi">Yükleniyor...</div>';box.after(div);
+  }
+  const oldAdmin=window.adminGirisYap;
+  window.adminGirisYap=function(){const r=oldAdmin.apply(this,arguments);setTimeout(()=>{adminBolumuEkle();adminOyunListesiniYukle();},50);return r;};
+  const oldHome=window.anaSayfayiYukle;
+  window.anaSayfayiYukle=async function(){const r=await oldHome.apply(this,arguments);document.querySelectorAll('.game-card').forEach((card,i)=>{const g=oyunListesi[i];if(!g)return;const action=card.lastElementChild;const b=document.createElement('button');b.className='game-action';b.textContent='Detay';b.onclick=()=>oyunDetayiniAc(g.id);action?.parentNode?.insertBefore(b,action);});return r;};
+  window.getKonumAdiByKoordinat=function(lat,lng){
+    return new Promise(resolve=>{
+      const gc=geocoder||new google.maps.Geocoder();
+      gc.geocode({location:{lat:Number(lat),lng:Number(lng)}},(results,status)=>{
+        if(status!=='OK'||!results?.length){resolve({locationName:'Koordinat: '+Number(lat).toFixed(4)+', '+Number(lng).toFixed(4),countryCode:''});return;}
+        const comps=results.flatMap(r=>r.address_components||[]);
+        const find=types=>comps.find(c=>types.some(t=>c.types?.includes(t)));
+        const city=find(['locality','postal_town','administrative_area_level_2','administrative_area_level_1']);
+        const country=find(['country']);
+        resolve({locationName:[city?.long_name,country?.long_name].filter(Boolean).join(', ')||results[0].formatted_address,countryCode:country?.short_name||''});
+      });
+    });
+  };
+})();
+
+</script></body>
 </html>
