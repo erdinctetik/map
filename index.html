@@ -1824,5 +1824,49 @@ tahminGonder=async function(){const asama=Number(localStorage.getItem(STORAGE_KE
   document.addEventListener('click',function(e){const b=e.target.closest?.('#adminAcButonu,button[onclick="adminPaneliniAc()"]');if(b){e.preventDefault();e.stopImmediatePropagation();panelAc();}},true);
 })();
 </script>
-</body>
+<script id="yalnizKonumAdiVeTurEtiketiFix">
+/* SADECE KONUM ADI VE TUR ETIKETLERI: S=Secim, K=Konum */
+(function(){
+  window.getKonumAdiByKoordinat=function(lat,lng){
+    return new Promise(resolve=>{
+      const gc=(typeof geocoder!=='undefined'&&geocoder)?geocoder:(window.google?.maps?.Geocoder?new google.maps.Geocoder():null);
+      if(!gc){resolve({locationName:`${Number(lat).toFixed(4)}, ${Number(lng).toFixed(4)}`,countryCode:''});return;}
+      gc.geocode({location:{lat:Number(lat),lng:Number(lng)}},(results,status)=>{
+        if(status!=='OK'||!results?.length){resolve({locationName:`${Number(lat).toFixed(4)}, ${Number(lng).toFixed(4)}`,countryCode:''});return;}
+        const comps=results.flatMap(r=>r.address_components||[]);
+        const find=types=>comps.find(c=>types.some(t=>c.types?.includes(t)));
+        const city=find(['locality','postal_town','administrative_area_level_2','administrative_area_level_1']);
+        const country=find(['country']);
+        const name=[city?.long_name,country?.long_name].filter(Boolean).join(', ')||results[0].formatted_address||`${Number(lat).toFixed(4)}, ${Number(lng).toFixed(4)}`;
+        resolve({locationName:name,countryCode:country?.short_name||''});
+      });
+    });
+  };
+  function turEtiketi(text,color){
+    const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="46" height="46" viewBox="0 0 46 46"><circle cx="23" cy="23" r="20" fill="${color}" stroke="#111827" stroke-width="2"/><text x="23" y="28" text-anchor="middle" font-family="Arial,sans-serif" font-size="15" font-weight="900" fill="white">${text}</text></svg>`;
+    return {url:'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(svg),scaledSize:new google.maps.Size(46,46),anchor:new google.maps.Point(23,23)};
+  }
+  window.gosterPinlerVeHaritayiYakınlaştır=function(tahminEnlem,tahminBoylam,hedefEnlem,hedefBoylam){
+    if(!tahminHaritasi)return;temizleHaritaKatmanlari();
+    const stage=Number(localStorage.getItem(STORAGE_KEY_STAGE)||1),t={lat:tahminEnlem,lng:tahminBoylam},h={lat:hedefEnlem,lng:hedefBoylam};
+    tahminMarker=new google.maps.Marker({position:t,map:tahminHaritasi,title:`${stage}. Seçim`,icon:turEtiketi(`${stage}S`,'#ef4444')});
+    hedefMarker=new google.maps.Marker({position:h,map:tahminHaritasi,title:`${stage}. Konum`,icon:turEtiketi(`${stage}K`,'#10b981')});
+    mesafeCizgisi=new google.maps.Polyline({path:[t,h],geodesic:true,strokeColor:'#3b82f6',strokeOpacity:.8,strokeWeight:4,map:tahminHaritasi});
+    const bounds=new google.maps.LatLngBounds();bounds.extend(t);bounds.extend(h);tahminHaritasi.fitBounds(bounds);
+  };
+  window.gosterTumAsamaSonuclarini=function(){
+    temizleHaritaKatmanlari();const bounds=new google.maps.LatLngBounds();
+    for(let stage=1;stage<=TOTAL_STAGES;stage++){
+      const ts=localStorage.getItem(`${PREFIX}haritaBulmacasi_stage_${stage}_tahminKoordinat`),hs=localStorage.getItem(`${PREFIX}haritaBulmacasi_stage_${stage}_hedefKoordinat`);if(!ts||!hs)continue;
+      const [tlat,tlng]=ts.split(',').map(Number),[hlat,hlng]=hs.split(',').map(Number),t={lat:tlat,lng:tlng},h={lat:hlat,lng:hlng};
+      const tm=new google.maps.Marker({position:t,map:tahminHaritasi,title:`${stage}. Seçim`,icon:turEtiketi(`${stage}S`,'#ef4444')});
+      const hm=new google.maps.Marker({position:h,map:tahminHaritasi,title:`${stage}. Konum`,icon:turEtiketi(`${stage}K`,'#10b981')});
+      const line=new google.maps.Polyline({path:[t,h],geodesic:true,strokeColor:'#111827',strokeOpacity:.55,strokeWeight:2,map:tahminHaritasi});
+      tumAsamaMarkerlari.push(tm,hm,line);bounds.extend(t);bounds.extend(h);
+    }
+    if(tumAsamaMarkerlari.length)tahminHaritasi.fitBounds(bounds);
+  };
+})();
+
+</script></body>
 </html>
