@@ -1286,7 +1286,7 @@
           const girilen=document.getElementById('adminParola').value.trim();
           if(girilen!==(kayitli || DEFAULT_ADMIN_PAROLA) && girilen!==DEFAULT_ADMIN_PAROLA){ document.getElementById('adminMesaj').textContent='❌ Parola hatalı.'; return; }
           if(girilen===DEFAULT_ADMIN_PAROLA && kayitli) localStorage.removeItem(ADMIN_PAROLA_KEY);
-          adminYetkili=true; document.getElementById('adminMesaj').textContent=''; document.getElementById('adminApiKey').value=localStorage.getItem('haritaBulmacasi_google_api_key') || EMBEDDED_API_KEY || ''; document.getElementById('adminFirebaseConfig').value=localStorage.getItem('haritaBulmacasi_firebase_config') || JSON.stringify(EMBEDDED_FIREBASE_CONFIG,null,2); document.getElementById('adminSansSuresi').value=localStorage.getItem('haritaBulmacasi_sans_suresi') || 60; document.getElementById('adminSansDagilimi').value=localStorage.getItem('haritaBulmacasi_sans_dagilimi_metni') || '-25:1\n-20:2\n-15:2\n-10:3\n10:3\n15:2\n20:2\n25:1'; document.getElementById('adminGirisBolumu').classList.add('hidden'); document.getElementById('adminIcerik').classList.remove('hidden'); adminListeyiCiz();
+          adminYetkili=true; document.getElementById('adminMesaj').textContent=''; document.getElementById('adminApiKey').value=localStorage.getItem('haritaBulmacasi_google_api_key') || ''; document.getElementById('adminFirebaseConfig').value=localStorage.getItem('haritaBulmacasi_firebase_config') || ''; document.getElementById('adminSansSuresi').value=localStorage.getItem('haritaBulmacasi_sans_suresi') || 60; document.getElementById('adminSansDagilimi').value=sansDagiliminiMetneCevir(JSON.parse(localStorage.getItem('haritaBulmacasi_sans_degerleri') || 'null') || VARSAYILAN_SANS_DEGERLERI); document.getElementById('adminGirisBolumu').classList.add('hidden'); document.getElementById('adminIcerik').classList.remove('hidden'); adminListeyiCiz();
         }
         function adminListeyiCiz(){
           const alan=document.getElementById('adminKoordinatListesi'); alan.innerHTML='';
@@ -1314,43 +1314,29 @@
         function panoAra(service,konum,radius){return new Promise(resolve=>service.getPanorama({location:konum,radius,preference:google.maps.StreetViewPreference.NEAREST,sources:[google.maps.StreetViewSource.OUTDOOR,google.maps.StreetViewSource.GOOGLE]},(data,status)=>resolve(status==='OK'&&data?.location?.latLng?data:null)));}
         function tersGeocode(geocoder,latLng){return new Promise(resolve=>geocoder.geocode({location:latLng},(r,s)=>resolve(s==='OK'?r:[])));}
         function panoKabul(data,results,tur,beklenenUlke){
-          if(!data?.location?.latLng)return false;
-          const components=(results||[]).flatMap(r=>r.address_components||[]);
+          if(!data?.location?.latLng||!results.length)return false;
+          const allTypes=new Set(results.flatMap(r=>r.types||[]));
+          const components=results.flatMap(r=>r.address_components||[]);
           const country=components.find(c=>c.types?.includes('country'))?.short_name||'';
-          if(beklenenUlke && country && country!==beklenenUlke)return false;
-          const allTypes=new Set((results||[]).flatMap(r=>r.types||[]));
-          const indoorTypes=['room','subpremise','shopping_mall','airport'];
+          if(beklenenUlke&&country!==beklenenUlke)return false;
+          const indoorTypes=['establishment','premise','subpremise','room','lodging','shopping_mall','airport'];
           if(indoorTypes.some(t=>allTypes.has(t)))return false;
-          if(tur==='street' && (data.links||[]).length<1)return false;
+          if(tur==='street'){
+            const route=components.find(c=>c.types?.includes('route'));
+            const sokakSonucu=results.some(r=>(r.types||[]).some(t=>['street_address','route','intersection'].includes(t)));
+            if(!route&&!sokakSonucu)return false;
+            if((data.links||[]).length<1)return false;
+          }
           return true;
         }
         async function otomatikKoordinatBul(){
-          const mesaj=document.getElementById('adminKayitMesaj'),buton=document.getElementById('otomatikKoordinatButonu');
-          if(!adminYetkili){mesaj.textContent='❌ Önce yönetici girişi yapın.';return;}
-          if(!window.google?.maps?.StreetViewService){mesaj.textContent='⏳ Google Maps henüz yükleniyor. Sayfayı yenileyip tekrar deneyin.';return;}
-          buton.disabled=true;const eski=buton.textContent;buton.textContent='Uygun sokak aranıyor...';mesaj.textContent='🌍 Street View bulunan dış mekân aranıyor...';mesaj.className='text-sm mt-3 font-semibold text-blue-700';
-          try{
-            const bolge=document.getElementById('otomatikBolge').value,tur=document.getElementById('otomatikTur').value,ulke=document.getElementById('otomatikUlke').value;
-            let merkezler,beklenen='';
-            if(bolge==='country'){merkezler=(ULKE_MERKEZLER[ulke]||[]).map(x=>[x[0],x[1],ulke]);beklenen=ulke;}
-            else if(bolge==='europe')merkezler=OTOMATIK_MERKEZLER.europe;
-            else merkezler=[...OTOMATIK_MERKEZLER.europe,...OTOMATIK_MERKEZLER.world];
-            const service=new google.maps.StreetViewService(),geocoder=new google.maps.Geocoder();let kabul=null;
-            for(let d=0;d<100&&!kabul;d++){
-              const c=merkezler[Math.floor(Math.random()*merkezler.length)];
-              const yayilim=tur==='street'?0.45:1.5;
-              const aday={lat:c[0]+(Math.random()-.5)*yayilim,lng:c[1]+(Math.random()-.5)*yayilim};
-              const data=await panoAra(service,aday,tur==='street'?15000:30000);
-              if(!data)continue;
-              let results=[];try{results=await tersGeocode(geocoder,data.location.latLng);}catch(e){}
-              if(panoKabul(data,results,tur,beklenen))kabul=data.location.latLng;
-            }
-            if(!kabul)throw new Error('Street View konumu bulunamadı. Google Maps API kısıtlarında Maps JavaScript API ve Geocoding API erişimini kontrol edin.');
-            const coord=`${kabul.lat().toFixed(7)}, ${kabul.lng().toFixed(7)}`;
-            koordinatSatiriEkle(sonrakiOtomatikKod(),coord);
-            mesaj.textContent='✅ Yeni bir gizli otomatik konum eklendi.';mesaj.className='text-sm mt-3 font-semibold text-emerald-700';
-          }catch(e){mesaj.textContent='❌ '+(e?.message||'Koordinat bulunamadı.');mesaj.className='text-sm mt-3 font-semibold text-red-600';}
-          finally{buton.disabled=false;buton.textContent=eski;}
+          const mesaj=document.getElementById('adminKayitMesaj'),buton=document.getElementById('otomatikKoordinatButonu');if(!adminYetkili){mesaj.textContent='❌ Önce yönetici girişi yapın.';return;}if(!window.google?.maps?.StreetViewService){mesaj.textContent='❌ Google Maps hazır değil. API anahtarını kaydedip sayfayı yenileyin.';return;}
+          buton.disabled=true;const eski=buton.textContent;buton.textContent='Uygun sokak aranıyor...';mesaj.textContent='🌍 Filtrelere uygun dış mekân panoraması aranıyor...';mesaj.className='text-sm mt-3 font-semibold text-blue-700';
+          try{const bolge=document.getElementById('otomatikBolge').value,tur=document.getElementById('otomatikTur').value,ulke=document.getElementById('otomatikUlke').value;let merkezler,beklenen='';if(bolge==='country'){merkezler=(ULKE_MERKEZLER[ulke]||[]).map(x=>[x[0],x[1],ulke]);beklenen=ulke;}else if(bolge==='europe'){merkezler=OTOMATIK_MERKEZLER.europe; }else{merkezler=[...OTOMATIK_MERKEZLER.europe,...OTOMATIK_MERKEZLER.world];}
+            const service=new google.maps.StreetViewService(),geocoder=new google.maps.Geocoder();let kabul=null,adres='';
+            for(let d=0;d<40&&!kabul;d++){const c=merkezler[Math.floor(Math.random()*merkezler.length)],aday={lat:c[0]+(Math.random()-.5)*(tur==='street'?1.2:3),lng:c[1]+(Math.random()-.5)*(tur==='street'?1.5:4)};const data=await panoAra(service,aday,tur==='street'?8000:20000);if(!data)continue;const results=await tersGeocode(geocoder,data.location.latLng);if(panoKabul(data,results,tur,beklenen)){kabul=data.location.latLng;adres=results[0]?.formatted_address||'';}}
+            if(!kabul)throw new Error('Bu filtrelerle uygun dış mekân/sokak bulunamadı. Tekrar deneyin veya filtreyi genişletin.');const coord=`${kabul.lat().toFixed(7)}, ${kabul.lng().toFixed(7)}`;koordinatSatiriEkle(sonrakiOtomatikKod(),coord);mesaj.textContent='✅ Yeni bir gizli otomatik konum eklendi.';mesaj.className='text-sm mt-3 font-semibold text-emerald-700';
+          }catch(e){mesaj.textContent='❌ '+(e?.message||'Koordinat bulunamadı.');mesaj.className='text-sm mt-3 font-semibold text-red-600';}finally{buton.disabled=false;buton.textContent=eski;}
         }
         function adminSatirEkle(){
           const satir=document.createElement('div'); satir.className='admin-grid';
@@ -1436,7 +1422,7 @@
           if(!Number.isInteger(sansSuresi) || sansSuresi<1 || sansSuresi>=120){ document.getElementById('adminKayitMesaj').textContent='❌ Şans süresi 1 ile 119 saniye arasında olmalı.'; return; }
           const sansAyar=adminSansDegerleriniOku();
           if(sansAyar.hata){ document.getElementById('adminKayitMesaj').textContent='❌ '+sansAyar.hata; document.getElementById('adminKayitMesaj').className='text-sm mt-3 font-semibold text-red-600'; return; }
-          HEDEF_VERILERI=arr; localStorage.setItem('haritaBulmacasi_admin_hedefler',JSON.stringify(arr)); localStorage.setItem('haritaBulmacasi_sans_suresi',String(sansSuresi)); localStorage.setItem('haritaBulmacasi_sans_degerleri',JSON.stringify(sansAyar.degerler)); localStorage.setItem('haritaBulmacasi_sans_dagilimi_metni',document.getElementById('adminSansDagilimi').value.trim());
+          HEDEF_VERILERI=arr; localStorage.setItem('haritaBulmacasi_admin_hedefler',JSON.stringify(arr)); localStorage.setItem('haritaBulmacasi_sans_suresi',String(sansSuresi)); localStorage.setItem('haritaBulmacasi_sans_degerleri',JSON.stringify(sansAyar.degerler));
           const fbAyar=firebaseConfigOku();
           if(fbAyar.hata){ document.getElementById('adminKayitMesaj').textContent='❌ '+fbAyar.hata; document.getElementById('adminKayitMesaj').className='text-sm mt-3 font-semibold text-red-600'; return false; }
           localStorage.setItem('haritaBulmacasi_firebase_config',JSON.stringify(fbAyar.cfg));
@@ -1684,10 +1670,10 @@ async function anaSayfayiYukle(){
   const ps=await firebaseDb.collection('games').doc(g.id).collection('players').doc(firebaseUser.uid).get();
   const p=ps.exists?ps.data():null;
   let durum='Oynanmadı',sinif='unplayed',buton='';
-  if(p?.completed){durum='Oynandı';sinif='played';buton=`<button class="game-action skor-ac" data-game-id="${temizMetin(g.id)}" data-game-name="${temizMetin(g.name||g.id)}">Skor Tablosu</button>`;}
+  if(p?.completed){durum='Oynandı';sinif='played';buton=`<button class="game-action" onclick="skorTablosunuAc('${g.id}',${JSON.stringify(g.name||g.id)})">Skor Tablosu</button>`;}
   else if(p){durum='Devam ediyor';sinif='progress';buton=`<button class="game-action" onclick="oyunaDevamEt('${g.id}')">Devam Et</button>`;}
   else if(g.status==='active'){buton=`<button class="game-action" onclick="oyunaKatil('${g.id}')">Oyuna Gir</button>`;}
-  else{buton=`<button class="game-action skor-ac" data-game-id="${temizMetin(g.id)}" data-game-name="${temizMetin(g.name||g.id)}">Skor Tablosu</button>`;}
+  else{buton=`<button class="game-action" onclick="skorTablosunuAc('${g.id}',${JSON.stringify(g.name||g.id)})">Skor Tablosu</button>`;}
   html+=`<div class="game-card ${g.status==='active'?'active':''}"><div><b>${temizMetin(g.name||g.id)}</b><div><span class="badge ${sinif}">${durum}</span> <small>${g.status==='active'?'Açık oyun':'Geçmiş oyun'}</small></div></div>${buton}</div>`;
  }
  document.getElementById('hubGames').innerHTML=html+(oyunListesi.length?'':'<p>Henüz oyun yok.</p>');
@@ -1730,12 +1716,6 @@ async function adminYeniOyunAc(){
  try{const all=await firebaseDb.collection('games').get();for(const d of all.docs)if(d.data().status==='active')await d.ref.update({status:'closed',updatedAt:firebase.firestore.FieldValue.serverTimestamp()});const gameId='OYUN_'+Date.now();await firebaseDb.collection('games').doc(gameId).set({gameId,name,status:'active',stageCount:3,targets:targets.map(x=>({code:String(x.code),coord:String(x.coord)})),createdAt:firebase.firestore.FieldValue.serverTimestamp(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});msg.textContent='✅ Yeni oyun açıldı.';setTimeout(()=>{adminPaneliniKapat();anaSayfayiYukle();},300);}catch(e){msg.textContent='❌ '+e.message+' | Admin UID belgesini kontrol et.';}
 }
 function createNewGame(){return adminYeniOyunAc();}
-document.addEventListener('click',function(e){
- const b=e.target.closest&&e.target.closest('.skor-ac');
- if(!b)return;
- e.preventDefault();
- skorTablosunuAc(b.dataset.gameId,b.dataset.gameName).catch(err=>{console.error(err);alert('Skor tablosu açılamadı: '+(err.message||err));});
-});
 const asilTahminGonder=tahminGonder;
 tahminGonder=async function(){const asama=Number(localStorage.getItem(STORAGE_KEY_STAGE)||0);await asilTahminGonder.apply(this,arguments);if(asama===3){document.getElementById('sonrakiAsamaButonu')?.classList.add('hidden');document.querySelector('.home-btn')?.classList.remove('hidden');}}
 
