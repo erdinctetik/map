@@ -1723,10 +1723,25 @@ function anaSayfayaDon(){localStorage.setItem('haritaEkranModu','home');location
 function goHome(){anaSayfayaDon();}
 function oyunSonuMenuyeDon(){anaSayfayaDon();}
 function dinamikAnaMenuyeDon(){anaSayfayaDon();}
+function ekrandakiKoordinatlariOku(){
+ const rows=[...document.querySelectorAll('#adminKoordinatListesi .admin-grid')];
+ const arr=[],codes=new Set();
+ for(const row of rows){
+  const code=(row.querySelector('.admin-code')?.value||'').trim();
+  const coord=(row.dataset.gizliCoord||row.querySelector('.admin-coord')?.value||'').trim();
+  const p=coord.split(',').map(Number);
+  if(!code||codes.has(code)||p.length!==2||!p.every(Number.isFinite)||Math.abs(p[0])>90||Math.abs(p[1])>180) continue;
+  codes.add(code);arr.push({code,coord:`${p[0]}, ${p[1]}`});
+ }
+ return arr;
+}
 async function adminYeniOyunAc(){
  const msg=document.getElementById('oyunYonetimMesaj'),name=(document.getElementById('yeniOyunAdi').value||'').trim(),codes=(document.getElementById('yeniOyunKodlari').value||'').split(/[ ,;]+/).filter(Boolean);
  if(name.length<2||codes.length!==3||new Set(codes).size!==3){msg.textContent='Oyun adı ve üç farklı konum kodu gir.';return;}
- const targets=codes.map(c=>HEDEF_VERILERI.find(h=>String(h.code)===String(c)));if(targets.some(x=>!x)){msg.textContent='Kodlardan biri koordinat listesinde yok.';return;}
+ const ekrandaki=ekrandakiKoordinatlariOku();
+ if(ekrandaki.length){HEDEF_VERILERI=ekrandaki;localStorage.setItem('haritaBulmacasi_admin_hedefler',JSON.stringify(ekrandaki));}
+ const targets=codes.map(c=>HEDEF_VERILERI.find(h=>String(h.code).trim()===String(c).trim()));
+ if(targets.some(x=>!x)){msg.textContent='Kodlardan biri koordinat listesinde yok. Önce koordinatın listede göründüğünü kontrol et.';return;}
  try{const all=await firebaseDb.collection('games').get();for(const d of all.docs)if(d.data().status==='active')await d.ref.update({status:'closed',updatedAt:firebase.firestore.FieldValue.serverTimestamp()});const gameId='OYUN_'+Date.now();await firebaseDb.collection('games').doc(gameId).set({gameId,name,status:'active',stageCount:3,targets:targets.map(x=>({code:String(x.code),coord:String(x.coord)})),createdAt:firebase.firestore.FieldValue.serverTimestamp(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});msg.textContent='✅ Yeni oyun açıldı.';setTimeout(()=>{adminPaneliniKapat();anaSayfayiYukle();},300);}catch(e){msg.textContent='❌ '+e.message+' | Admin UID belgesini kontrol et.';}
 }
 function createNewGame(){return adminYeniOyunAc();}
