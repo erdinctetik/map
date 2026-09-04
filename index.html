@@ -1330,7 +1330,7 @@
           return true;
         }
         async function otomatikKoordinatBul(){
-          const mesaj=document.getElementById('adminKayitMesaj'),buton=document.getElementById('otomatikKoordinatButonu');if(!adminYetkili){mesaj.textContent='❌ Önce yönetici girişi yapın.';return;}if(!window.google?.maps?.StreetViewService){mesaj.textContent='❌ Google Maps hazır değil. API anahtarını kaydedip sayfayı yenileyin.';return;}
+          const mesaj=document.getElementById('adminKayitMesaj'),buton=document.getElementById('otomatikKoordinatButonu');if(!adminYetkili){mesaj.textContent='❌ Önce yönetici girişi yapın.';return;}if(!window.google?.maps?.StreetViewService){mesaj.textContent='⏳ Google Maps henüz yükleniyor. Sayfayı bir kez yenileyip birkaç saniye sonra tekrar deneyin.';return;}
           buton.disabled=true;const eski=buton.textContent;buton.textContent='Uygun sokak aranıyor...';mesaj.textContent='🌍 Filtrelere uygun dış mekân panoraması aranıyor...';mesaj.className='text-sm mt-3 font-semibold text-blue-700';
           try{const bolge=document.getElementById('otomatikBolge').value,tur=document.getElementById('otomatikTur').value,ulke=document.getElementById('otomatikUlke').value;let merkezler,beklenen='';if(bolge==='country'){merkezler=(ULKE_MERKEZLER[ulke]||[]).map(x=>[x[0],x[1],ulke]);beklenen=ulke;}else if(bolge==='europe'){merkezler=OTOMATIK_MERKEZLER.europe; }else{merkezler=[...OTOMATIK_MERKEZLER.europe,...OTOMATIK_MERKEZLER.world];}
             const service=new google.maps.StreetViewService(),geocoder=new google.maps.Geocoder();let kabul=null,adres='';
@@ -1581,7 +1581,7 @@
           }
           const sc=document.createElement('script'); sc.src=`https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&libraries=places&callback=initMap`; sc.async=true; sc.defer=true; document.head.appendChild(sc);
         }
-        window.addEventListener('load', async ()=>{ await firebaseBaslat(); if(SERIES_ID!=='LOBBY') googleMapsYukle(); });
+        window.addEventListener('load', async ()=>{ await firebaseBaslat(); googleMapsYukle(); });
 
           function resetGame() {
              for (let i = 0; i < TOTAL_STAGES; i++) {
@@ -1791,4 +1791,3 @@ tahminGonder=async function(){const asama=Number(localStorage.getItem(STORAGE_KE
 </script>
 </body>
 </html>
-
