@@ -313,7 +313,11 @@
         const SANS_TETIK_SANIYESI = Number(EMBEDDED_CHANCE_AT || localStorage.getItem('haritaBulmacasi_sans_suresi') || 60);
         const VARSAYILAN_SANS_DEGERLERI = [-25,-20,-20,-15,-15,-10,-10,-10,10,10,10,15,15,20,20,25];
         const SANS_DEGERLERI = EMBEDDED_CHANCE_VALUES || JSON.parse(localStorage.getItem('haritaBulmacasi_sans_degerleri') || 'null') || VARSAYILAN_SANS_DEGERLERI;
-        const RAKIP_MOD = EMBEDDED_RAKIP_MOD || localStorage.getItem('haritaBulmacasi_rakip_mod') || 'off';
+        // Ayar localStorage'da tutulursa diger oyuncunun cihazina ulasmaz.
+        // Bu yuzden varsayilan ACIK ve her cagrida yeniden okunur.
+        function rakipModAl(){
+            return EMBEDDED_RAKIP_MOD || localStorage.getItem('haritaBulmacasi_rakip_mod') || 'always';
+        }
         let rakipMarkerlari = {};
         let rakipDinleyici = null;
         let rakipYazmaZamani = 0;
@@ -656,10 +660,13 @@
             createCustomControl(); 
             (function rakipBaslatDene(deneme){
                 if(firebaseHazir && firebaseUser){
+                    console.log('[RAKIP] Sistem baslatildi. Mod:', rakipModAl(), '| Oyun:', SERIES_ID, '| UID:', firebaseUser.uid);
                     rakipleriDinle();
                     rakipKonumYaz();
-                } else if(deneme < 40){
+                } else if(deneme < 60){
                     setTimeout(function(){ rakipBaslatDene(deneme+1); }, 500);
+                } else {
+                    console.warn('[RAKIP] Firebase hazir olmadi, sistem baslatilamadi.');
                 }
             })(0);
             setInterval(rakipKonumYaz, 3000);
@@ -710,10 +717,11 @@
         // RAKİP CANLI KONUM SİSTEMİ
         // =================================================================================================
         function rakipGosterilsinMi(){
-            if(RAKIP_MOD === 'off') return false;
-            if(RAKIP_MOD === 'always') return true;
-            if(RAKIP_MOD === 'last30') return sonKalanSaniye <= 30;
-            if(RAKIP_MOD === 'after') return localStorage.getItem(STORAGE_KEY_COMPLETED) === 'true';
+            const mod = rakipModAl();
+            if(mod === 'off') return false;
+            if(mod === 'always') return true;
+            if(mod === 'last30') return sonKalanSaniye <= 30;
+            if(mod === 'after') return localStorage.getItem(STORAGE_KEY_COMPLETED) === 'true';
             return false;
         }
         function rakipIkonu(harf){
@@ -724,7 +732,7 @@
             return { url:'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(svg), scaledSize:new google.maps.Size(34,34), anchor:new google.maps.Point(17,17) };
         }
         async function rakipKonumYaz(){
-            if(!firebaseHazir || !firebaseUser || RAKIP_MOD === 'off') return;
+            if(!firebaseHazir || !firebaseUser || rakipModAl() === 'off') return;
             if(!streetViewPanorama) return;
             const simdi = Date.now();
             if(simdi - rakipYazmaZamani < 2000) return;
@@ -738,15 +746,17 @@
                     asama: parseInt(localStorage.getItem(STORAGE_KEY_STAGE) || '1', 10),
                     zaman: simdi
                 });
-            }catch(e){ console.warn('Canlı konum yazılamadı', e); }
+                if(!window.__rakipYazildi){ window.__rakipYazildi=true; console.log('[RAKIP] Konum yazildi.'); }
+            }catch(e){ console.error('[RAKIP] Konum YAZILAMADI. Firestore kurallarini kontrol et:', e); }
         }
         function rakipleriDinle(){
-            if(!firebaseHazir || !firebaseUser || RAKIP_MOD === 'off') return;
+            if(!firebaseHazir || !firebaseUser || rakipModAl() === 'off') return;
             if(rakipDinleyici) return;
             rakipDinleyici = firebaseDb.collection('games').doc(SERIES_ID).collection('canliKonum')
               .onSnapshot(snap => {
                 const benimAsamam = parseInt(localStorage.getItem(STORAGE_KEY_STAGE) || '1', 10);
                 const goster = rakipGosterilsinMi();
+                console.log('[RAKIP] Kayit sayisi:', snap.size, '| Gosterim:', goster, '| Asamam:', benimAsamam);
                 snap.forEach(doc => {
                     if(doc.id === firebaseUser.uid) return;
                     const v = doc.data();
