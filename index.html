@@ -654,8 +654,15 @@
             
             // Harita üzerine uyarı kontrolünü ekle
             createCustomControl(); 
-            rakipleriDinle();
-            rakipKonumYaz();
+            (function rakipBaslatDene(deneme){
+                if(firebaseHazir && firebaseUser){
+                    rakipleriDinle();
+                    rakipKonumYaz();
+                } else if(deneme < 40){
+                    setTimeout(function(){ rakipBaslatDene(deneme+1); }, 500);
+                }
+            })(0);
+            setInterval(rakipKonumYaz, 3000);
 
 
             const tahminYapildi = localStorage.getItem(STORAGE_KEY_TAHMIN) === 'true';
