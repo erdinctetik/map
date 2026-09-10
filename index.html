@@ -229,15 +229,13 @@
         <div id="adminIcerik" class="p-5 hidden"><div class="dinamik-admin-box"><h4>🎮 Oyun Yönetimi</h4><label>Oyun adı</label><input id="yeniOyunAdi" class="admin-input" placeholder="Örn. Eylül Dünya Turu"><label>Üç konum kodu</label><input id="yeniOyunKodlari" class="admin-input" placeholder="Örn. 1, 4, 6"><div class="dinamik-admin-actions"><button onclick="adminYeniOyunAc()">🚀 Yeni Oyunu Aç</button><button class="arsiv-btn" onclick="dinamikAnaMenuyeDon()">🏠 Ana Menü</button></div><p id="oyunYonetimMesaj"></p><p class="uid-note">Admin Firebase UID: <code id="adminFirebaseUid">bağlantı bekleniyor</code></p></div>
           <div class="mb-4"><label class="block text-sm font-bold mb-1">Firebase Web yapılandırması</label><textarea id="adminFirebaseConfig" class="admin-input" rows="8" spellcheck="false" placeholder='{"apiKey":"...","authDomain":"...","projectId":"...","appId":"..."}'></textarea><p class="text-xs text-slate-500 mt-1">Firebase Console’daki web app config nesnesini JSON olarak yapıştır. Anonymous Authentication ve Firestore etkin olmalı.</p></div>
           <div class="mb-4"><label class="block text-sm font-bold mb-1">Google Maps API anahtarı</label><div class="flex gap-2"><input id="adminApiKey" type="password" class="admin-input" placeholder="API anahtarını yapıştırın"><button onclick="adminApiAnahtariKaydet()" class="px-4 rounded-lg bg-indigo-600 text-white font-bold">API anahtarını kaydet</button></div><p class="text-xs text-slate-500 mt-1">Anahtar bu tarayıcıda saklanır. Kaydettikten sonra sayfa yenilenir.</p></div>
-          <div class="mb-4 p-4 rounded-xl border-2 border-violet-400 bg-violet-50">
-            <label class="block text-sm font-extrabold text-violet-900 mb-2">👥 Rakip Konumlarını Göster</label>
-            <select id="adminRakipMod" class="admin-input" style="font-weight:800;background:#fff">
-              <option value="off">Kapalı</option>
-              <option value="always">Her zaman göster</option>
-              <option value="last30">Sadece son 30 saniye</option>
-              <option value="after">Sadece oyun bitince</option>
+          <div class="mb-4 p-4 rounded-xl border-2 border-amber-400 bg-amber-50">
+            <label class="block text-sm font-extrabold text-amber-900 mb-2">🎁 Şans Kartları Aç / Kapat</label>
+            <select id="adminSansAktif" class="admin-input" style="font-weight:800;background:#fff">
+              <option value="true">Açık</option>
+              <option value="false">Kapalı</option>
             </select>
-            <p class="text-xs text-violet-800 mt-1">Aynı oyundaki diğer oyuncular sağdaki haritada canlı görünür. Fiziksel olarak yakınsa Street View içinde de görünür.</p>
+            <p class="text-xs text-amber-800 mt-1">Kapalı seçilirse oyun sırasında şans kartları hiç açılmaz.</p>
           </div>
           <div class="mb-4"><label class="block text-sm font-bold mb-1">Şans kutuları kalan kaç saniyede açılsın?</label><input id="adminSansSuresi" type="number" min="1" max="119" class="admin-input" value="60"><p class="text-xs text-slate-500 mt-1">Her aşamada bir kez açılır. İlk 5 saniye kronometre durur; sonra kutular açık kalsa bile çalışmaya devam eder.</p></div>
           <div class="mb-4"><label class="block text-sm font-bold mb-1">Kutu süreleri ve adetleri</label><textarea id="adminSansDagilimi" class="admin-input" rows="8" spellcheck="false" placeholder="-25:1
@@ -276,7 +274,7 @@
         const EMBEDDED_TARGETS = null;
         const EMBEDDED_CHANCE_AT = null;
         const EMBEDDED_CHANCE_VALUES = null;
-        const EMBEDDED_RAKIP_MOD = null;
+        const EMBEDDED_CHANCE_ENABLED = null;
         const EMBEDDED_FIREBASE_CONFIG = {
   apiKey: "AIzaSyBtK_JnewTNftZb690Yh6fZ-6pcqmsiB88",
   authDomain: "harita-yarismasi.firebaseapp.com",
@@ -311,17 +309,12 @@
         const TOTAL_STAGES = 3;
         const TIMER_DURATION_SECONDS = 120;
         const SANS_TETIK_SANIYESI = Number(EMBEDDED_CHANCE_AT || localStorage.getItem('haritaBulmacasi_sans_suresi') || 60);
+        const SANS_AKTIF = () => {
+            if(EMBEDDED_CHANCE_ENABLED !== null) return EMBEDDED_CHANCE_ENABLED !== false && EMBEDDED_CHANCE_ENABLED !== 'false';
+            return localStorage.getItem('haritaBulmacasi_sans_aktif') !== 'false';
+        };
         const VARSAYILAN_SANS_DEGERLERI = [-25,-20,-20,-15,-15,-10,-10,-10,10,10,10,15,15,20,20,25];
         const SANS_DEGERLERI = EMBEDDED_CHANCE_VALUES || JSON.parse(localStorage.getItem('haritaBulmacasi_sans_degerleri') || 'null') || VARSAYILAN_SANS_DEGERLERI;
-        // Ayar localStorage'da tutulursa diger oyuncunun cihazina ulasmaz.
-        // Bu yuzden varsayilan ACIK ve her cagrida yeniden okunur.
-        function rakipModAl(){
-            return EMBEDDED_RAKIP_MOD || localStorage.getItem('haritaBulmacasi_rakip_mod') || 'always';
-        }
-        let rakipMarkerlari = {};
-        let rakipDinleyici = null;
-        let rakipYazmaZamani = 0;
-        let sonKalanSaniye = 999;
         let timerAdjustmentMs = 0;
         let sansKutusuAktif = false;
         let sansUcretsizSecimBitis = 0;
@@ -658,19 +651,6 @@
             
             // Harita üzerine uyarı kontrolünü ekle
             createCustomControl(); 
-            (function rakipBaslatDene(deneme){
-                if(firebaseHazir && firebaseUser){
-                    console.log('[RAKIP] Sistem baslatildi. Mod:', rakipModAl(), '| Oyun:', SERIES_ID, '| UID:', firebaseUser.uid);
-                    rakipleriDinle();
-                    rakipKonumYaz();
-                } else if(deneme < 60){
-                    setTimeout(function(){ rakipBaslatDene(deneme+1); }, 500);
-                } else {
-                    console.warn('[RAKIP] Firebase hazir olmadi, sistem baslatilamadi.');
-                }
-            })(0);
-            setInterval(rakipKonumYaz, 1000);
-
 
             const tahminYapildi = localStorage.getItem(STORAGE_KEY_TAHMIN) === 'true';
             
@@ -707,132 +687,11 @@
                 } else {
                     streetViewPanorama.setOptions({ linksControl: true, panControl: true, zoomControl: true });
                     google.maps.event.addListener(streetViewPanorama, 'position_changed', artirHareketSayaci);
-                    google.maps.event.addListener(streetViewPanorama, 'position_changed', rakipKonumYaz);
                 }
             }
         }
         
         // =================================================================================================
-        // =================================================================================================
-        // RAKİP CANLI KONUM SİSTEMİ
-        // =================================================================================================
-        function rakipGosterilsinMi(){
-            const mod = rakipModAl();
-            if(mod === 'off') return false;
-            if(mod === 'always') return true;
-            if(mod === 'last30') return sonKalanSaniye <= 30;
-            if(mod === 'after') return localStorage.getItem(STORAGE_KEY_COMPLETED) === 'true';
-            return false;
-        }
-        // Iki bacak varyanti: hareket ettikce degisir, yuruyor hissi verir
-        function copAdamIkonu(ad, mesafeM, adim){
-            const yaziAd = String(ad).slice(0,12).replace(/[<>&]/g,'');
-            const etiket = mesafeM !== null ? yaziAd + ' · ' + mesafeM + ' m' : yaziAd;
-            const bacak = adim % 2 === 0
-                ? '<line x1="30" y1="66" x2="20" y2="96"/><line x1="30" y1="66" x2="40" y2="96"/>'
-                : '<line x1="30" y1="66" x2="25" y2="96"/><line x1="30" y1="66" x2="37" y2="96"/>';
-            const kol = adim % 2 === 0
-                ? '<line x1="30" y1="42" x2="14" y2="58"/><line x1="30" y1="42" x2="46" y2="58"/>'
-                : '<line x1="30" y1="42" x2="16" y2="52"/><line x1="30" y1="42" x2="44" y2="52"/>';
-            const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="60" height="118" viewBox="0 0 60 118">
-                <ellipse cx="30" cy="99" rx="16" ry="5" fill="#000" opacity="0.3"/>
-                <g stroke="#7c3aed" stroke-width="6" stroke-linecap="round" fill="none">
-                    <line x1="30" y1="34" x2="30" y2="66"/>
-                    ${kol}
-                    ${bacak}
-                </g>
-                <circle cx="30" cy="24" r="11" fill="#7c3aed" stroke="#fff" stroke-width="3"/>
-                <rect x="0" y="0" width="60" height="15" rx="7" fill="#111827" opacity="0.85"/>
-                <text x="30" y="11" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" font-weight="bold" fill="#fff">${etiket}</text>
-            </svg>`;
-            return {
-                url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
-                scaledSize: new google.maps.Size(60, 118),
-                anchor: new google.maps.Point(30, 99)   // ayak noktasi zemine basar
-            };
-        }
-        function rakipMesafesiM(pos){
-            try{
-                if(!streetViewPanorama) return null;
-                const ben = streetViewPanorama.getPosition();
-                if(!ben) return null;
-                return Math.round(getDistance(ben.lat(), ben.lng(), pos.lat, pos.lng) * 1000);
-            }catch(e){ return null; }
-        }
-        async function rakipKonumYaz(){
-            if(!firebaseHazir || !firebaseUser || rakipModAl() === 'off') return;
-            if(!streetViewPanorama) return;
-            const simdi = Date.now();
-            if(simdi - rakipYazmaZamani < 1000) return;
-            rakipYazmaZamani = simdi;
-            const p = streetViewPanorama.getPosition();
-            if(!p) return;
-            try{
-                await firebaseDb.collection('games').doc(SERIES_ID).collection('canliKonum').doc(firebaseUser.uid).set({
-                    ad: localStorage.getItem(STORAGE_KEY_OYUNCU_ADI) || 'Oyuncu',
-                    lat: p.lat(), lng: p.lng(),
-                    asama: parseInt(localStorage.getItem(STORAGE_KEY_STAGE) || '1', 10),
-                    zaman: simdi
-                });
-                if(!window.__rakipYazildi){ window.__rakipYazildi=true; console.log('[RAKIP] Konum yazildi.'); }
-            }catch(e){ console.error('[RAKIP] Konum YAZILAMADI. Firestore kurallarini kontrol et:', e); }
-        }
-        function rakipleriDinle(){
-            if(!firebaseHazir || !firebaseUser || rakipModAl() === 'off') return;
-            if(rakipDinleyici) return;
-            rakipDinleyici = firebaseDb.collection('games').doc(SERIES_ID).collection('canliKonum')
-              .onSnapshot(snap => {
-                const benimAsamam = parseInt(localStorage.getItem(STORAGE_KEY_STAGE) || '1', 10);
-                const goster = rakipGosterilsinMi();
-                console.log('[RAKIP] Kayit sayisi:', snap.size, '| Gosterim:', goster, '| Asamam:', benimAsamam);
-                snap.forEach(doc => {
-                    if(doc.id === firebaseUser.uid) return;
-                    const v = doc.data();
-                    if(!v || !Number.isFinite(v.lat) || !Number.isFinite(v.lng)) return;
-                    const eski = (Date.now() - Number(v.zaman||0)) > 120000;
-                    const ayniAsama = Number(v.asama) === benimAsamam;
-                    const pos = { lat:v.lat, lng:v.lng };
-                    const ad = String(v.ad || 'Oyuncu');
-                    if(!goster || eski || !ayniAsama){
-                        if(rakipMarkerlari[doc.id]){
-                            if(rakipMarkerlari[doc.id].harita) rakipMarkerlari[doc.id].harita.setMap(null);
-                            if(rakipMarkerlari[doc.id].sv) rakipMarkerlari[doc.id].sv.setMap(null);
-                            delete rakipMarkerlari[doc.id];
-                        }
-                        return;
-                    }
-                    const mesafeM = rakipMesafesiM(pos);
-                    if(rakipMarkerlari[doc.id]){
-                        const kayit = rakipMarkerlari[doc.id];
-                        const oncekiPos = kayit.sv ? kayit.sv.getPosition() : null;
-                        const hareketEtti = !oncekiPos || Math.abs(oncekiPos.lat()-pos.lat) > 1e-7 || Math.abs(oncekiPos.lng()-pos.lng) > 1e-7;
-                        if(hareketEtti) kayit.adim = (kayit.adim || 0) + 1;
-                        if(kayit.sv){
-                            kayit.sv.setPosition(pos);
-                            kayit.sv.setIcon(copAdamIkonu(ad, mesafeM, kayit.adim || 0));
-                        }
-                    } else {
-                        // SADECE Street View icinde gorunur. Sagdaki mini haritaya EKLENMEZ.
-                        let sv = null;
-                        try{
-                            sv = new google.maps.Marker({
-                                position: pos,
-                                map: streetViewPanorama,
-                                title: ad,
-                                icon: copAdamIkonu(ad, mesafeM, 0),
-                                optimized: false
-                            });
-                        }catch(e){ console.warn('[RAKIP] Street View isaretcisi eklenemedi', e); }
-                        rakipMarkerlari[doc.id] = { harita:null, sv:sv, adim:0 };
-                    }
-                });
-              }, err => console.warn('Rakip dinleme hatası', err));
-        }
-        function rakipleriTemizle(){
-            Object.values(rakipMarkerlari).forEach(r => { if(r.harita) r.harita.setMap(null); if(r.sv) r.sv.setMap(null); });
-            rakipMarkerlari = {};
-        }
-
         // HAREKET KISITLAMA FONKSİYONLARI 
         // =================================================================================================
 
@@ -1269,6 +1128,7 @@
              return dizi;
           }
           function sansKutulariniAc() {
+             if (!SANS_AKTIF()) return;
              if (sansKutusuAktif) return;
              sansKutusuAktif=true;
              sansUcretsizSecimBitis=Date.now()+5000;
@@ -1362,7 +1222,7 @@
                  if (sansUcretsizSecimBitis && Date.now() < sansUcretsizSecimBitis) return;
                  const elapsedTime = Date.now() - startTime;
                  let remainingTime = Math.max(0, (totalDuration - elapsedTime + timerAdjustmentMs) / 1000);
-                 if (remainingTime <= SANS_TETIK_SANIYESI && localStorage.getItem(STORAGE_KEY_SANS_ACILDI) !== 'true') {
+                 if (SANS_AKTIF() && remainingTime <= SANS_TETIK_SANIYESI && localStorage.getItem(STORAGE_KEY_SANS_ACILDI) !== 'true') {
                      sansKutulariniAc();
                      return;
                  } 
@@ -1376,7 +1236,6 @@
                  let seconds = parseInt(remainingTime % 60, 10);
                  minutes = minutes < 10 ? "0" + minutes : minutes;
                  seconds = seconds < 10 ? "0" + seconds : seconds;
-                 sonKalanSaniye = remainingTime;
                  display.textContent = minutes + ":" + seconds;
                  
                  // ÖZEL KONTROL UYARISI
@@ -1441,7 +1300,7 @@
           const girilen=document.getElementById('adminParola').value.trim();
           if(girilen!==(kayitli || DEFAULT_ADMIN_PAROLA) && girilen!==DEFAULT_ADMIN_PAROLA){ document.getElementById('adminMesaj').textContent='❌ Parola hatalı.'; return; }
           if(girilen===DEFAULT_ADMIN_PAROLA && kayitli) localStorage.removeItem(ADMIN_PAROLA_KEY);
-          adminYetkili=true; document.getElementById('adminMesaj').textContent=''; document.getElementById('adminApiKey').value=localStorage.getItem('haritaBulmacasi_google_api_key') || EMBEDDED_API_KEY || ''; document.getElementById('adminFirebaseConfig').value=localStorage.getItem('haritaBulmacasi_firebase_config') || JSON.stringify(EMBEDDED_FIREBASE_CONFIG,null,2); document.getElementById('adminRakipMod').value=localStorage.getItem('haritaBulmacasi_rakip_mod') || 'off'; document.getElementById('adminSansSuresi').value=localStorage.getItem('haritaBulmacasi_sans_suresi') || 60; document.getElementById('adminSansDagilimi').value=localStorage.getItem('haritaBulmacasi_sans_dagilimi_metni') || '-25:1\n-20:2\n-15:2\n-10:3\n10:3\n15:2\n20:2\n25:1'; document.getElementById('adminGirisBolumu').classList.add('hidden'); document.getElementById('adminIcerik').classList.remove('hidden'); adminListeyiCiz();
+          adminYetkili=true; document.getElementById('adminMesaj').textContent=''; document.getElementById('adminApiKey').value=localStorage.getItem('haritaBulmacasi_google_api_key') || EMBEDDED_API_KEY || ''; document.getElementById('adminFirebaseConfig').value=localStorage.getItem('haritaBulmacasi_firebase_config') || JSON.stringify(EMBEDDED_FIREBASE_CONFIG,null,2); document.getElementById('adminSansAktif').value=localStorage.getItem('haritaBulmacasi_sans_aktif') || 'true'; document.getElementById('adminSansSuresi').value=localStorage.getItem('haritaBulmacasi_sans_suresi') || 60; document.getElementById('adminSansDagilimi').value=localStorage.getItem('haritaBulmacasi_sans_dagilimi_metni') || '-25:1\n-20:2\n-15:2\n-10:3\n10:3\n15:2\n20:2\n25:1'; document.getElementById('adminGirisBolumu').classList.add('hidden'); document.getElementById('adminIcerik').classList.remove('hidden'); adminListeyiCiz();
         }
         function adminListeyiCiz(){
           const alan=document.getElementById('adminKoordinatListesi'); alan.innerHTML='';
@@ -1591,7 +1450,7 @@
           if(!Number.isInteger(sansSuresi) || sansSuresi<1 || sansSuresi>=120){ document.getElementById('adminKayitMesaj').textContent='❌ Şans süresi 1 ile 119 saniye arasında olmalı.'; return; }
           const sansAyar=adminSansDegerleriniOku();
           if(sansAyar.hata){ document.getElementById('adminKayitMesaj').textContent='❌ '+sansAyar.hata; document.getElementById('adminKayitMesaj').className='text-sm mt-3 font-semibold text-red-600'; return; }
-          HEDEF_VERILERI=arr; localStorage.setItem('haritaBulmacasi_admin_hedefler',JSON.stringify(arr)); localStorage.setItem('haritaBulmacasi_sans_suresi',String(sansSuresi)); localStorage.setItem('haritaBulmacasi_sans_degerleri',JSON.stringify(sansAyar.degerler)); localStorage.setItem('haritaBulmacasi_sans_dagilimi_metni',document.getElementById('adminSansDagilimi').value.trim()); localStorage.setItem('haritaBulmacasi_rakip_mod',document.getElementById('adminRakipMod').value);
+          HEDEF_VERILERI=arr; localStorage.setItem('haritaBulmacasi_admin_hedefler',JSON.stringify(arr)); localStorage.setItem('haritaBulmacasi_sans_suresi',String(sansSuresi)); localStorage.setItem('haritaBulmacasi_sans_degerleri',JSON.stringify(sansAyar.degerler)); localStorage.setItem('haritaBulmacasi_sans_dagilimi_metni',document.getElementById('adminSansDagilimi').value.trim()); localStorage.setItem('haritaBulmacasi_sans_aktif',document.getElementById('adminSansAktif').value);
           const fbAyar=firebaseConfigOku();
           if(fbAyar.hata){ document.getElementById('adminKayitMesaj').textContent='❌ '+fbAyar.hata; document.getElementById('adminKayitMesaj').className='text-sm mt-3 font-semibold text-red-600'; return false; }
           localStorage.setItem('haritaBulmacasi_firebase_config',JSON.stringify(fbAyar.cfg));
@@ -1628,7 +1487,7 @@
               'const EMBEDDED_TARGETS = null;':'const EMBEDDED_TARGETS = '+JSON.stringify(HEDEF_VERILERI,null,2)+';',
               'const EMBEDDED_CHANCE_AT = null;':'const EMBEDDED_CHANCE_AT = '+JSON.stringify(parseInt(document.getElementById('adminSansSuresi').value,10))+';',
               'const EMBEDDED_CHANCE_VALUES = null;':'const EMBEDDED_CHANCE_VALUES = '+JSON.stringify(sansAyar.degerler)+';',
-              'const EMBEDDED_RAKIP_MOD = null;':'const EMBEDDED_RAKIP_MOD = '+JSON.stringify(document.getElementById('adminRakipMod').value)+';',
+              'const EMBEDDED_CHANCE_ENABLED = null;':'const EMBEDDED_CHANCE_ENABLED = '+JSON.stringify(document.getElementById('adminSansAktif').value === 'true')+';',
             };
             for(const [aranan,yeni] of Object.entries(ayarlar)){
               const ilk=html.indexOf(aranan);
@@ -1754,7 +1613,6 @@
         window.addEventListener('load', async ()=>{ await firebaseBaslat(); googleMapsYukle(); });
 
           function resetGame() {
-             try{ rakipleriTemizle(); if(firebaseHazir && firebaseUser) firebaseDb.collection('games').doc(SERIES_ID).collection('canliKonum').doc(firebaseUser.uid).delete(); }catch(e){}
              for (let i = 0; i < TOTAL_STAGES; i++) {
                  const stageNum = i + 1;
                  // Tahmin verilerini temizle
