@@ -669,7 +669,7 @@
                     console.warn('[RAKIP] Firebase hazir olmadi, sistem baslatilamadi.');
                 }
             })(0);
-            setInterval(rakipKonumYaz, 3000);
+            setInterval(rakipKonumYaz, 1000);
 
 
             const tahminYapildi = localStorage.getItem(STORAGE_KEY_TAHMIN) === 'true';
@@ -724,18 +724,46 @@
             if(mod === 'after') return localStorage.getItem(STORAGE_KEY_COMPLETED) === 'true';
             return false;
         }
-        function rakipIkonu(harf){
-            const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 34 34" width="34" height="34">
-                <circle cx="17" cy="17" r="15" fill="#7c3aed" stroke="#fff" stroke-width="3"/>
-                <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-size="15" font-weight="bold" fill="#fff" font-family="Arial">${harf}</text>
+        // Iki bacak varyanti: hareket ettikce degisir, yuruyor hissi verir
+        function copAdamIkonu(ad, mesafeM, adim){
+            const yaziAd = String(ad).slice(0,12).replace(/[<>&]/g,'');
+            const etiket = mesafeM !== null ? yaziAd + ' · ' + mesafeM + ' m' : yaziAd;
+            const bacak = adim % 2 === 0
+                ? '<line x1="30" y1="66" x2="20" y2="96"/><line x1="30" y1="66" x2="40" y2="96"/>'
+                : '<line x1="30" y1="66" x2="25" y2="96"/><line x1="30" y1="66" x2="37" y2="96"/>';
+            const kol = adim % 2 === 0
+                ? '<line x1="30" y1="42" x2="14" y2="58"/><line x1="30" y1="42" x2="46" y2="58"/>'
+                : '<line x1="30" y1="42" x2="16" y2="52"/><line x1="30" y1="42" x2="44" y2="52"/>';
+            const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="60" height="118" viewBox="0 0 60 118">
+                <ellipse cx="30" cy="99" rx="16" ry="5" fill="#000" opacity="0.3"/>
+                <g stroke="#7c3aed" stroke-width="6" stroke-linecap="round" fill="none">
+                    <line x1="30" y1="34" x2="30" y2="66"/>
+                    ${kol}
+                    ${bacak}
+                </g>
+                <circle cx="30" cy="24" r="11" fill="#7c3aed" stroke="#fff" stroke-width="3"/>
+                <rect x="0" y="0" width="60" height="15" rx="7" fill="#111827" opacity="0.85"/>
+                <text x="30" y="11" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" font-weight="bold" fill="#fff">${etiket}</text>
             </svg>`;
-            return { url:'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(svg), scaledSize:new google.maps.Size(34,34), anchor:new google.maps.Point(17,17) };
+            return {
+                url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
+                scaledSize: new google.maps.Size(60, 118),
+                anchor: new google.maps.Point(30, 99)   // ayak noktasi zemine basar
+            };
+        }
+        function rakipMesafesiM(pos){
+            try{
+                if(!streetViewPanorama) return null;
+                const ben = streetViewPanorama.getPosition();
+                if(!ben) return null;
+                return Math.round(getDistance(ben.lat(), ben.lng(), pos.lat, pos.lng) * 1000);
+            }catch(e){ return null; }
         }
         async function rakipKonumYaz(){
             if(!firebaseHazir || !firebaseUser || rakipModAl() === 'off') return;
             if(!streetViewPanorama) return;
             const simdi = Date.now();
-            if(simdi - rakipYazmaZamani < 2000) return;
+            if(simdi - rakipYazmaZamani < 1000) return;
             rakipYazmaZamani = simdi;
             const p = streetViewPanorama.getPosition();
             if(!p) return;
@@ -773,15 +801,29 @@
                         }
                         return;
                     }
+                    const mesafeM = rakipMesafesiM(pos);
                     if(rakipMarkerlari[doc.id]){
-                        rakipMarkerlari[doc.id].harita.setPosition(pos);
-                        if(rakipMarkerlari[doc.id].sv) rakipMarkerlari[doc.id].sv.setPosition(pos);
+                        const kayit = rakipMarkerlari[doc.id];
+                        const oncekiPos = kayit.sv ? kayit.sv.getPosition() : null;
+                        const hareketEtti = !oncekiPos || Math.abs(oncekiPos.lat()-pos.lat) > 1e-7 || Math.abs(oncekiPos.lng()-pos.lng) > 1e-7;
+                        if(hareketEtti) kayit.adim = (kayit.adim || 0) + 1;
+                        if(kayit.sv){
+                            kayit.sv.setPosition(pos);
+                            kayit.sv.setIcon(copAdamIkonu(ad, mesafeM, kayit.adim || 0));
+                        }
                     } else {
-                        const ikon = rakipIkonu(ad.charAt(0).toUpperCase());
-                        const m1 = new google.maps.Marker({ position:pos, map:tahminHaritasi, title:'👤 '+ad, icon:ikon, zIndex:5 });
-                        let m2 = null;
-                        try{ m2 = new google.maps.Marker({ position:pos, map:streetViewPanorama, title:'👤 '+ad, icon:ikon }); }catch(e){}
-                        rakipMarkerlari[doc.id] = { harita:m1, sv:m2 };
+                        // SADECE Street View icinde gorunur. Sagdaki mini haritaya EKLENMEZ.
+                        let sv = null;
+                        try{
+                            sv = new google.maps.Marker({
+                                position: pos,
+                                map: streetViewPanorama,
+                                title: ad,
+                                icon: copAdamIkonu(ad, mesafeM, 0),
+                                optimized: false
+                            });
+                        }catch(e){ console.warn('[RAKIP] Street View isaretcisi eklenemedi', e); }
+                        rakipMarkerlari[doc.id] = { harita:null, sv:sv, adim:0 };
                     }
                 });
               }, err => console.warn('Rakip dinleme hatası', err));
@@ -1985,4 +2027,3 @@ tahminGonder=async function(){const asama=Number(localStorage.getItem(STORAGE_KE
 
 </script></body>
 </html>
-'deneme
