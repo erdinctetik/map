@@ -142,8 +142,8 @@
 <style id="dinamikOyunCss">.dinamik-home{position:fixed;inset:0;z-index:800;background:linear-gradient(135deg,#eef2ff,#f0fdf4);overflow:auto;padding:24px}.dinamik-home-card{max-width:900px;margin:auto;background:#fff;border-radius:18px;padding:24px;box-shadow:0 20px 60px #0f172a22}.home-head{display:flex;justify-content:space-between;gap:12px;align-items:center;border-bottom:1px solid #e2e8f0;padding-bottom:16px}.home-head h1{font-size:28px;font-weight:900}.home-head button,.dinamik-admin-actions button,.join-btn{border:0;border-radius:10px;padding:11px 16px;background:#4f46e5;color:#fff;font-weight:900;cursor:pointer}.active-game{margin:18px 0;padding:18px;border:2px solid #22c55e;background:#f0fdf4;border-radius:14px}.active-game h2{font-size:22px;font-weight:900;color:#166534}.player-entry{display:flex;gap:8px;margin-top:12px}.player-entry input{flex:1;border:1px solid #86efac;border-radius:9px;padding:11px}.archive-title{font-weight:900;font-size:18px;margin:18px 0 8px}.archive-item{border:1px solid #cbd5e1;border-radius:11px;padding:12px;margin-top:8px;display:flex;justify-content:space-between;gap:10px}.archive-item button{border:0;background:#e0e7ff;color:#3730a3;border-radius:8px;padding:7px 10px;font-weight:800}.dinamik-admin-box{border:2px solid #8b5cf6;background:#f5f3ff;border-radius:14px;padding:14px;margin-bottom:16px}.dinamik-admin-box h4{font-size:20px;font-weight:900}.dinamik-admin-box label{display:block;font-size:12px;font-weight:800;margin:8px 0 4px}.dinamik-admin-actions{display:flex;gap:8px;margin-top:10px}.dinamik-admin-actions .arsiv-btn{background:#334155}.uid-note{font-size:11px;color:#64748b;margin-top:8px}.menu-return{border:0;border-radius:8px;padding:7px 10px;background:#0f766e;color:#fff;font-weight:900;margin-top:5px}.archive-modal{position:fixed;inset:0;z-index:40000;background:#0f172acc;display:flex;align-items:center;justify-content:center;padding:18px}.archive-dialog{width:min(900px,95vw);max-height:85vh;overflow:auto;background:#fff;border-radius:16px;padding:16px}.archive-dialog table{width:100%;border-collapse:collapse}.archive-dialog th,.archive-dialog td{padding:8px;border-bottom:1px solid #e2e8f0;text-align:left}.hidden{display:none!important}@media(max-width:650px){.player-entry{flex-direction:column}.home-head{align-items:flex-start}.archive-item{flex-direction:column}}</style><style>.hub{position:fixed;inset:0;z-index:700;background:linear-gradient(135deg,#eef2ff,#f0fdf4);overflow:auto;padding:24px}.hub-card{max-width:900px;margin:auto;background:white;border-radius:20px;padding:24px;box-shadow:0 20px 60px #0f172a22}.hub-head{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e2e8f0;padding-bottom:15px}.hub-head h1{font-size:28px;font-weight:900}.hub button,.game-admin button,.game-action,.home-btn{border:0;border-radius:9px;padding:10px 14px;background:#4f46e5;color:white;font-weight:900;cursor:pointer}.game-card{margin-top:12px;border:1px solid #cbd5e1;border-radius:13px;padding:14px;display:flex;justify-content:space-between;gap:12px;align-items:center}.game-card.active{border:2px solid #22c55e;background:#f0fdf4}.badge{display:inline-block;border-radius:999px;padding:4px 9px;font-size:11px;font-weight:900}.played{background:#dcfce7;color:#166534}.unplayed{background:#f1f5f9;color:#475569}.progress{background:#fef3c7;color:#92400e}.game-admin{border:2px solid #8b5cf6;background:#f5f3ff;border-radius:13px;padding:14px;margin-bottom:16px}.game-admin input{margin-top:8px}.home-btn{background:#0f766e;margin-left:10px}.score-pop{position:fixed;inset:0;z-index:50000;background:#0f172acc;display:flex;align-items:center;justify-content:center;padding:18px}.score-box{width:min(900px,96vw);max-height:85vh;overflow:auto;background:white;border-radius:16px;padding:16px}.score-box table{width:100%;border-collapse:collapse}.score-box th,.score-box td{padding:8px;border-bottom:1px solid #e2e8f0;text-align:left}@media(max-width:650px){.game-card{align-items:flex-start;flex-direction:column}.hub-head{align-items:flex-start}}</style>
 <script id="surumDamgasi">
 /* SURUM DAMGASI - her yeni surumde asagidaki iki satiri guncelle. */
-window.APP_VERSION='2026-09-15-v34';
-window.APP_VERSION_NOT='Harita gecislerinde kullanici portali parlamasi tamamen gizlendi';
+window.APP_VERSION='2026-09-15-v35';
+window.APP_VERSION_NOT='Oynanmamis oyun skorlarinda hedef ve oyuncu secimleri gizlenir; yalnizca mesafe, sure, hareket ve puan gosterilir';
 console.log('%c SURUM: '+window.APP_VERSION+' ','background:#0f766e;color:#fff;font-weight:900;padding:3px 10px;border-radius:5px');
 console.log('Icerik: '+window.APP_VERSION_NOT);
 /* Surum bilgisi yalnizca konsolda gosterilir; ekranda etiket yoktur. */
@@ -170,15 +170,6 @@ console.log('Icerik: '+window.APP_VERSION_NOT);
   });
 })();
 </script>
-<script id="girisPortaliOnBoyamaKilidi">
-/* Tarayici body'yi cizmeden once ic harita gecisini yakala.
-   Boylece Firebase oturumu geri yuklenene kadar kullanici portali tek kare bile gorunmez. */
-window.__HARITA_IC_GECIS__ = sessionStorage.getItem('haritaIcGecisOturumu') === '1';
-if(window.__HARITA_IC_GECIS__) document.documentElement.classList.add('harita-ic-gecis');
-</script>
-<style id="girisPortaliOnBoyamaCss">
-html.harita-ic-gecis #uyelikKapisi { display:none !important; visibility:hidden !important; opacity:0 !important; pointer-events:none !important; }
-</style>
 </head>
 <body class="bg-gray-50"><div id="hub" class="hub hidden"><div class="hub-card"><div class="hub-head"><div><h1>🎯 Harita Bulmacası</h1><p>Açık oyuna katıl veya geçmiş oyunları incele.</p></div><button onclick="adminPaneliniAc()">⚙️ Yönetim</button></div><div id="hubGames">Yükleniyor...</div></div></div><div id="dinamikAnaMenu" class="dinamik-home hidden"><div class="dinamik-home-card"><div class="home-head"><div><h1>🎯 Harita Bulmacası</h1><p>Açık oyuna katıl veya geçmiş yarışları incele.</p></div><button onclick="adminPaneliniAc()">⚙️ Yönetim</button></div><div id="aktifOyunAlani"></div><div class="archive-title">📚 Geçmiş Oyunlar</div><div id="oyunArsivi" class="archive-list"></div><p id="dinamikMesaj"></p></div></div>
     
@@ -2019,7 +2010,7 @@ async function firebaseBaslat(){
   firebaseDb=firebase.firestore();
   // Yalnizca oyun icindeki zorunlu harita/asama gecislerinde mevcut oturumu koru.
   // Normal acilis, manuel yenileme ve Oyuna Don akisi tekrar kullanici secimi ister.
-  const icGecis=window.__HARITA_IC_GECIS__===true;
+  const icGecis=sessionStorage.getItem('haritaIcGecisOturumu')==='1';
   sessionStorage.removeItem('haritaIcGecisOturumu');
   await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.SESSION);
   if(!icGecis) await firebase.auth().signOut().catch(()=>{});
@@ -2131,9 +2122,8 @@ async function anaSayfayiYukle(){
   if(p?.completed){durum='Oynandı';sinif='played';buton=`<button class="game-action skor-ac" data-game-id="${temizMetin(g.id)}" data-game-name="${temizMetin(g.name||g.id)}">Skor Tablosu</button>`;}
   else if(p){durum='Devam ediyor';sinif='progress';buton=`<button class="game-action" onclick="oyunaDevamEt('${g.id}')">Devam Et</button>`;}
   else if(g.status==='active'){
-   // Oyuncu bu oyuna hic katilmamis olsa bile mevcut skor tablolarini inceleyebilir.
-   // Skor Tablosu butonu ayni zamanda takim skoru butonunun eklenmesi icin oyun kimligini tasir.
-   buton=`<div class="game-score-actions"><button class="game-action" onclick="oyunaKatil('${g.id}')">Oyuna Gir</button><button class="game-action skor-ac oyun-izle-skor" data-game-id="${temizMetin(g.id)}" data-game-name="${temizMetin(g.name||g.id)}">Skor Tablosu</button></div>`;
+   // Oyuncu bu oyuna hic katilmadi: skor izlenebilir ama hedef ve secim adlari gizlenir.
+   buton=`<div class="game-score-actions"><button class="game-action" onclick="oyunaKatil('${g.id}')">Oyuna Gir</button><button class="game-action skor-ac oyun-izle-skor" data-game-id="${temizMetin(g.id)}" data-game-name="${temizMetin(g.name||g.id)}" data-spoiler="1">Skor Tablosu</button></div>`;
   }
   else{buton=`<button class="game-action skor-ac" data-game-id="${temizMetin(g.id)}" data-game-name="${temizMetin(g.name||g.id)}">Skor Tablosu</button>`;}
   html+=`<div class="game-card ${g.status==='active'?'active':''}"><div><b>${temizMetin(g.name||g.id)}</b><div><span class="badge ${sinif}">${durum}</span> <small>${g.status==='active'?'Açık oyun':'Geçmiş oyun'}</small></div></div>${buton}</div>`;
@@ -2175,7 +2165,7 @@ function oyunuYereldeHazirla(id,targets,rumuz,asama,temiz=true){
  * Sutunlar: Sira | Oyuncu | 1./2./3. Konum | Toplam km | Puan
  * Her konum hucresinde: km, puan ve o konumdaki derece gosterilir.
  * ========================================================================= */
-async function skorTablosuOlustur(id,name){
+async function skorTablosuOlustur(id,name,gizliMod=false){
  const snap=await firebaseDb.collection('games').doc(id).collection('players').get();
  const ham=snap.docs.map(d=>d.data());
 
@@ -2220,7 +2210,7 @@ async function skorTablosuOlustur(id,name){
     <div class="hucre-ust"><b>${kmYaz(km)}</b>${dRozet}</div>
     <span class="hucre-puan">${puanYaz(puan)} p</span>
     <span class="score-rozet ${sv.cls}">${sv.etiket}</span>
-    <span class="score-yer">${temizMetin(secim||'-')}</span>
+    ${gizliMod?'':`<span class="score-yer">${temizMetin(secim||'-')}</span>`}
     <span class="score-sure">${ek}</span>
   </td>`;
  };
@@ -2229,7 +2219,7 @@ async function skorTablosuOlustur(id,name){
  x.innerHTML=`<div class="score-box"><button style="float:right" onclick="this.closest('.score-pop').remove()">\u2715</button>
   <h2>${temizMetin(name)}</h2>
   <div class="score-ozet"><div>\u{1F465} ${rows.length} oyuncu</div><div>\u2705 ${biten.length} tamamlad\u0131</div><div>\u{1F3C6} En y\u00fcksek puan: ${Number.isFinite(enYuksekPuan)?puanYaz(enYuksekPuan):'-'}</div><div>\u{1F3AF} En iyi tek tahmin: ${Number.isFinite(enIyiAtis)?kmYaz(enIyiAtis):'-'}</div></div>
-  <div style="font-size:12px;color:#475569;margin-bottom:8px">\u{1F30D} Konumlar: <b>${hedefAdlari.map(h=>temizMetin(h)).join('</b> \u00b7 <b>')}</b></div>
+  ${gizliMod?'<div class="spoiler-uyari">🔒 Bu oyuna henüz katılmadığın için gerçek konumlar ve oyuncu seçimleri gizlendi.</div>':`<div style="font-size:12px;color:#475569;margin-bottom:8px">\u{1F30D} Konumlar: <b>${hedefAdlari.map(h=>temizMetin(h)).join('</b> \u00b7 <b>')}</b></div>`}
   <table><tr><th>S\u0131ra</th><th>Oyuncu</th><th>1. Konum</th><th>2. Konum</th><th>3. Konum</th><th>Toplam km</th><th>Puan</th></tr>
   ${rows.map((r,i)=>{
     const kms=[r.stage1Km,r.stage2Km,r.stage3Km].map(Number).filter(Number.isFinite);
@@ -2256,8 +2246,8 @@ async function skorTablosuOlustur(id,name){
   </div>`;
  document.body.appendChild(x);
 }
-async function skorTablosunuAc(id,name){ return skorTablosuOlustur(id,name); }
-async function bireyselEskiSkorTablosunuAc(id,name){ return skorTablosuOlustur(id,name); }
+async function skorTablosunuAc(id,name,gizliMod=false){ return skorTablosuOlustur(id,name,gizliMod); }
+async function bireyselEskiSkorTablosunuAc(id,name,gizliMod=false){ return skorTablosuOlustur(id,name,gizliMod); }
 
 async function sonucEkraniniAc(id,name){localStorage.setItem('haritaEkranModu','play');oyunEkraniniGoster();try{gosterToplamSonuclari();}catch(e){console.error(e)}await firebaseLiderlikYenile();const b=document.querySelector('.home-btn');if(b){b.onclick=anaSayfayaDon;b.classList.remove('hidden');}}
 async function anaSayfayaDon(){
@@ -2335,7 +2325,7 @@ document.addEventListener('click',function(e){
  const b=e.target.closest&&e.target.closest('.skor-ac');
  if(!b)return;
  e.preventDefault();
- skorTablosunuAc(b.dataset.gameId,b.dataset.gameName).catch(err=>{console.error(err);alert('Skor tablosu açılamadı: '+(err.message||err));});
+ skorTablosunuAc(b.dataset.gameId,b.dataset.gameName,b.dataset.spoiler==='1').catch(err=>{console.error(err);alert('Skor tablosu açılamadı: '+(err.message||err));});
 });
 const asilTahminGonder=tahminGonder;
 tahminGonder=async function(){const asama=Number(localStorage.getItem(STORAGE_KEY_STAGE)||0);await asilTahminGonder.apply(this,arguments);if(asama===3){document.getElementById('sonrakiAsamaButonu')?.classList.add('hidden');document.querySelector('.home-btn')?.classList.remove('hidden');}}
@@ -2756,9 +2746,9 @@ tahminGonder=async function(){const asama=Number(localStorage.getItem(STORAGE_KE
  }
  const eskiLider=window.firebaseLiderlikYenile;
  window.firebaseLiderlikYenile=async function(){const alan=document.getElementById('liderlikTablosu'),durum=document.getElementById('liderDurum');if(!alan||!firebaseHazir)return;try{const rows=await takimSkorlari(SERIES_ID);alan.innerHTML=takimHtml(rows);durum.textContent=rows.length+' takım · sıralama takım puan ortalamasına göredir'}catch(e){console.error(e);return eskiLider.apply(this,arguments)}};
- window.takimSkorTablosunuAc=async function(id,name){
+ window.takimSkorTablosunuAc=async function(id,name,gizliMod=false){
   const rows=await takimSkorlari(id),x=document.createElement('div');x.className='score-pop';x.onclick=e=>{if(e.target===x)x.remove()};
-  x.innerHTML=`<div class="score-box"><button style="float:right" onclick="this.closest('.score-pop').remove()">\u2715</button><h2>\u{1F3C6} ${yazi(name)} \u00b7 Tak\u0131m Skoru</h2><p style="color:#64748b">Tak\u0131mlar, \u00fc\u00e7 konumdaki tak\u0131m <b>puan ortalamalar\u0131n\u0131n toplam\u0131na</b> g\u00f6re s\u0131ralan\u0131r. Puan = yak\u0131nl\u0131k + s\u00fcre bonusu.</p>${takimHtml(rows)}</div>`;
+  x.innerHTML=`<div class="score-box ${gizliMod?'takim-spoiler-gizli':''}"><button style="float:right" onclick="this.closest('.score-pop').remove()">\u2715</button><h2>\u{1F3C6} ${yazi(name)} \u00b7 Tak\u0131m Skoru</h2><p style="color:#64748b">Tak\u0131mlar, \u00fc\u00e7 konumdaki tak\u0131m <b>puan ortalamalar\u0131n\u0131n toplam\u0131na</b> g\u00f6re s\u0131ralan\u0131r. Puan = yak\u0131nl\u0131k + s\u00fcre bonusu.</p>${gizliMod?'<div class="spoiler-uyari">🔒 Bu oyuna henüz katılmadığın için gerçek konumlar ve oyuncu seçimleri gizlendi.</div>':''}${takimHtml(rows)}</div>`;
   document.body.appendChild(x);
  };
  // Sayfa açılışında rumuz isteme; takım seçimi yalnızca Oyuna Gir tıklanınca açılır.
@@ -2984,7 +2974,8 @@ tahminGonder=async function(){const asama=Number(localStorage.getItem(STORAGE_KE
 .takim-asamalar small{display:block;color:#64748b;margin-top:3px}.takim-detay{margin-top:12px;border-top:1px solid #cbd5e1;padding-top:10px}.takim-detay summary{cursor:pointer;font-weight:900;color:#1e3a8a}.takim-oyuncu{margin-top:10px;border:1px solid #dbeafe;border-radius:12px;padding:10px;background:#fff}.takim-oyuncu-head{display:flex;justify-content:space-between;gap:8px;align-items:center}.takim-oyuncu-head span{font-size:11px;color:#475569}.takim-oyuncu-ozet{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}.takim-oyuncu-ozet span{background:#eff6ff;border-radius:8px;padding:5px 8px;font-size:11px}.takim-oyuncu-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.takim-oyuncu-asama{border:1px solid #e2e8f0;border-radius:9px;padding:8px;font-size:11px;color:#475569}.to-baslik{display:flex;justify-content:space-between;color:#0f172a;margin-bottom:4px}@media(max-width:650px){.takim-oyuncu-grid{grid-template-columns:1fr}.takim-oyuncu-head{align-items:flex-start;flex-direction:column}.takim-asamalar{grid-template-columns:1fr 1fr}}
 </style>
 
-<style id="anaSayfaTakimSkoruCss">.game-score-actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end;align-items:center}.takim-skor-ac{background:#0f766e!important}.oyun-izle-skor{background:#334155!important}.game-card>.game-score-actions{margin-left:auto}@media(max-width:650px){.game-score-actions{width:100%;margin-left:0!important}.game-score-actions button{flex:1;min-width:110px}}</style>
+<style id="anaSayfaTakimSkoruCss">.game-score-actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end;align-items:center}.takim-skor-ac{background:#0f766e!important}.oyun-izle-skor{background:#334155!important}.game-card>.game-score-actions{margin-left:auto}@media(max-width:650px){.game-score-actions{width:100%;margin-left:0!important}.game-score-actions button{flex:1;min-width:110px}}.spoiler-uyari{margin:8px 0 12px;padding:9px 11px;border:1px solid #fbbf24;border-radius:10px;background:#fffbeb;color:#92400e;font-size:12px;font-weight:800}.takim-spoiler-gizli .takim-oyuncu-asama>div:nth-child(3),.takim-spoiler-gizli .takim-oyuncu-asama>div:nth-child(4){display:none!important}
+</style>
 <script id="anaSayfaTakimSkoruButonFix">
 /* Ana sayfada her oyun kartina ayri "Takim Skoru" butonu ekler.
    Kart -> oyun eslestirmesi, karttaki mevcut skor butonunun data-game-id degerinden yapilir. */
@@ -2994,6 +2985,7 @@ tahminGonder=async function(){const asama=Number(localStorage.getItem(STORAGE_KE
    const kaynak=card.querySelector('.skor-ac');
    const gameId=kaynak?.dataset.gameId;
    const gameName=kaynak?.dataset.gameName||gameId;
+   const gizliMod=kaynak?.dataset.spoiler==='1';
    if(!gameId) return;
    if(card.querySelector('.takim-skor-ac')) return;
    let alan=card.querySelector('.game-score-actions');
@@ -3007,7 +2999,7 @@ tahminGonder=async function(){const asama=Number(localStorage.getItem(STORAGE_KE
    b.type='button';
    b.className='game-action takim-skor-ac';
    b.textContent='\u{1F465} Tak\u0131m Skoru';
-   b.onclick=()=>takimSkorTablosunuAc(gameId,gameName).catch(e=>alert('Tak\u0131m skoru a\u00e7\u0131lamad\u0131: '+(e.code||e.message)));
+   b.onclick=()=>takimSkorTablosunuAc(gameId,gameName,gizliMod).catch(e=>alert('Tak\u0131m skoru a\u00e7\u0131lamad\u0131: '+(e.code||e.message)));
    alan.appendChild(b);
   });
  }
@@ -3025,7 +3017,7 @@ tahminGonder=async function(){const asama=Number(localStorage.getItem(STORAGE_KE
   e.preventDefault();
   e.stopPropagation();
   e.stopImmediatePropagation();
-  bireyselEskiSkorTablosunuAc(b.dataset.gameId,b.dataset.gameName).catch(err=>{
+  bireyselEskiSkorTablosunuAc(b.dataset.gameId,b.dataset.gameName,b.dataset.spoiler==='1').catch(err=>{
    console.error(err);
    alert('Skor tablosu a\u00e7\u0131lamad\u0131: '+(err.message||err));
   });
@@ -3641,8 +3633,8 @@ tahminGonder=async function(){const asama=Number(localStorage.getItem(STORAGE_KE
  window.firebaseKayitOl=async function(){const alan=document.getElementById('uyelikKullanici'),ad=norm(alan.value),sifre=document.getElementById('kayitSifre').value;alan.value=ad;if(ad.length<2){msg('Kullanıcı adı en az 2 karakter olmalı.');return}if(sifre.length<4){msg('Şifre en az 4 karakter olmalı.');return}if(kullaniciDizini.some(x=>norm(x.username)===ad)){msg('Bu kullanıcı adı daha önce alınmış.');return}await kimlikIslemi('kayit',ad,sifre)};
  async function kimlikIslemi(tur,ad,sifre){if(islemSuruyor)return;islemSuruyor=true;msg('İşleniyor...',true);try{await sdkBekle();const email=authEmail(ad);if(tur==='kayit'){let cred=null;try{cred=await firebase.auth().createUserWithEmailAndPassword(email,authParola(sifre));const veri={uid:cred.user.uid,username:ad,usernameCanonical:ad,avatar:seciliAvatar,createdAt:firebase.firestore.FieldValue.serverTimestamp(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()};await firebaseDb.collection('users').doc(cred.user.uid).set(veri);await firebaseDb.collection('userDirectory').doc(cred.user.uid).set({uid:cred.user.uid,username:ad,avatar:seciliAvatar,updatedAt:firebase.firestore.FieldValue.serverTimestamp()})}catch(e){if(cred?.user)try{await cred.user.delete()}catch(_){}throw e}}else await firebase.auth().signInWithEmailAndPassword(email,authParola(sifre));sifreHatirla(ad,sifre);msg(tur==='kayit'?'✅ Kayıt tamamlandı. Profil açılıyor...':'✅ Giriş başarılı. Profil açılıyor...',true)}catch(e){console.error(e);const k=e.code||'';msg(k==='auth/email-already-in-use'?'Bu kullanıcı adı zaten kayıtlı.':k==='auth/invalid-credential'||k==='auth/wrong-password'||k==='auth/user-not-found'?'Kullanıcı veya şifre hatalı.':k==='auth/operation-not-allowed'?'Firebase Authentication bölümünde Email/Password sağlayıcısını aç.':k==='permission-denied'?'Firestore kuralları profil kaydına izin vermiyor.':(e.message||'İşlem tamamlanamadı.'))}finally{islemSuruyor=false}}
  window.firebaseUyelikHazir=function(){kayitliKullanicilariYukle()};
- window.firebaseUyelikGirisBasarili=async function(p){aktifProfil=p;document.getElementById('uyelikKapisi').classList.add('hidden');document.documentElement.classList.remove('harita-ic-gecis');window.__HARITA_IC_GECIS__=false;profilButonlariniGuncelle();try{await firebaseDb.collection('userDirectory').doc(firebaseUser.uid).set({uid:firebaseUser.uid,username:p.username,avatar:p.avatar||'🎯',updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true})}catch(e){console.error(e)}kayitliKullanicilariYukle()};
- window.firebaseUyelikCikisDurumu=function(){aktifProfil=null;document.documentElement.classList.remove('harita-ic-gecis');window.__HARITA_IC_GECIS__=false;document.getElementById('profilAyarAlani').classList.add('hidden');document.getElementById('uyelikGirisKayit').classList.remove('hidden');document.getElementById('uyelikKapisi').classList.remove('hidden');uyelikSekme('giris')};
+ window.firebaseUyelikGirisBasarili=async function(p){aktifProfil=p;document.getElementById('uyelikKapisi').classList.add('hidden');profilButonlariniGuncelle();try{await firebaseDb.collection('userDirectory').doc(firebaseUser.uid).set({uid:firebaseUser.uid,username:p.username,avatar:p.avatar||'🎯',updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true})}catch(e){console.error(e)}kayitliKullanicilariYukle()};
+ window.firebaseUyelikCikisDurumu=function(){aktifProfil=null;document.getElementById('profilAyarAlani').classList.add('hidden');document.getElementById('uyelikGirisKayit').classList.remove('hidden');document.getElementById('uyelikKapisi').classList.remove('hidden');uyelikSekme('giris')};
  window.firebaseUyelikHata=function(t){msg(t)};
  window.profilAc=function(){if(!aktifProfil)return;seciliAvatar=aktifProfil.avatar||'🎯';document.getElementById('uyelikGirisKayit').classList.add('hidden');document.getElementById('profilAyarAlani').classList.remove('hidden');document.getElementById('profilAd').textContent=aktifProfil.username;document.getElementById('profilAvatarBuyuk').textContent=seciliAvatar;document.getElementById('profilMesaj').textContent='';grid('profilAvatarGrid',seciliAvatar);document.getElementById('uyelikKapisi').classList.remove('hidden')};
  window.profilKapat=function(){document.getElementById('uyelikKapisi').classList.add('hidden')};
@@ -3651,7 +3643,7 @@ tahminGonder=async function(){const asama=Number(localStorage.getItem(STORAGE_KE
  function profilButonlariniGuncelle(){if(!aktifProfil)return;const hedef=`${aktifProfil.avatar||'🎯'} ${aktifProfil.username} ⚙️`;document.querySelectorAll('.profil-btn').forEach(b=>{if(b.textContent!==hedef)b.textContent=hedef})}
  function profilButonuEkle(){if(!aktifProfil)return;document.querySelectorAll('.hub-head,.home-head').forEach(h=>{let b=h.querySelector('.profil-btn');if(!b){b=document.createElement('button');b.type='button';b.className='profil-btn';b.onclick=profilAc;h.appendChild(b)}});profilButonlariniGuncelle()}
  const eskiKatil=window.oyunaKatil;window.oyunaKatil=async function(id){if(!aktifProfil){document.getElementById('uyelikKapisi').classList.remove('hidden');return}const r=await eskiKatil.apply(this,arguments);setTimeout(()=>{const i=document.getElementById('takimRumuz');if(i){i.value=aktifProfil.username;i.readOnly=true}},30);return r};window.globalOyuncuAdiSor=function(){return aktifProfil?aktifProfil.username:''};
- document.addEventListener('DOMContentLoaded',()=>{const kapi=document.getElementById('uyelikKapisi');if(window.__HARITA_IC_GECIS__===true)kapi.classList.add('hidden');else kapi.classList.remove('hidden');uyelikSekme('giris');document.getElementById('uyelikKullaniciSelect').addEventListener('change',avatarOnizleme);document.getElementById('uyelikSifre').addEventListener('keydown',e=>{if(e.key==='Enter')firebaseGirisYap()});document.getElementById('kayitSifre').addEventListener('keydown',e=>{if(e.key==='Enter')firebaseKayitOl()})});
+ document.addEventListener('DOMContentLoaded',()=>{document.getElementById('uyelikKapisi').classList.remove('hidden');uyelikSekme('giris');document.getElementById('uyelikKullaniciSelect').addEventListener('change',avatarOnizleme);document.getElementById('uyelikSifre').addEventListener('keydown',e=>{if(e.key==='Enter')firebaseGirisYap()});document.getElementById('kayitSifre').addEventListener('keydown',e=>{if(e.key==='Enter')firebaseKayitOl()})});
  let bekliyor=false;new MutationObserver(()=>{if(bekliyor)return;bekliyor=true;requestAnimationFrame(()=>{bekliyor=false;try{profilButonuEkle()}catch(e){}})}).observe(document.documentElement,{childList:true,subtree:true});
 })();
 </script>
