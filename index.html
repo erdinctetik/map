@@ -6,6 +6,9 @@
     <title>ERDİNÇ TETİK katkılarıyla     Harita Bulmacası - Konum</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        /* Eski kod ve asama giris ekrani hicbir durumda gosterilmez. */
+        #baslangicKapsayici { display: none !important; }
+
         /* CSS Kodları */
         html, body {height: 100%; margin: 0; padding: 0; overflow-x: hidden; overflow-y: auto; font-family: 'Inter', sans-serif;}
         .harita-kapsayici {display: flex; width: 95%; height: 71vh; margin: 10px auto; box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1); border-radius: 12px; overflow: hidden;}
@@ -86,7 +89,24 @@
         #sonucTablosuKapsayici { max-height:72vh; overflow:auto; }
         .result-card { padding:9px 11px !important; }
         .result-card .text-lg { font-size:1rem !important; }
-        .lider-row { display:grid; grid-template-columns:42px 1.4fr repeat(4,minmax(70px,1fr)); gap:8px; align-items:center; padding:9px 6px; border-bottom:1px solid #e2e8f0; font-size:13px; }
+        .lider-row { display:grid; grid-template-columns:40px 1.5fr repeat(3,minmax(106px,1.2fr)) repeat(3,minmax(78px,.9fr)); gap:8px; align-items:center; padding:9px 6px; border-bottom:1px solid #e2e8f0; font-size:13px; }
+        .lider-sira { font-size:16px; text-align:center; }
+        .lider-km { font-weight:800; color:#0f172a; }
+        .lider-alt { font-size:11px; color:#64748b; display:flex; align-items:center; gap:4px; }
+        .lider-nokta { width:7px; height:7px; border-radius:999px; display:inline-block; }
+        .lider-yer { font-size:11px; color:#334155; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:150px; }
+        .lider-bos { color:#94a3b8; }
+        .lider-eniyi { font-weight:800; color:#047857; }
+        .lider-toplam { font-weight:900; color:#1d4ed8; }
+        .lider-sen { background:#2563eb; color:#fff; border-radius:999px; padding:1px 7px; font-size:10px; font-weight:800; }
+        @media (max-width:900px){ .lider-row { grid-template-columns:34px 1.2fr repeat(3,minmax(86px,1fr)) minmax(70px,.8fr); } .lider-row > :nth-child(6), .lider-row > :nth-child(7) { display:none; } }
+        /* Skor tablosu pop-up detaylari */
+        .score-box th { background:#f8fafc; font-size:12px; color:#475569; }
+        .score-ozet { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 14px; }
+        .score-ozet div { background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:8px 12px; font-size:12px; font-weight:800; color:#1e3a8a; }
+        .score-yer { font-size:11px; color:#64748b; display:block; }
+        .score-sure { font-size:11px; color:#1d4ed8; font-weight:800; display:block; margin-top:2px; }
+        .score-rozet { display:inline-block; border-radius:999px; padding:1px 7px; font-size:10px; font-weight:800; margin-top:2px; }
         .lider-row:last-child { border-bottom:0; }
         .lider-head { font-weight:800; color:#475569; background:#f8fafc; border-radius:8px; }
         .lider-me { background:#eff6ff; font-weight:800; }
@@ -107,14 +127,53 @@
         .result-card { border:1px solid #dbeafe; border-left:6px solid #3b82f6; border-radius:12px; padding:12px; background:#fff; }
         .result-badge { display:inline-flex; align-items:center; border-radius:999px; padding:4px 9px; font-size:12px; font-weight:800; }
         .stat-box { background:#eff6ff; border:1px solid #bfdbfe; border-radius:12px; padding:10px; text-align:center; }
-        .player-mode #adminAcButonu, .player-mode #adminModal, .player-mode #bannerSifirlaButonu { display:none !important; }
+        .player-mode #adminModal, .player-mode #bannerSifirlaButonu { display:none !important; }
+        /* Yonetim erisimi yalnizca index yonetim panelinden saglanir; oyun icindeki buton hicbir modda gorunmez. */
+        #adminAcButonu, .hub-head button[onclick="adminPaneliniAc()"], .home-head button[onclick="adminPaneliniAc()"] { display:none !important; }
         #adminAcButonu { position:fixed; right:14px; bottom:14px; z-index:900; border:0; border-radius:999px; padding:10px 14px; background:#111827; color:white; font-weight:700; box-shadow:0 8px 24px rgba(0,0,0,.22); cursor:pointer; }
         #devamBilgisi { max-width:520px; text-align:center; }
+        /* Sağ harita: kendi tam ekranı (üstte tahmin kutusu ve Tahmini Gönder butonu görünür kalır) */
+        #sagHaritaTamEkranButonu { position:absolute; top:8px; right:8px; z-index:5; border:0; border-radius:8px; padding:6px 10px; background:rgba(17,24,39,.85); color:#fff; font-size:12px; font-weight:800; cursor:pointer; box-shadow:0 3px 10px rgba(0,0,0,.3); }
+        #sagHaritaTamEkranButonu:hover { background:#111827; }
+        #sagHaritaKapsayici.sag-harita-genis { position:fixed !important; left:12px !important; right:12px !important; bottom:12px !important; width:auto !important; height:auto !important; z-index:880 !important; box-shadow:0 18px 50px rgba(0,0,0,.45); }
+        body.sag-harita-genis-acik #tahminKutusu { position:relative; z-index:890; box-shadow:0 8px 22px rgba(0,0,0,.18); }
+        body.sag-harita-genis-acik { overflow:hidden; }
     </style>
-<style id="dinamikOyunCss">.dinamik-home{position:fixed;inset:0;z-index:800;background:linear-gradient(135deg,#eef2ff,#f0fdf4);overflow:auto;padding:24px}.dinamik-home-card{max-width:900px;margin:auto;background:#fff;border-radius:18px;padding:24px;box-shadow:0 20px 60px #0f172a22}.home-head{display:flex;justify-content:space-between;gap:12px;align-items:center;border-bottom:1px solid #e2e8f0;padding-bottom:16px}.home-head h1{font-size:28px;font-weight:900}.home-head button,.dinamik-admin-actions button,.join-btn{border:0;border-radius:10px;padding:11px 16px;background:#4f46e5;color:#fff;font-weight:900;cursor:pointer}.active-game{margin:18px 0;padding:18px;border:2px solid #22c55e;background:#f0fdf4;border-radius:14px}.active-game h2{font-size:22px;font-weight:900;color:#166534}.player-entry{display:flex;gap:8px;margin-top:12px}.player-entry input{flex:1;border:1px solid #86efac;border-radius:9px;padding:11px}.archive-title{font-weight:900;font-size:18px;margin:18px 0 8px}.archive-item{border:1px solid #cbd5e1;border-radius:11px;padding:12px;margin-top:8px;display:flex;justify-content:space-between;gap:10px}.archive-item button{border:0;background:#e0e7ff;color:#3730a3;border-radius:8px;padding:7px 10px;font-weight:800}.dinamik-admin-box{border:2px solid #8b5cf6;background:#f5f3ff;border-radius:14px;padding:14px;margin-bottom:16px}.dinamik-admin-box h4{font-size:20px;font-weight:900}.dinamik-admin-box label{display:block;font-size:12px;font-weight:800;margin:8px 0 4px}.dinamik-admin-actions{display:flex;gap:8px;margin-top:10px}.dinamik-admin-actions .arsiv-btn{background:#334155}.uid-note{font-size:11px;color:#64748b;margin-top:8px}.menu-return{border:0;border-radius:8px;padding:7px 10px;background:#0f766e;color:#fff;font-weight:900;margin-top:5px}.archive-modal{position:fixed;inset:0;z-index:40000;background:#0f172acc;display:flex;align-items:center;justify-content:center;padding:18px}.archive-dialog{width:min(900px,95vw);max-height:85vh;overflow:auto;background:#fff;border-radius:16px;padding:16px}.archive-dialog table{width:100%;border-collapse:collapse}.archive-dialog th,.archive-dialog td{padding:8px;border-bottom:1px solid #e2e8f0;text-align:left}.hidden{display:none!important}@media(max-width:650px){.player-entry{flex-direction:column}.home-head{align-items:flex-start}.archive-item{flex-direction:column}}</style><style>.hub{position:fixed;inset:0;z-index:700;background:linear-gradient(135deg,#eef2ff,#f0fdf4);overflow:auto;padding:24px}.hub-card{max-width:900px;margin:auto;background:white;border-radius:20px;padding:24px;box-shadow:0 20px 60px #0f172a22}.hub-head{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e2e8f0;padding-bottom:15px}.hub-head h1{font-size:28px;font-weight:900}.hub button,.game-admin button,.game-action,.home-btn{border:0;border-radius:9px;padding:10px 14px;background:#4f46e5;color:white;font-weight:900;cursor:pointer}.game-card{margin-top:12px;border:1px solid #cbd5e1;border-radius:13px;padding:14px;display:flex;justify-content:space-between;gap:12px;align-items:center}.game-card.active{border:2px solid #22c55e;background:#f0fdf4}.badge{display:inline-block;border-radius:999px;padding:4px 9px;font-size:11px;font-weight:900}.played{background:#dcfce7;color:#166534}.unplayed{background:#f1f5f9;color:#475569}.progress{background:#fef3c7;color:#92400e}.game-admin{border:2px solid #8b5cf6;background:#f5f3ff;border-radius:13px;padding:14px;margin-bottom:16px}.game-admin input{margin-top:8px}.home-btn{background:#0f766e;margin-left:10px}.score-pop{position:fixed;inset:0;z-index:50000;background:#0f172acc;display:flex;align-items:center;justify-content:center;padding:18px}.score-box{width:min(900px,96vw);max-height:85vh;overflow:auto;background:white;border-radius:16px;padding:16px}.score-box table{width:100%;border-collapse:collapse}.score-box th,.score-box td{padding:8px;border-bottom:1px solid #e2e8f0;text-align:left}@media(max-width:650px){.game-card{align-items:flex-start;flex-direction:column}.hub-head{align-items:flex-start}}</style></head>
+<style id="dinamikOyunCss">.dinamik-home{position:fixed;inset:0;z-index:800;background:linear-gradient(135deg,#eef2ff,#f0fdf4);overflow:auto;padding:24px}.dinamik-home-card{max-width:900px;margin:auto;background:#fff;border-radius:18px;padding:24px;box-shadow:0 20px 60px #0f172a22}.home-head{display:flex;justify-content:space-between;gap:12px;align-items:center;border-bottom:1px solid #e2e8f0;padding-bottom:16px}.home-head h1{font-size:28px;font-weight:900}.home-head button,.dinamik-admin-actions button,.join-btn{border:0;border-radius:10px;padding:11px 16px;background:#4f46e5;color:#fff;font-weight:900;cursor:pointer}.active-game{margin:18px 0;padding:18px;border:2px solid #22c55e;background:#f0fdf4;border-radius:14px}.active-game h2{font-size:22px;font-weight:900;color:#166534}.player-entry{display:flex;gap:8px;margin-top:12px}.player-entry input{flex:1;border:1px solid #86efac;border-radius:9px;padding:11px}.archive-title{font-weight:900;font-size:18px;margin:18px 0 8px}.archive-item{border:1px solid #cbd5e1;border-radius:11px;padding:12px;margin-top:8px;display:flex;justify-content:space-between;gap:10px}.archive-item button{border:0;background:#e0e7ff;color:#3730a3;border-radius:8px;padding:7px 10px;font-weight:800}.dinamik-admin-box{border:2px solid #8b5cf6;background:#f5f3ff;border-radius:14px;padding:14px;margin-bottom:16px}.dinamik-admin-box h4{font-size:20px;font-weight:900}.dinamik-admin-box label{display:block;font-size:12px;font-weight:800;margin:8px 0 4px}.dinamik-admin-actions{display:flex;gap:8px;margin-top:10px}.dinamik-admin-actions .arsiv-btn{background:#334155}.uid-note{font-size:11px;color:#64748b;margin-top:8px}.menu-return{border:0;border-radius:8px;padding:7px 10px;background:#0f766e;color:#fff;font-weight:900;margin-top:5px}.archive-modal{position:fixed;inset:0;z-index:40000;background:#0f172acc;display:flex;align-items:center;justify-content:center;padding:18px}.archive-dialog{width:min(900px,95vw);max-height:85vh;overflow:auto;background:#fff;border-radius:16px;padding:16px}.archive-dialog table{width:100%;border-collapse:collapse}.archive-dialog th,.archive-dialog td{padding:8px;border-bottom:1px solid #e2e8f0;text-align:left}.hidden{display:none!important}@media(max-width:650px){.player-entry{flex-direction:column}.home-head{align-items:flex-start}.archive-item{flex-direction:column}}</style><style>.hub{position:fixed;inset:0;z-index:700;background:linear-gradient(135deg,#eef2ff,#f0fdf4);overflow:auto;padding:24px}.hub-card{max-width:900px;margin:auto;background:white;border-radius:20px;padding:24px;box-shadow:0 20px 60px #0f172a22}.hub-head{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e2e8f0;padding-bottom:15px}.hub-head h1{font-size:28px;font-weight:900}.hub button,.game-admin button,.game-action,.home-btn{border:0;border-radius:9px;padding:10px 14px;background:#4f46e5;color:white;font-weight:900;cursor:pointer}.game-card{margin-top:12px;border:1px solid #cbd5e1;border-radius:13px;padding:14px;display:flex;justify-content:space-between;gap:12px;align-items:center}.game-card.active{border:2px solid #22c55e;background:#f0fdf4}.badge{display:inline-block;border-radius:999px;padding:4px 9px;font-size:11px;font-weight:900}.played{background:#dcfce7;color:#166534}.unplayed{background:#f1f5f9;color:#475569}.progress{background:#fef3c7;color:#92400e}.game-admin{border:2px solid #8b5cf6;background:#f5f3ff;border-radius:13px;padding:14px;margin-bottom:16px}.game-admin input{margin-top:8px}.home-btn{background:#0f766e;margin-left:10px}.score-pop{position:fixed;inset:0;z-index:50000;background:#0f172acc;display:flex;align-items:center;justify-content:center;padding:18px}.score-box{width:min(900px,96vw);max-height:85vh;overflow:auto;background:white;border-radius:16px;padding:16px}.score-box table{width:100%;border-collapse:collapse}.score-box th,.score-box td{padding:8px;border-bottom:1px solid #e2e8f0;text-align:left}@media(max-width:650px){.game-card{align-items:flex-start;flex-direction:column}.hub-head{align-items:flex-start}}</style>
+<script id="surumDamgasi">
+/* SURUM DAMGASI - her yeni surumde asagidaki iki satiri guncelle. */
+window.APP_VERSION='2026-09-15-v19';
+window.APP_VERSION_NOT='Yonetim panelinde sure ve puan olcegi ayari; otomatik koordinat bolumu yukari alindi';
+console.log('%c SURUM: '+window.APP_VERSION+' ','background:#0f766e;color:#fff;font-weight:900;padding:3px 10px;border-radius:5px');
+console.log('Icerik: '+window.APP_VERSION_NOT);
+/* Surum bilgisi yalnizca konsolda gosterilir; ekranda etiket yoktur. */
+</script>
+<script id="parentModeBootstrap">
+(function(){
+  const mode=new URLSearchParams(location.search).get('mode')||'player';
+  if(mode==='player'){
+    document.documentElement.classList.add('player-mode');
+    const st=document.createElement('style');
+    st.textContent='#adminAcButonu,.hub-head button,.home-head button,button[onclick="adminPaneliniAc()"]{display:none!important}';
+    document.head.appendChild(st);
+  }
+  // Admin paneli yalnizca oyun oynanmiyorken ve yalnizca ilk aciliste otomatik acilir.
+  window.oyunDevamEdiyorMu=function(){
+    try{ return localStorage.getItem('haritaEkranModu')==='play'; }catch(e){ return false; }
+  };
+  window.addEventListener('load',function(){
+    if(mode!=='admin')return;
+    if(window.oyunDevamEdiyorMu())return;
+    if(sessionStorage.getItem('haritaAdminPaneliAcildi')==='1')return;
+    sessionStorage.setItem('haritaAdminPaneliAcildi','1');
+    if(typeof window.adminPaneliniAc==='function')setTimeout(()=>window.adminPaneliniAc(),100);
+  });
+})();
+</script>
+</head>
 <body class="bg-gray-50"><div id="hub" class="hub hidden"><div class="hub-card"><div class="hub-head"><div><h1>🎯 Harita Bulmacası</h1><p>Açık oyuna katıl veya geçmiş oyunları incele.</p></div><button onclick="adminPaneliniAc()">⚙️ Yönetim</button></div><div id="hubGames">Yükleniyor...</div></div></div><div id="dinamikAnaMenu" class="dinamik-home hidden"><div class="dinamik-home-card"><div class="home-head"><div><h1>🎯 Harita Bulmacası</h1><p>Açık oyuna katıl veya geçmiş yarışları incele.</p></div><button onclick="adminPaneliniAc()">⚙️ Yönetim</button></div><div id="aktifOyunAlani"></div><div class="archive-title">📚 Geçmiş Oyunlar</div><div id="oyunArsivi" class="archive-list"></div><p id="dinamikMesaj"></p></div></div>
     
-    <div id="baslangicKapsayici" class="flex flex-col items-center justify-center p-8 space-y-4 h-full w-full absolute top-0 left-0 bg-gray-50 z-20">
+    <div id="baslangicKapsayici" class="hidden" hidden aria-hidden="true" style="display:none!important">
         <h2 class="text-3xl font-bold text-gray-800">🎯 Harita Bulmacası  -  ERDİNÇ TETİK Sunar</h2>
         <p class="text-gray-600 text-center">Lütfen oynamak istediğiniz <b>3 konuma</b> ait kodları giriniz.</p>
         
@@ -141,7 +200,7 @@
                     <span role="img" aria-label="pin">📍</span> Harita Bulmacası <span id="oyunBaslik"></span>
                 </h3>
                 <p class="text-lg font-mono mb-2">
-                    ⏳ Kalan Süre: <span id="kronometre" class="text-red-600 font-bold">02:00</span>
+                    ⏳ Kalan Süre: <span id="kronometre" class="text-red-600 font-bold">--:--</span>
                 </p>
                 <p id="hareketKalan" class="text-sm font-mono mb-4 text-gray-500">
                 </p>
@@ -156,9 +215,10 @@
                 <p id="mesajAlani" class="mt-1 text-sm font-semibold text-gray-700"></p>
             </div>
 
-            <div id="sagHaritaKapsayici" style="height: 180px; width: 350px; border: 3px solid #374151; border-radius: 8px; overflow: hidden; flex-shrink: 0;">
+            <div id="sagHaritaKapsayici" style="height: 180px; width: 350px; border: 3px solid #374151; border-radius: 8px; overflow: hidden; flex-shrink: 0; position: relative;">
                 <div id="sagHaritaDiv">
                     </div>
+                <button type="button" id="sagHaritaTamEkranButonu" onclick="sagHaritaTamEkranDegistir()" title="Tam ekran (Esc ile çık)">⛶ Tam ekran</button>
             </div>
 
             <div id="sonucTablosuKapsayici" class="hidden" style="min-height:250px; min-width:620px; max-width:820px; border:3px solid #2563eb; border-radius:14px; flex-grow:1; background:#f8fafc;">
@@ -218,7 +278,7 @@
     <div id="adminModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="adminBaslik">
       <div class="modal-card">
         <div class="p-5 border-b flex items-center justify-between">
-          <div><h3 id="adminBaslik" class="text-2xl font-extrabold text-slate-800">Yönetim Paneli</h3><p class="text-sm text-slate-500">Koordinatları elle ekleyin veya Street View bulunan rastgele bir koordinatı otomatik seçin.</p></div>
+          <div><h3 id="adminBaslik" class="text-2xl font-extrabold text-slate-800">Yönetim Paneli</h3><p class="text-sm text-slate-500">Koordinatları hazırlayın; aşağıdaki Oyun Yönetimi bölümünden oyun oluşturun, değiştirin, açıp kapatın veya silin.</p></div>
           <button type="button" onclick="adminPaneliniKapat()" class="px-3 py-2 rounded-lg bg-slate-100">✕</button>
         </div>
         <div id="adminGirisBolumu" class="p-5">
@@ -226,33 +286,46 @@
           <div class="flex gap-2"><input id="adminParola" type="password" inputmode="numeric" class="admin-input" placeholder="Parola"><button onclick="adminGirisYap()" class="px-5 rounded-lg bg-slate-900 text-white font-bold">Giriş</button></div>
           <p id="adminMesaj" class="text-sm mt-2 text-red-600"></p>
         </div>
-        <div id="adminIcerik" class="p-5 hidden"><div class="dinamik-admin-box"><h4>🎮 Oyun Yönetimi</h4><label>Oyun adı</label><input id="yeniOyunAdi" class="admin-input" placeholder="Örn. Eylül Dünya Turu"><label>Üç konum kodu</label><input id="yeniOyunKodlari" class="admin-input" placeholder="Örn. 1, 4, 6"><div class="dinamik-admin-actions"><button onclick="adminYeniOyunAc()">🚀 Yeni Oyunu Aç</button><button class="arsiv-btn" onclick="dinamikAnaMenuyeDon()">🏠 Ana Menü</button></div><p id="oyunYonetimMesaj"></p><p class="uid-note">Admin Firebase UID: <code id="adminFirebaseUid">bağlantı bekleniyor</code></p></div>
-          <div class="mb-4"><label class="block text-sm font-bold mb-1">Firebase Web yapılandırması</label><textarea id="adminFirebaseConfig" class="admin-input" rows="8" spellcheck="false" placeholder='{"apiKey":"...","authDomain":"...","projectId":"...","appId":"..."}'></textarea><p class="text-xs text-slate-500 mt-1">Firebase Console’daki web app config nesnesini JSON olarak yapıştır. Anonymous Authentication ve Firestore etkin olmalı.</p></div>
-          <div class="mb-4"><label class="block text-sm font-bold mb-1">Google Maps API anahtarı</label><div class="flex gap-2"><input id="adminApiKey" type="password" class="admin-input" placeholder="API anahtarını yapıştırın"><button onclick="adminApiAnahtariKaydet()" class="px-4 rounded-lg bg-indigo-600 text-white font-bold">API anahtarını kaydet</button></div><p class="text-xs text-slate-500 mt-1">Anahtar bu tarayıcıda saklanır. Kaydettikten sonra sayfa yenilenir.</p></div>
-          <div class="mb-4 p-4 rounded-xl border-2 border-amber-400 bg-amber-50">
-            <label class="block text-sm font-extrabold text-amber-900 mb-2">🎁 Şans Kartları Aç / Kapat</label>
-            <select id="adminSansAktif" class="admin-input" style="font-weight:800;background:#fff">
-              <option value="true">Açık</option>
-              <option value="false">Kapalı</option>
-            </select>
-            <p class="text-xs text-amber-800 mt-1">Kapalı seçilirse oyun sırasında şans kartları hiç açılmaz.</p>
+        <div id="adminIcerik" class="p-5 hidden"><div class="dinamik-admin-box"><h4>🎮 Oyun Yönetimi</h4><label>Oyun adı</label><input id="yeniOyunAdi" class="admin-input" placeholder="Örn. Eylül Dünya Turu"><label>Üç konum kodu</label><input id="yeniOyunKodlari" class="admin-input" placeholder="Örn. 1, 4, 6"><div id="sansAyarKutusu" style="margin-top:10px;padding:10px 12px;border:2px solid #f59e0b;border-radius:10px;background:#fffbeb"><label style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:900;color:#92400e;cursor:pointer;margin:0"><input id="adminSansAktif" type="checkbox" onchange="adminSansAktifDegisti()" style="width:18px;height:18px;cursor:pointer"> 🎁 Şans kutuları açık <span style="font-weight:700;font-size:11px;color:#b45309">(varsayılan: kapalı)</span></label><p style="font-size:11px;color:#92400e;margin-top:5px">Kapatırsan bu ayarla kaydedilen/değiştirilen oyunlarda şans kutuları hiç çıkmaz, süre ekleme veya kesintisi olmaz.</p><p id="adminSansAktifMesaj" style="font-size:11px;font-weight:800;margin-top:4px"></p></div><div class="dinamik-admin-actions"><button onclick="adminYeniOyunAc()">💾 Oyunu Kaydet</button><button class="arsiv-btn" onclick="dinamikAnaMenuyeDon()">🏠 Ana Menü</button></div><p id="oyunYonetimMesaj"></p><div class="archive-title">🎮 Oluşturulan Oyunlar</div><div id="adminOyunListesi" class="archive-list"><p>Oyunlar yükleniyor...</p></div><p class="uid-note">Admin Firebase UID: <code id="adminFirebaseUid">bağlantı bekleniyor</code></p></div>
+          <div class="mb-4" style="border:2px solid #2563eb;border-radius:12px;padding:12px 14px;background:#eff6ff">
+            <h4 style="font-size:17px;font-weight:900;color:#1e3a8a;margin:0 0 4px">⚙️ Oyun Ayarları</h4>
+            <p class="text-xs" style="color:#1e40af;margin-bottom:10px">Bu ayarlar, buradan sonra <b>kaydedilen veya değiştirilen</b> oyunlara işlenir. Daha önce oluşturulmuş oyunlar kendi ayarlarıyla oynanmaya devam eder.</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-sm font-bold mb-1">⏳ Konum başına süre (saniye)</label>
+                <input id="adminSureSaniye" type="number" min="15" max="600" step="5" class="admin-input" value="120" onchange="adminSureDegisti()">
+                <div class="hazir-butonlar">
+                  <button type="button" class="hazir-btn" onclick="adminSureAyarla(60)">60 sn</button>
+                  <button type="button" class="hazir-btn" onclick="adminSureAyarla(90)">90 sn</button>
+                  <button type="button" class="hazir-btn" onclick="adminSureAyarla(120)">120 sn</button>
+                  <button type="button" class="hazir-btn" onclick="adminSureAyarla(180)">180 sn</button>
+                </div>
+                <p class="text-xs text-slate-600 mt-1">Her konumda oyuncuya verilen süre. Puandaki süre bonusu da bu değere göre ölçeklenir.</p>
+                <p id="adminSureMesaj" class="text-xs font-bold mt-1"></p>
+              </div>
+              <div>
+                <label class="block text-sm font-bold mb-1">🎯 Puan ölçeği (km)</label>
+                <input id="adminPuanOlcek" type="number" min="500" max="10000" step="100" class="admin-input" value="2000" onchange="adminPuanOlcekDegisti()">
+                <div class="hazir-butonlar">
+                  <button type="button" class="hazir-btn" onclick="adminPuanOlcekAyarla(1500)">1500</button>
+                  <button type="button" class="hazir-btn" onclick="adminPuanOlcekAyarla(2000)">2000</button>
+                  <button type="button" class="hazir-btn" onclick="adminPuanOlcekAyarla(3000)">3000</button>
+                  <button type="button" class="hazir-btn" onclick="adminPuanOlcekAyarla(5000)">5000</button>
+                </div>
+                <p class="text-xs text-slate-600 mt-1">Küçük değer: yalnızca çok yakın tahminler puan alır. Büyük değer: uzak tahminler arasında da fark oluşur.</p>
+                <p id="adminPuanOlcekMesaj" class="text-xs font-bold mt-1"></p>
+              </div>
+            </div>
+            <div id="puanOnizleme" class="puan-onizleme"></div>
           </div>
-          <div class="mb-4"><label class="block text-sm font-bold mb-1">Şans kutuları kalan kaç saniyede açılsın?</label><input id="adminSansSuresi" type="number" min="1" max="119" class="admin-input" value="60"><p class="text-xs text-slate-500 mt-1">Her aşamada bir kez açılır. İlk 5 saniye kronometre durur; sonra kutular açık kalsa bile çalışmaya devam eder.</p></div>
-          <div class="mb-4"><label class="block text-sm font-bold mb-1">Kutu süreleri ve adetleri</label><textarea id="adminSansDagilimi" class="admin-input" rows="8" spellcheck="false" placeholder="-25:1
--20:2
--15:2
--10:3
-10:3
-15:2
-20:2
-25:1"></textarea><p class="text-xs text-slate-500 mt-1">Her satıra <b>süre:adet</b> yaz. Eksi değer süre düşürür, artı veya işaretsiz pozitif değer süre ekler. 4×4 düzen için toplam adet tam 16 olmalı.</p></div>
           <div class="flex flex-wrap gap-2 mb-4">
             <button onclick="adminSatirEkle()" class="px-4 py-2 rounded-lg bg-blue-600 text-white font-bold">+ Konum ekle</button>
             <div class="w-full grid grid-cols-1 md:grid-cols-3 gap-2 p-3 rounded-xl bg-cyan-50 border border-cyan-200">
-              <div><label class="block text-xs font-extrabold text-cyan-900 mb-1">Bölge</label><select id="otomatikBolge" onchange="otomatikBolgeDegisti()" class="admin-input"><option value="europe">Avrupa</option><option value="world">Dünya</option><option value="country">Ülke seç</option></select></div>
+              <div><label class="block text-xs font-extrabold text-cyan-900 mb-1">Bölge</label><select id="otomatikBolge" onchange="otomatikBolgeDegisti()" class="admin-input"><option value="world">Dünya</option><option value="europe">Avrupa</option><option value="asia">Asya</option><option value="africa">Afrika</option><option value="america">Amerika</option><option value="country">Ülke seç</option></select></div>
               <div><label class="block text-xs font-extrabold text-cyan-900 mb-1">Ülke</label><select id="otomatikUlke" class="admin-input" disabled><option value="TR">Türkiye</option><option value="DE">Almanya</option><option value="FR">Fransa</option><option value="IT">İtalya</option><option value="ES">İspanya</option><option value="GB">Birleşik Krallık</option><option value="NL">Hollanda</option><option value="BE">Belçika</option><option value="AT">Avusturya</option><option value="CH">İsviçre</option><option value="PL">Polonya</option><option value="CZ">Çekya</option><option value="HU">Macaristan</option><option value="RO">Romanya</option><option value="GR">Yunanistan</option><option value="PT">Portekiz</option><option value="SE">İsveç</option><option value="NO">Norveç</option><option value="FI">Finlandiya</option><option value="DK">Danimarka</option><option value="US">ABD</option><option value="CA">Kanada</option><option value="AU">Avustralya</option><option value="JP">Japonya</option></select></div>
               <div><label class="block text-xs font-extrabold text-cyan-900 mb-1">Konum türü</label><select id="otomatikTur" class="admin-input"><option value="street">Sadece sokak / yol</option><option value="outdoor">Dış mekân</option></select></div>
-              <div class="md:col-span-3"><button id="otomatikKoordinatButonu" onclick="otomatikKoordinatBul()" class="w-full px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-700 text-white font-bold">🎲 Otomatik koordinat bul</button><p class="text-xs text-cyan-800 mt-1">Sokak modu; bina içi, işletme içi ve yol adı bulunmayan panoramaları reddeder.</p></div>
+              <div class="md:col-span-3"><button id="otomatikKoordinatButonu" onclick="otomatikKoordinatBul()" class="w-full px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-700 text-white font-bold">🎲 Otomatik koordinat bul</button><p class="text-xs text-cyan-800 mt-1">Excel referansları kullanılır. Sonuç referanstan 20–150 km uzakta olur. Bir önceki otomatik koordinata uzaklık: <b>Ülke seçiminde en az 250 km</b>, Dünya / Avrupa / Asya / Afrika / Amerika seçiminde <b>en az 900 km</b>.</p></div>
+
             </div>
             <button onclick="adminKoordinatlariKaydet()" class="px-4 py-2 rounded-lg bg-emerald-600 text-white font-bold">Kaydet</button>
             <button onclick="oyuncuHtmlIndir()" class="px-4 py-2 rounded-lg bg-violet-600 text-white font-bold">⬇️ Oyuncu HTML’sini indir</button>
@@ -262,6 +335,19 @@
           <div class="admin-grid text-xs font-extrabold text-slate-500 mb-2"><div>KOD</div><div>ENLEM, BOYLAM</div><div></div></div>
           <div id="adminKoordinatListesi" class="space-y-2"></div>
           <p id="adminKayitMesaj" class="text-sm mt-3 font-semibold"></p>
+          <div class="mb-4 admin-ayirac"><h4>🎁 Şans Kutusu Ayarları</h4><p class="text-xs text-slate-500">Şans kutuları yalnızca yukarıdaki kutu işaretliyse çıkar.</p></div>
+          <div class="mb-4"><label class="block text-sm font-bold mb-1">Şans kutuları kalan kaç saniyede açılsın?</label><input id="adminSansSuresi" type="number" min="1" max="119" class="admin-input" value="60"><p class="text-xs text-slate-500 mt-1">Her aşamada bir kez açılır. İlk 5 saniye kronometre durur; sonra kutular açık kalsa bile çalışmaya devam eder.</p></div>
+          <div class="mb-4"><label class="block text-sm font-bold mb-1">Kutu süreleri ve adetleri</label><textarea id="adminSansDagilimi" class="admin-input" rows="8" spellcheck="false" placeholder="-25:1
+-20:2
+-15:2
+-10:3
+10:3
+15:2
+20:2
+25:1"></textarea><p class="text-xs text-slate-500 mt-1">Her satıra <b>süre:adet</b> yaz. Eksi değer süre düşürür, artı veya işaretsiz pozitif değer süre ekler. 4×4 düzen için toplam adet tam 16 olmalı.</p></div>
+          <div class="mb-4 admin-ayirac"><h4>🔌 Bağlantı Ayarları</h4><p class="text-xs text-slate-500">Bu bölüme genelde dokunmanız gerekmez.</p></div>
+          <div class="mb-4"><label class="block text-sm font-bold mb-1">Google Maps API anahtarı</label><div class="flex gap-2"><input id="adminApiKey" type="password" class="admin-input" placeholder="API anahtarını yapıştırın"><button onclick="adminApiAnahtariKaydet()" class="px-4 rounded-lg bg-indigo-600 text-white font-bold">API anahtarını kaydet</button></div><p class="text-xs text-slate-500 mt-1">Anahtar bu tarayıcıda saklanır. Kaydettikten sonra sayfa yenilenir.</p></div>
+          <div class="mb-4"><label class="block text-sm font-bold mb-1">Firebase Web yapılandırması</label><textarea id="adminFirebaseConfig" class="admin-input" rows="8" spellcheck="false" placeholder='{"apiKey":"...","authDomain":"...","projectId":"...","appId":"..."}'></textarea><p class="text-xs text-slate-500 mt-1">Firebase Console’daki web app config nesnesini JSON olarak yapıştır. Anonymous Authentication ve Firestore etkin olmalı.</p></div>
           <p class="text-xs text-violet-700 font-semibold mt-3">Oyuncu çıktısında koordinatlar ve API anahtarı dosyanın içine gömülür; yönetim paneli bulunmaz. Her yeni çıktıda ayrı oyun kimliği üretilir.</p>
           <p class="text-xs text-slate-500 mt-3">Not: Bu tek HTML dosyasında parola ve veriler tarayıcı tarafındadır. Bu yöntem yanlışlıkla sıfırlamayı engeller, ancak tarayıcı verileri bilinçli olarak silinirse kesin güvenlik sağlayamaz.</p>
         </div>
@@ -274,15 +360,9 @@
         const EMBEDDED_TARGETS = null;
         const EMBEDDED_CHANCE_AT = null;
         const EMBEDDED_CHANCE_VALUES = null;
-        const EMBEDDED_CHANCE_ENABLED = null;
-        const EMBEDDED_FIREBASE_CONFIG = {
-  apiKey: "AIzaSyBtK_JnewTNftZb690Yh6fZ-6pcqmsiB88",
-  authDomain: "harita-yarismasi.firebaseapp.com",
-  projectId: "harita-yarismasi",
-  storageBucket: "harita-yarismasi.firebasestorage.app",
-  messagingSenderId: "967222839746",
-  appId: "1:967222839746:web:ed15daa18a9495ec43ae5b"
-};
+        const EMBEDDED_TIMER_SECONDS = null;
+        const EMBEDDED_PUAN_OLCEK = null;
+        const EMBEDDED_FIREBASE_CONFIG = {"apiKey":"AIzaSyCIKfNjaAxhULKLEzvNO8EIsgu_kii7nX4","authDomain":"harita-mini-oyun.firebaseapp.com","projectId":"harita-mini-oyun","storageBucket":"harita-mini-oyun.firebasestorage.app","messagingSenderId":"432191742278","appId":"1:432191742278:web:21774e8639545cb9a70547"};
         const SERIES_ID = EMBEDDED_GAME_ID || (localStorage.getItem('haritaEkranModu') === 'play' ? localStorage.getItem('haritaAktifOyunId') : null) || 'LOBBY';
         // =========================================================================
         const MAX_HAREKET = 100; 
@@ -307,14 +387,32 @@
         const DEFAULT_ADMIN_PAROLA = '1212';
         let adminYetkili = false;
         const TOTAL_STAGES = 3;
-        const TIMER_DURATION_SECONDS = 120;
-        const SANS_TETIK_SANIYESI = Number(EMBEDDED_CHANCE_AT || localStorage.getItem('haritaBulmacasi_sans_suresi') || 60);
-        const SANS_AKTIF = () => {
-            if(EMBEDDED_CHANCE_ENABLED !== null) return EMBEDDED_CHANCE_ENABLED !== false && EMBEDDED_CHANCE_ENABLED !== 'false';
-            return localStorage.getItem('haritaBulmacasi_sans_aktif') !== 'false';
-        };
+        // Konum basina sure: once oynanan oyunun kendi ayari, yoksa yonetim panelindeki genel ayar.
+        const VARSAYILAN_SURE_SANIYE = 120;
+        const TIMER_DURATION_SECONDS = (function(){
+          if(Number.isFinite(Number(EMBEDDED_TIMER_SECONDS))) return Math.round(Number(EMBEDDED_TIMER_SECONDS));
+          const oyunAyari = (localStorage.getItem('haritaEkranModu')==='play') ? Number(localStorage.getItem('haritaAktifOyunSure')) : NaN;
+          if(Number.isFinite(oyunAyari) && oyunAyari>=15 && oyunAyari<=600) return Math.round(oyunAyari);
+          const genel = Number(localStorage.getItem('haritaBulmacasi_sure_saniye'));
+          if(Number.isFinite(genel) && genel>=15 && genel<=600) return Math.round(genel);
+          return VARSAYILAN_SURE_SANIYE;
+        })();
+        const SANS_TETIK_SANIYESI = (function(){
+          const ham = Number(EMBEDDED_CHANCE_AT || localStorage.getItem('haritaBulmacasi_sans_suresi') || 60);
+          if(!Number.isFinite(ham) || ham<1) return Math.min(60, TIMER_DURATION_SECONDS-1);
+          // Tetik saniyesi toplam sureden kucuk olmali; aksi halde kutular hic acilmaz.
+          return Math.max(1, Math.min(Math.round(ham), TIMER_DURATION_SECONDS-1));
+        })();
         const VARSAYILAN_SANS_DEGERLERI = [-25,-20,-20,-15,-15,-10,-10,-10,10,10,10,15,15,20,20,25];
         const SANS_DEGERLERI = EMBEDDED_CHANCE_VALUES || JSON.parse(localStorage.getItem('haritaBulmacasi_sans_degerleri') || 'null') || VARSAYILAN_SANS_DEGERLERI;
+        // Şans kutuları açık/kapalı: önce oynanan oyunun ayarı, yoksa yönetim panelindeki genel ayar.
+        const SANS_AKTIF = (function(){
+          const oyunAyari = (localStorage.getItem('haritaEkranModu') === 'play') ? localStorage.getItem('haritaAktifOyunSans') : null;
+          if(oyunAyari === '0') return false;
+          if(oyunAyari === '1') return true;
+          // Varsayilan KAPALI: yalnizca yonetim panelinden acikca acilmissa ('1') kutular cikar.
+          return localStorage.getItem('haritaBulmacasi_sans_aktif') === '1';
+        })();
         let timerAdjustmentMs = 0;
         let sansKutusuAktif = false;
         let sansUcretsizSecimBitis = 0;
@@ -354,6 +452,23 @@
         const STORAGE_KEY_HAREKET_SAYACI = `${PREFIX}haritaBulmacasi_${GAME_ID}_hareket_sayaci`; 
         const STORAGE_KEY_SANS_ACILDI = `${PREFIX}haritaBulmacasi_${GAME_ID}_sans_acildi`;
         const STORAGE_KEY_TIMER_ADJUST = `${PREFIX}haritaBulmacasi_${GAME_ID}_timer_adjust`;
+        // Tahmin gonderilmeden once haritaya atilan son pin burada saklanir.
+        // Boylece sayfa yenilense bile sure dolunca son pin tahmin olarak kabul edilir.
+        const STORAGE_KEY_SECILI_PIN = `${PREFIX}haritaBulmacasi_${GAME_ID}_seciliPin`;
+        function seciliPiniKaydet(lat,lng){
+          if(Number.isFinite(Number(lat)) && Number.isFinite(Number(lng))){
+            localStorage.setItem(STORAGE_KEY_SECILI_PIN, Number(lat)+','+Number(lng));
+          }
+        }
+        function seciliPiniGeriYukle(){
+          if(selectedLat !== null && selectedLng !== null) return true;
+          const raw = localStorage.getItem(STORAGE_KEY_SECILI_PIN);
+          if(!raw) return false;
+          const p = raw.split(',').map(Number);
+          if(p.length!==2 || !p.every(Number.isFinite)) return false;
+          selectedLat = p[0]; selectedLng = p[1];
+          return true;
+        }
         
         let tahminHaritasi;
         let geocoder;
@@ -532,7 +647,7 @@
             if (typeof initMap === 'function') {
                 initMap(); 
             } else {
-                window.location.reload(); // Gerekirse sayfayı tamamen yenile
+                oyunuYenidenYukle(); // Gerekirse sayfayı tamamen yenile
             }
         }
 
@@ -595,7 +710,8 @@
 
 
             // 👇 YENİ EK: Eğer hedef ismi hala "Hedef XXXX" şeklinde koddan oluşuyorsa VEYA ülke kodu eksikse, geocoding yap.
-            if (!hedefUlkeKodu || (hedefIsmi && hedefIsmi.startsWith('Hedef '))) { 
+            const koordinatGibi = /^\s*-?\d+([.,]\d+)?\s*,\s*-?\d+([.,]\d+)?\s*$/.test(hedefIsmi||'');
+            if (!hedefUlkeKodu || !hedefIsmi || hedefIsmi.startsWith('Hedef ') || hedefIsmi==='Bilinmiyor' || koordinatGibi) { 
                 document.getElementById('mesajAlani').textContent = "Konum bilgileri alınıyor...";
                 
                 // getKonumAdiByKoordinat fonksiyonu hem ismi hem kodu döndürüyor.
@@ -618,7 +734,7 @@
                 zoom: 2,
                 streetViewControl: false,
                 mapTypeControl: false,
-                fullscreenControl: true,
+                fullscreenControl: false,
                 zoomControl: false,
                 gestureHandling: "greedy" // Harita Mouse Tekerleği Zoom Fix'i
             });
@@ -676,6 +792,14 @@
                 tahminHaritasi.setCenter({ lat: 41, lng: 28 });
                 document.getElementById('tahminButonu').classList.remove('hidden');
                 document.getElementById('tahminButonu').disabled = true; // İlk başta tahmin butonu devre dışı (seçim yapmaya zorlamak için)
+                // Sayfa yenilendiyse daha once atilan pin geri yuklenir.
+                if (seciliPiniGeriYukle()) {
+                    setTimeout(() => {
+                        pinAtVeKoordinatGuncelle(selectedLat, selectedLng);
+                        document.getElementById('tahminButonu').disabled = false;
+                        document.getElementById('mesajAlani').textContent = "Önceki seçimin geri yüklendi. Tahmini Göndermek için butona bas.";
+                    }, 300);
+                }
 
                 const display = document.getElementById('kronometre');
                 timerAdjustmentMs = parseInt(localStorage.getItem(STORAGE_KEY_TIMER_ADJUST) || '0',10);
@@ -874,10 +998,9 @@
              const FACTOR = 100;
              const truncatedMesafe = Math.trunc(mesafeKm * FACTOR) / FACTOR; // 2 ondalıkta kes
 
-             formattedMesafe = truncatedMesafe.toLocaleString('tr-TR', { 
-                 minimumFractionDigits: 2, 
-                 maximumFractionDigits: 2 
-             });
+             formattedMesafe = Math.abs(truncatedMesafe) >= 1000
+                 ? Math.round(truncatedMesafe).toLocaleString('tr-TR', { maximumFractionDigits: 0 })
+                 : truncatedMesafe.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
              const hedefIsimKey = `${STORAGE_KEY_HEDEF_ISIM_BASE}${stageNum}_hedefIsim`;
              // 👇 Hedef ismi localStorage'dan çekilir (initMap'te güncellendi)
@@ -1002,7 +1125,11 @@
              return {etiket:'Uzak', cls:'bg-red-100 text-red-800', renk:'#ef4444'};
           }
           function kmFormatla(km) {
-             return km.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' km';
+             const n=Number(km);
+             if(!Number.isFinite(n)) return '-';
+             return (Math.abs(n)>=1000
+               ? Math.round(n).toLocaleString('tr-TR',{maximumFractionDigits:0})
+               : n.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2})) + ' km';
           }
           function gosterToplamSonuclari() {
              localStorage.setItem(STORAGE_KEY_COMPLETED, 'true');
@@ -1054,6 +1181,7 @@
              
              selectedLat = lat;
              selectedLng = lng;
+             seciliPiniKaydet(lat, lng);
 
              const tahminKonum = { lat: lat, lng: lng };
              // Tahmin yapılmadan önce sadece basit bir pin gösteriyoruz.
@@ -1128,7 +1256,7 @@
              return dizi;
           }
           function sansKutulariniAc() {
-             if (!SANS_AKTIF()) return;
+             if (!SANS_AKTIF) { localStorage.setItem(STORAGE_KEY_SANS_ACILDI,'true'); return; }
              if (sansKutusuAktif) return;
              sansKutusuAktif=true;
              sansUcretsizSecimBitis=Date.now()+5000;
@@ -1188,6 +1316,23 @@
                  sansUcretsizSecimBitis=0;
                  sansUcretsizSureEklendi=false;
                  const sansModal=document.getElementById('sansModal'); if(sansModal) sansModal.classList.add('hidden');
+
+                 // SÜRE DOLDU: Haritada işaretli pin varsa ve tahmin gönderilmediyse, son pin tahmin sayılır.
+                 // Pin bellekte yoksa yerel kayıttan geri yüklenir (sayfa yenilenmiş olabilir).
+                 seciliPiniGeriYukle();
+                 if (selectedLat !== null && selectedLng !== null && localStorage.getItem(STORAGE_KEY_TAHMIN) !== 'true') {
+                     display.textContent = "00:00";
+                     display.style.color = "gray";
+                     display.classList.remove("animate-pulse");
+                     bodyElement.classList.remove('border-alert');
+                     document.removeEventListener('click', kapatUyariGlobal, true);
+                     localStorage.removeItem(STORAGE_KEY_TIMER_START);
+                     localStorage.removeItem(STORAGE_KEY_TIMER_DURATION);
+                     document.getElementById('mesajAlani').innerHTML = "⏱️ Süre doldu! Haritadaki son işaretlenen pin tahmin olarak gönderiliyor...";
+                     try { tahminGonder(); } catch(e) { console.error('Otomatik tahmin gönderilemedi:', e); }
+                     return;
+                 }
+
                  document.getElementById('tahminButonu').disabled = true;
                  document.getElementById('mesajAlani').innerHTML = "🛑 SÜRE DOLDU! Tahmin girişi kapatılmıştır. Bir sonraki aşamaya geçin.";
                  display.textContent = "00:00";
@@ -1200,7 +1345,7 @@
 
                  localStorage.setItem(STORAGE_KEY_TAHMIN, 'true');
                  localStorage.setItem(STORAGE_KEY_MESAFE, '19000');
-                 localStorage.setItem(STORAGE_KEY_SELECTION_NAME, 'Süre Doldu (19000 km)'); 
+                 localStorage.setItem(STORAGE_KEY_SELECTION_NAME, 'Süre Doldu'); 
                  firebaseAsamaKaydet(parseInt(localStorage.getItem(STORAGE_KEY_STAGE)), 19000, 'Süre Doldu', 'Hedef', hareketSayaci);
                  localStorage.removeItem(STORAGE_KEY_TIMER_START);
                  localStorage.removeItem(STORAGE_KEY_TIMER_DURATION);
@@ -1222,7 +1367,7 @@
                  if (sansUcretsizSecimBitis && Date.now() < sansUcretsizSecimBitis) return;
                  const elapsedTime = Date.now() - startTime;
                  let remainingTime = Math.max(0, (totalDuration - elapsedTime + timerAdjustmentMs) / 1000);
-                 if (SANS_AKTIF() && remainingTime <= SANS_TETIK_SANIYESI && localStorage.getItem(STORAGE_KEY_SANS_ACILDI) !== 'true') {
+                 if (SANS_AKTIF && remainingTime <= SANS_TETIK_SANIYESI && localStorage.getItem(STORAGE_KEY_SANS_ACILDI) !== 'true') {
                      sansKutulariniAc();
                      return;
                  } 
@@ -1275,7 +1420,7 @@
                 const nextStage = currentStage + 1;
                 localStorage.setItem(STORAGE_KEY_STAGE, nextStage);
                 alert(`🎉 ${nextStage}. Aşama'ya geçiliyor! Yeni harita yükleniyor...`);
-                window.location.reload(); 
+                oyunuYenidenYukle(); 
             } else {
                 localStorage.setItem(STORAGE_KEY_COMPLETED, 'true'); 
 
@@ -1292,6 +1437,43 @@
         }
           
 
+        /* Sağ haritayı, üstteki tahmin kutusu ve "Tahmini Gönder" butonu görünür kalacak şekilde büyütür. */
+        function sagHaritaUstBoslugunuAyarla(){
+          const kap=document.getElementById('sagHaritaKapsayici');
+          if(!kap || !kap.classList.contains('sag-harita-genis')) return;
+          const kutu=document.getElementById('tahminKutusu');
+          const alt=kutu ? kutu.getBoundingClientRect().bottom : 140;
+          kap.style.top = Math.max(8, Math.round(alt) + 10) + 'px';
+        }
+        function sagHaritaTamEkranDegistir(){
+          const kap=document.getElementById('sagHaritaKapsayici');
+          const btn=document.getElementById('sagHaritaTamEkranButonu');
+          if(!kap) return;
+          const acik=kap.classList.toggle('sag-harita-genis');
+          document.body.classList.toggle('sag-harita-genis-acik', acik);
+          if(acik){
+            window.scrollTo(0,0);
+            sagHaritaUstBoslugunuAyarla();
+            if(btn) btn.textContent='✕ Küçült';
+          } else {
+            kap.style.top='';
+            if(btn) btn.textContent='⛶ Tam ekran';
+          }
+          if(typeof tahminHaritasi!=='undefined' && tahminHaritasi){
+            const merkez=tahminHaritasi.getCenter();
+            setTimeout(()=>{ google.maps.event.trigger(tahminHaritasi,'resize'); if(merkez) tahminHaritasi.setCenter(merkez); }, 80);
+          }
+        }
+        document.addEventListener('keydown',function(e){
+          if(e.key==='Escape' && document.getElementById('sagHaritaKapsayici')?.classList.contains('sag-harita-genis')) sagHaritaTamEkranDegistir();
+        });
+        window.addEventListener('resize', sagHaritaUstBoslugunuAyarla);
+
+        /* Oyun akisindaki yenilemeler her zaman oyuncu modunda yapilir; boylece yonetim paneli tekrar acilmaz. */
+        function oyunuYenidenYukle(){
+          try{ sessionStorage.setItem('haritaAdminPaneliAcildi','1'); }catch(e){}
+          location.replace(location.pathname+'?mode=player');
+        }
         function adminPaneliniAc(){ document.getElementById('adminModal').classList.remove('hidden'); const p=document.getElementById('adminParola'); p.value=''; p.focus(); }
         function adminPaneliniKapat(){ document.getElementById('adminModal').classList.add('hidden'); document.getElementById('adminParola').value=''; }
         document.addEventListener('DOMContentLoaded',()=>{ const p=document.getElementById('adminParola'); if(p) p.addEventListener('keydown',e=>{ if(e.key==='Enter') adminGirisYap(); }); });
@@ -1300,7 +1482,13 @@
           const girilen=document.getElementById('adminParola').value.trim();
           if(girilen!==(kayitli || DEFAULT_ADMIN_PAROLA) && girilen!==DEFAULT_ADMIN_PAROLA){ document.getElementById('adminMesaj').textContent='❌ Parola hatalı.'; return; }
           if(girilen===DEFAULT_ADMIN_PAROLA && kayitli) localStorage.removeItem(ADMIN_PAROLA_KEY);
-          adminYetkili=true; document.getElementById('adminMesaj').textContent=''; document.getElementById('adminApiKey').value=localStorage.getItem('haritaBulmacasi_google_api_key') || EMBEDDED_API_KEY || ''; document.getElementById('adminFirebaseConfig').value=localStorage.getItem('haritaBulmacasi_firebase_config') || JSON.stringify(EMBEDDED_FIREBASE_CONFIG,null,2); document.getElementById('adminSansAktif').value=localStorage.getItem('haritaBulmacasi_sans_aktif') || 'true'; document.getElementById('adminSansSuresi').value=localStorage.getItem('haritaBulmacasi_sans_suresi') || 60; document.getElementById('adminSansDagilimi').value=localStorage.getItem('haritaBulmacasi_sans_dagilimi_metni') || '-25:1\n-20:2\n-15:2\n-10:3\n10:3\n15:2\n20:2\n25:1'; document.getElementById('adminGirisBolumu').classList.add('hidden'); document.getElementById('adminIcerik').classList.remove('hidden'); adminListeyiCiz();
+          adminYetkili=true; document.getElementById('adminMesaj').textContent=''; document.getElementById('adminApiKey').value=localStorage.getItem('haritaBulmacasi_google_api_key') || EMBEDDED_API_KEY || ''; document.getElementById('adminFirebaseConfig').value=localStorage.getItem('haritaBulmacasi_firebase_config') || JSON.stringify(EMBEDDED_FIREBASE_CONFIG,null,2); document.getElementById('adminSansSuresi').value=localStorage.getItem('haritaBulmacasi_sans_suresi') || 60; document.getElementById('adminSansDagilimi').value=localStorage.getItem('haritaBulmacasi_sans_dagilimi_metni') || '-25:1\n-20:2\n-15:2\n-10:3\n10:3\n15:2\n20:2\n25:1'; const sansKutu=document.getElementById('adminSansAktif'); if(sansKutu) sansKutu.checked = localStorage.getItem('haritaBulmacasi_sans_aktif') === '1'; document.getElementById('adminGirisBolumu').classList.add('hidden'); document.getElementById('adminIcerik').classList.remove('hidden'); adminListeyiCiz();
+        }
+        function adminSansAktifDegisti(){
+          const acik=document.getElementById('adminSansAktif').checked;
+          localStorage.setItem('haritaBulmacasi_sans_aktif', acik?'1':'0');
+          const m=document.getElementById('adminSansAktifMesaj');
+          if(m){ m.textContent = acik ? '✅ Şans kutuları açık. Bundan sonra oluşturulan oyunlarda kutular çıkacak.' : '⛔ Şans kutuları kapalı. Bundan sonra oluşturulan oyunlarda kutular çıkmayacak.'; m.className='text-xs font-bold mt-1 '+(acik?'text-emerald-700':'text-red-600'); }
         }
         function adminListeyiCiz(){
           const alan=document.getElementById('adminKoordinatListesi'); alan.innerHTML='';
@@ -1310,6 +1498,7 @@
             alan.appendChild(satir);
           });
         }
+        const EXCEL_REFERANS_HAVUZU = {"europe":[[38.0942985102661,27.73140097646863],[39.67575749794908,27.89847756998702],[55.67671111634751,12.54015189071222],[40.29103463707555,38.42034437512403],[38.73507569119867,-9.14575186244241],[64.29383840478494,23.9414831043665],[54.86270473811383,24.45750051654336],[54.44121779992766,18.56648286958475],[53.27425576109485,-9.048022126754864],[44.8299394279989,-0.5672063978889963],[63.16761086504126,15.60392777466867],[46.67336803813303,-0.3178085205752537],[41.59199653336675,-4.920257535041007],[25.30069723454095,55.44012762370313],[47.02436354780549,28.837774345852754],[59.93747579392169,30.33170600433493],[52.37335248353262,4.891751791213989],[55.78826612611443,49.10704798527169],[36.33131340004707,59.51866196657969],[60.39146358127183,5.31896330042916],[50.00288415179383,14.359261847574476],[45.25381525717101,19.85045435509307],[46.49229112416248,11.34136865156314],[54.16850298217933,-4.476747986159619],[53.5600367292296,10.019987418766995],[60.16614749716677,24.93875414119737],[40.60793260113162,9.749445057518564],[41.34883696694602,21.564996682230376],[51.40514754045241,21.161355782218344],[42.547126285678964,1.514233709662445],[54.442808801015936,18.565796197074285],[53.27400874805034,-9.049491969222451],[44.830057392004896,-0.569744417776951],[51.05399838960143,3.7171683623015928],[64.10293614881856,-21.874418278070557],[48.21050094759616,16.37391411289963],[54.59896412167509,-5.946318611460687],[40.62121460389244,22.95464316557763],[43.85933268497895,18.4309720529942],[56.9701833140076,24.045848643169684],[59.40739215169118,24.71832825103073],[40.242432697532095,40.23010802755808],[38.735151923936094,-9.145793456517179],[64.29387726476867,23.94141214208712],[54.86281353130869,24.457297383510795],[63.16758673394949,15.603876076870561],[39.54641208940255,29.49398908262088],[39.316611,26.338207],[60.069329,20.094976],[40.137758,18.50856],[47.802169,30.266183],[55.657835,50.10043],[52.04296,59.905782],[19.643164,56.032531],[47.394584,42.747097],[61.681878,14.176479],[51.885521,33.424025],[63.674559,10.583075],[42.903593,47.626421],[51.431751,28.830612],[52.330091,57.917731]],"asia":[[22.6449730261729,90.95477625591283],[35.01362171179103,135.7631377369327],[-25.72892595518731,143.329576370542],[-34.9723436147999,138.5640573647651],[22.67544577482986,120.285360486327],[42.35302243831564,69.64246056632872],[35.87255723329469,128.4776302869397],[39.01756798014126,125.7623488196277],[14.68230338581193,120.9782980387356],[-43.53139803233838,172.63470872787119],[47.91767280620843,106.91421216619895],[42.353062081746295,69.6425249393944],[35.87240943581077,128.47683635450775],[7.48436198116317,80.35470081604964],[1.2908379960176934,103.84121968042022],[13.7372517174585,100.5132987762929],[2.7629446299497498,101.72433069604733],[35.01383510754688,135.76202018122083],[-25.729616451042993,143.33013633811973],[-34.9723671666183,138.5640890106808],[22.675432774295125,120.28556624146876],[11.980165,124.855256],[34.436713,133.332409],[57.137273,86.385653],[-20.375334,140.287252],[-21.226264,147.594857],[44.244124,110.821115],[53.872472,120.9091],[-18.547418,146.341079],[10.839725,122.332034],[31.278611,74.548406],[-19.388,147.111736],[-24.834602,116.927965],[12.380432,105.100836],[5.282002,100.191495],[-1.044051,117.101579],[-35.726146,140.802672],[41.364953,75.471964],[-31.272626,120.011279],[46.368132,96.967144],[13.727543,104.774592],[-6.155749,71.517714],[54.497868,110.487152],[47.090895,106.216877],[54.010257,102.027492],[-25.117404,119.360367],[54.687631,89.822642],[-1.180316,100.390146],[48.555128,70.336839],[-32.531023,146.281749],[-33.365156,148.361506],[10.496834,124.031025],[64.470508,144.608718]],"africa":[[37.28116160121512,27.58211099435789],[31.21899013360216,29.92750386782464],[33.3165929037182,44.35499501237403],[-34.80826152228604,20.05483641803749],[6.59735823856748,3.359658874594727],[33.316216330521705,44.35726951633132],[32.07929301398184,34.79154889977727],[28.11258356311026,-15.42880348405378],[6.671171111121846,-1.605998445980973],[14.7169493826635,-17.46825796898007],[32.08505715035202,20.09192655932297],[-1.9494098448920385,30.06548196313533],[-21.979680820304647,16.905901401001742],[35.89119259226106,-5.323213250983676],[12.586086293515304,-16.26631257409473],[-25.671736691384496,28.196707524661807],[-0.412961059197196,34.161272749591504],[-6.173195830862824,39.22946693098146],[0.3112081122353102,32.57672559424252],[4.964283569849753,8.351977176297922],[31.219035697545834,29.9270502793251],[37.888450169327875,41.13579980023792],[37.188803715508385,32.24533173442593],[-27.412795,17.94278],[9.202697,-0.588906],[36.956943,-6.175125]],"america":[[33.45449070248973,-112.0739186167158],[-34.90182293053306,-56.20317294457083],[53.21539253446422,-62.3259179053065],[20.9974445883205,-89.64993725843024],[-12.73919968117575,-56.51797777831259],[24.77518056374397,-107.4045064109354],[5.416459083535584,-73.34945844908172],[33.83329441764316,-84.1903452848709],[21.31358063678165,-157.84894310315312],[-17.762923163468884,-63.17520994279652],[24.767726140559233,-107.40819882089104],[18.47195827949447,-69.94142265797478],[45.51561672965391,-122.6827603999146],[-34.90181746141848,-56.20331740221168],[53.21509681737594,-62.32488194593444],[20.997456392334975,-89.64993087264408],[-12.739479612650475,-56.51775247278013],[36.934487,-93.357336],[43.558391,-96.24103],[8.511623,-81.082437],[-25.075241,-130.088754],[-28.798661,-65.107681],[52.587017,-112.579897],[45.196303,-87.901894],[-1.012838,-48.965217],[48.877072,-57.930021],[38.023538,-114.201646],[-10.59472,-45.981071],[44.692367,-121.972997],[54.297655,-115.149546],[44.524438,-77.492854],[25.083943,-102.622974],[-27.355459,-67.75817],[43.097752,-90.599709],[-27.60835,-62.073223],[-11.857939,-47.598266],[-27.061491,-65.408966],[61.582086,-144.439035],[36.152984,-95.512308],[40.359194,-115.639112],[-3.403925,-49.556267],[68.84553,-148.822161],[44.310676,-113.020558],[73.227418,-119.540538],[46.306131,-61.24378],[37.06989,-97.619135],[54.236777,-126.632758],[36.330528,-104.923899],[7.653227,-73.670617],[52.202689,-105.194265],[-31.453822,-57.902728],[43.803795,-82.941212],[61.618557,-130.231363],[-32.37279,-66.058257],[-37.349658,-59.197251],[49.191655,-69.445489],[18.215745,-92.877648],[32.343727,-81.427915],[-20.099584,-54.433142],[35.470405,-93.358738],[24.358519,-101.711327],[47.734485,-73.006206],[42.011998,-123.627332],[-30.294527,-66.86809],[-16.159403,-54.790706],[0.051351,-77.300122],[51.782147,-67.91597],[-44.239213,-68.237953]],"world":[[38.0942985102661,27.73140097646863],[39.67575749794908,27.89847756998702],[37.28116160121512,27.58211099435789],[22.6449730261729,90.95477625591283],[55.67671111634751,12.54015189071222],[40.29103463707555,38.42034437512403],[33.45449070248973,-112.0739186167158],[35.01362171179103,135.7631377369327],[38.73507569119867,-9.14575186244241],[-34.90182293053306,-56.20317294457083],[31.21899013360216,29.92750386782464],[-25.72892595518731,143.329576370542],[53.21539253446422,-62.3259179053065],[-34.9723436147999,138.5640573647651],[22.67544577482986,120.285360486327],[64.29383840478494,23.9414831043665],[54.86270473811383,24.45750051654336],[20.9974445883205,-89.64993725843024],[-12.73919968117575,-56.51797777831259],[24.77518056374397,-107.4045064109354],[42.35302243831564,69.64246056632872],[35.87255723329469,128.4776302869397],[54.44121779992766,18.56648286958475],[53.27425576109485,-9.048022126754864],[44.8299394279989,-0.5672063978889963],[33.3165929037182,44.35499501237403],[63.16761086504126,15.60392777466867],[5.416459083535584,-73.34945844908172],[46.67336803813303,-0.3178085205752537],[41.59199653336675,-4.920257535041007],[25.30069723454095,55.44012762370313],[33.83329441764316,-84.1903452848709],[39.01756798014126,125.7623488196277],[14.68230338581193,120.9782980387356],[-34.80826152228604,20.05483641803749],[47.02436354780549,28.837774345852754],[6.59735823856748,3.359658874594727],[-43.53139803233838,172.63470872787119],[21.31358063678165,-157.84894310315312],[47.91767280620843,106.91421216619895],[-17.762923163468884,-63.17520994279652],[24.767726140559233,-107.40819882089104],[42.353062081746295,69.6425249393944],[35.87240943581077,128.47683635450775],[7.48436198116317,80.35470081604964],[1.2908379960176934,103.84121968042022],[33.316216330521705,44.35726951633132],[32.07929301398184,34.79154889977727],[59.93747579392169,30.33170600433493],[52.37335248353262,4.891751791213989],[18.47195827949447,-69.94142265797478],[45.51561672965391,-122.6827603999146],[13.7372517174585,100.5132987762929],[55.78826612611443,49.10704798527169],[28.11258356311026,-15.42880348405378],[36.33131340004707,59.51866196657969],[2.7629446299497498,101.72433069604733],[60.39146358127183,5.31896330042916],[50.00288415179383,14.359261847574476],[6.671171111121846,-1.605998445980973],[14.7169493826635,-17.46825796898007],[32.08505715035202,20.09192655932297],[-1.9494098448920385,30.06548196313533],[-21.979680820304647,16.905901401001742],[35.89119259226106,-5.323213250983676],[12.586086293515304,-16.26631257409473],[-25.671736691384496,28.196707524661807],[-0.412961059197196,34.161272749591504],[-6.173195830862824,39.22946693098146],[0.3112081122353102,32.57672559424252],[4.964283569849753,8.351977176297922],[45.25381525717101,19.85045435509307],[46.49229112416248,11.34136865156314],[54.16850298217933,-4.476747986159619],[53.5600367292296,10.019987418766995],[60.16614749716677,24.93875414119737],[40.60793260113162,9.749445057518564],[41.34883696694602,21.564996682230376],[51.40514754045241,21.161355782218344],[42.547126285678964,1.514233709662445],[54.442808801015936,18.565796197074285],[53.27400874805034,-9.049491969222451],[44.830057392004896,-0.569744417776951],[51.05399838960143,3.7171683623015928],[64.10293614881856,-21.874418278070557],[48.21050094759616,16.37391411289963],[54.59896412167509,-5.946318611460687],[40.62121460389244,22.95464316557763],[43.85933268497895,18.4309720529942],[56.9701833140076,24.045848643169684],[59.40739215169118,24.71832825103073],[40.242432697532095,40.23010802755808],[35.01383510754688,135.76202018122083],[38.735151923936094,-9.145793456517179],[-34.90181746141848,-56.20331740221168],[31.219035697545834,29.9270502793251],[-25.729616451042993,143.33013633811973],[53.21509681737594,-62.32488194593444],[-34.9723671666183,138.5640890106808],[22.675432774295125,120.28556624146876],[64.29387726476867,23.94141214208712],[54.86281353130869,24.457297383510795],[20.997456392334975,-89.64993087264408],[-12.739479612650475,-56.51775247278013],[63.16758673394949,15.603876076870561],[37.888450169327875,41.13579980023792],[37.188803715508385,32.24533173442593],[39.54641208940255,29.49398908262088],[36.934487,-93.357336],[43.558391,-96.24103],[39.316611,26.338207],[8.511623,-81.082437],[11.980165,124.855256],[34.436713,133.332409],[60.069329,20.094976],[-25.075241,-130.088754],[57.137273,86.385653],[-28.798661,-65.107681],[52.587017,-112.579897],[45.196303,-87.901894],[-1.012838,-48.965217],[-20.375334,140.287252],[-21.226264,147.594857],[40.137758,18.50856],[44.244124,110.821115],[53.872472,120.9091],[-18.547418,146.341079],[48.877072,-57.930021],[38.023538,-114.201646],[47.802169,30.266183],[10.839725,122.332034],[-10.59472,-45.981071],[44.692367,-121.972997],[55.657835,50.10043],[54.297655,-115.149546],[44.524438,-77.492854],[25.083943,-102.622974],[-27.355459,-67.75817],[52.04296,59.905782],[43.097752,-90.599709],[-27.412795,17.94278],[19.643164,56.032531],[-27.60835,-62.073223],[9.202697,-0.588906],[47.394584,42.747097],[-11.857939,-47.598266],[31.278611,74.548406],[-19.388,147.111736],[-27.061491,-65.408966],[61.681878,14.176479],[61.582086,-144.439035],[-24.834602,116.927965],[12.380432,105.100836],[36.152984,-95.512308],[40.359194,-115.639112],[51.885521,33.424025],[-3.403925,-49.556267],[5.282002,100.191495],[68.84553,-148.822161],[44.310676,-113.020558],[-1.044051,117.101579],[73.227418,-119.540538],[46.306131,-61.24378],[37.06989,-97.619135],[54.236777,-126.632758],[-35.726146,140.802672],[41.364953,75.471964],[36.330528,-104.923899],[-31.272626,120.011279],[63.674559,10.583075],[46.368132,96.967144],[36.956943,-6.175125],[13.727543,104.774592],[7.653227,-73.670617],[52.202689,-105.194265],[-31.453822,-57.902728],[43.803795,-82.941212],[61.618557,-130.231363],[-32.37279,-66.058257],[42.903593,47.626421],[51.431751,28.830612],[-37.349658,-59.197251],[49.191655,-69.445489],[-6.155749,71.517714],[54.497868,110.487152],[18.215745,-92.877648],[32.343727,-81.427915],[-20.099584,-54.433142],[47.090895,106.216877],[35.470405,-93.358738],[54.010257,102.027492],[24.358519,-101.711327],[-25.117404,119.360367],[54.687631,89.822642],[47.734485,-73.006206],[42.011998,-123.627332],[-30.294527,-66.86809],[-1.180316,100.390146],[-16.159403,-54.790706],[48.555128,70.336839],[52.330091,57.917731],[-32.531023,146.281749],[0.051351,-77.300122],[-33.365156,148.361506],[10.496834,124.031025],[51.782147,-67.91597],[64.470508,144.608718],[-44.239213,-68.237953]]};
         const OTOMATIK_MERKEZLER={
           europe:[[48.85,2.35,'FR'],[51.50,-.12,'GB'],[41.01,28.97,'TR'],[52.52,13.40,'DE'],[41.90,12.49,'IT'],[40.41,-3.70,'ES'],[50.85,4.35,'BE'],[52.37,4.90,'NL'],[48.20,16.37,'AT'],[50.08,14.43,'CZ'],[47.49,19.04,'HU'],[44.43,26.10,'RO'],[37.98,23.72,'GR'],[38.72,-9.13,'PT'],[55.67,12.56,'DK'],[59.91,10.75,'NO'],[60.17,24.94,'FI'],[52.23,21.01,'PL'],[46.05,14.50,'SI'],[45.81,15.98,'HR']],
           world:[[40.71,-74,'US'],[34.05,-118.24,'US'],[43.65,-79.38,'CA'],[19.43,-99.13,'MX'],[-23.55,-46.63,'BR'],[-34.60,-58.38,'AR'],[-33.45,-70.66,'CL'],[35.68,139.69,'JP'],[37.56,126.97,'KR'],[1.35,103.82,'SG'],[-33.86,151.20,'AU'],[-37.81,144.96,'AU'],[-36.84,174.76,'NZ'],[25.20,55.27,'AE'],[22.31,114.17,'HK']]
@@ -1338,31 +1527,62 @@
           if(tur==='street' && (data.links||[]).length<1)return false;
           return true;
         }
+        function otomatikMesafeKm(lat1,lng1,lat2,lng2){
+          const R=6371,dLat=(lat2-lat1)*Math.PI/180,dLng=(lng2-lng1)*Math.PI/180;
+          const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+          return 2*R*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+        }
+        function referansCevresindeAday(ref){
+          const minKm=20,maxKm=150;
+          const mesafe=Math.sqrt(Math.random()*(maxKm*maxKm-minKm*minKm)+minKm*minKm);
+          const aci=Math.random()*Math.PI*2;
+          const dLat=(mesafe/111)*Math.cos(aci);
+          const cos=Math.max(.15,Math.cos(ref[0]*Math.PI/180));
+          const dLng=(mesafe/(111*cos))*Math.sin(aci);
+          let lng=ref[1]+dLng;if(lng>180)lng-=360;if(lng<-180)lng+=360;
+          return {lat:Math.max(-85,Math.min(85,ref[0]+dLat)),lng};
+        }
+        function mevcutOtomatikKoordinatlar(){
+          return [...document.querySelectorAll('#adminKoordinatListesi .admin-grid')].map(row=>{
+            const raw=(row.dataset.gizliCoord||row.querySelector('.admin-coord')?.value||'').trim();
+            const p=raw.split(',').map(Number);return p.length===2&&p.every(Number.isFinite)?p:null;
+          }).filter(Boolean);
+        }
         async function otomatikKoordinatBul(){
           const mesaj=document.getElementById('adminKayitMesaj'),buton=document.getElementById('otomatikKoordinatButonu');
           if(!adminYetkili){mesaj.textContent='❌ Önce yönetici girişi yapın.';return;}
           if(!window.google?.maps?.StreetViewService){mesaj.textContent='⏳ Google Maps henüz yükleniyor. Sayfayı yenileyip tekrar deneyin.';return;}
-          buton.disabled=true;const eski=buton.textContent;buton.textContent='Uygun sokak aranıyor...';mesaj.textContent='🌍 Street View bulunan dış mekân aranıyor...';mesaj.className='text-sm mt-3 font-semibold text-blue-700';
+          buton.disabled=true;const eski=buton.textContent;buton.textContent='Uygun sokak aranıyor...';mesaj.textContent='🌍 Excel referans havuzundan Street View konumu aranıyor...';mesaj.className='text-sm mt-3 font-semibold text-blue-700';
           try{
             const bolge=document.getElementById('otomatikBolge').value,tur=document.getElementById('otomatikTur').value,ulke=document.getElementById('otomatikUlke').value;
-            let merkezler,beklenen='';
-            if(bolge==='country'){merkezler=(ULKE_MERKEZLER[ulke]||[]).map(x=>[x[0],x[1],ulke]);beklenen=ulke;}
-            else if(bolge==='europe')merkezler=OTOMATIK_MERKEZLER.europe;
-            else merkezler=[...OTOMATIK_MERKEZLER.europe,...OTOMATIK_MERKEZLER.world];
-            const service=new google.maps.StreetViewService(),geocoder=new google.maps.Geocoder();let kabul=null;
-            for(let d=0;d<100&&!kabul;d++){
-              const c=merkezler[Math.floor(Math.random()*merkezler.length)];
-              const yayilim=tur==='street'?0.45:1.5;
-              const aday={lat:c[0]+(Math.random()-.5)*yayilim,lng:c[1]+(Math.random()-.5)*yayilim};
-              const data=await panoAra(service,aday,tur==='street'?15000:30000);
-              if(!data)continue;
-              let results=[];try{results=await tersGeocode(geocoder,data.location.latLng);}catch(e){}
-              if(panoKabul(data,results,tur,beklenen))kabul=data.location.latLng;
+            let merkezler=[],beklenen='';
+            if(bolge==='country'){
+              merkezler=(ULKE_MERKEZLER[ulke]||[]).map(x=>[x[0],x[1],ulke]);beklenen=ulke;
+            }else{
+              merkezler=EXCEL_REFERANS_HAVUZU[bolge]||EXCEL_REFERANS_HAVUZU.world;
             }
-            if(!kabul)throw new Error('Street View konumu bulunamadı. Google Maps API kısıtlarında Maps JavaScript API ve Geocoding API erişimini kontrol edin.');
+            if(!merkezler.length)throw new Error('Seçilen bölge için referans koordinat bulunamadı.');
+            const mevcut=mevcutOtomatikKoordinatlar();
+            // Bir onceki otomatik koordinata olan minimum uzaklik: ulke secimi 250 km, bolge/dunya secimi 900 km.
+            const minAyrimKm = (bolge==='country') ? 250 : 900;
+            const sonKoordinat = mevcut.length ? mevcut[mevcut.length-1] : null;
+            const digerKoordinatlar = mevcut.slice(0,-1);
+            const service=new google.maps.StreetViewService(),geocoder=new google.maps.Geocoder();let kabul=null;
+            for(let d=0;d<260&&!kabul;d++){
+              const ref=merkezler[Math.floor(Math.random()*merkezler.length)];
+              const aday=referansCevresindeAday(ref);
+              const data=await panoAra(service,aday,tur==='street'?12000:25000);if(!data)continue;
+              const p=data.location.latLng,refUzaklik=otomatikMesafeKm(ref[0],ref[1],p.lat(),p.lng());
+              if(refUzaklik<20||refUzaklik>150)continue;
+              if(sonKoordinat && otomatikMesafeKm(sonKoordinat[0],sonKoordinat[1],p.lat(),p.lng())<minAyrimKm)continue;
+              if(digerKoordinatlar.some(x=>otomatikMesafeKm(x[0],x[1],p.lat(),p.lng())<250))continue;
+              let results=[];try{results=await tersGeocode(geocoder,p);}catch(e){}
+              if(panoKabul(data,results,tur,beklenen))kabul=p;
+            }
+            if(!kabul)throw new Error(`Koşullara uygun Street View konumu bulunamadı (bir önceki koordinattan en az ${minAyrimKm} km uzaklık şartı). Bölgeyi değiştirin veya mevcut koordinatlardan bazılarını kaldırın.`);
             const coord=`${kabul.lat().toFixed(7)}, ${kabul.lng().toFixed(7)}`;
             koordinatSatiriEkle(sonrakiOtomatikKod(),coord);
-            mesaj.textContent='✅ Yeni bir gizli otomatik konum eklendi.';mesaj.className='text-sm mt-3 font-semibold text-emerald-700';
+            mesaj.textContent=`✅ Referanstan 20–150 km uzakta, bir önceki koordinattan en az ${minAyrimKm} km uzakta konum eklendi.`;mesaj.className='text-sm mt-3 font-semibold text-emerald-700';
           }catch(e){mesaj.textContent='❌ '+(e?.message||'Koordinat bulunamadı.');mesaj.className='text-sm mt-3 font-semibold text-red-600';}
           finally{buton.disabled=false;buton.textContent=eski;}
         }
@@ -1450,7 +1670,7 @@
           if(!Number.isInteger(sansSuresi) || sansSuresi<1 || sansSuresi>=120){ document.getElementById('adminKayitMesaj').textContent='❌ Şans süresi 1 ile 119 saniye arasında olmalı.'; return; }
           const sansAyar=adminSansDegerleriniOku();
           if(sansAyar.hata){ document.getElementById('adminKayitMesaj').textContent='❌ '+sansAyar.hata; document.getElementById('adminKayitMesaj').className='text-sm mt-3 font-semibold text-red-600'; return; }
-          HEDEF_VERILERI=arr; localStorage.setItem('haritaBulmacasi_admin_hedefler',JSON.stringify(arr)); localStorage.setItem('haritaBulmacasi_sans_suresi',String(sansSuresi)); localStorage.setItem('haritaBulmacasi_sans_degerleri',JSON.stringify(sansAyar.degerler)); localStorage.setItem('haritaBulmacasi_sans_dagilimi_metni',document.getElementById('adminSansDagilimi').value.trim()); localStorage.setItem('haritaBulmacasi_sans_aktif',document.getElementById('adminSansAktif').value);
+          HEDEF_VERILERI=arr; localStorage.setItem('haritaBulmacasi_admin_hedefler',JSON.stringify(arr)); localStorage.setItem('haritaBulmacasi_sans_suresi',String(sansSuresi)); localStorage.setItem('haritaBulmacasi_sans_degerleri',JSON.stringify(sansAyar.degerler)); localStorage.setItem('haritaBulmacasi_sans_dagilimi_metni',document.getElementById('adminSansDagilimi').value.trim());
           const fbAyar=firebaseConfigOku();
           if(fbAyar.hata){ document.getElementById('adminKayitMesaj').textContent='❌ '+fbAyar.hata; document.getElementById('adminKayitMesaj').className='text-sm mt-3 font-semibold text-red-600'; return false; }
           localStorage.setItem('haritaBulmacasi_firebase_config',JSON.stringify(fbAyar.cfg));
@@ -1487,7 +1707,8 @@
               'const EMBEDDED_TARGETS = null;':'const EMBEDDED_TARGETS = '+JSON.stringify(HEDEF_VERILERI,null,2)+';',
               'const EMBEDDED_CHANCE_AT = null;':'const EMBEDDED_CHANCE_AT = '+JSON.stringify(parseInt(document.getElementById('adminSansSuresi').value,10))+';',
               'const EMBEDDED_CHANCE_VALUES = null;':'const EMBEDDED_CHANCE_VALUES = '+JSON.stringify(sansAyar.degerler)+';',
-              'const EMBEDDED_CHANCE_ENABLED = null;':'const EMBEDDED_CHANCE_ENABLED = '+JSON.stringify(document.getElementById('adminSansAktif').value === 'true')+';',
+              'const EMBEDDED_TIMER_SECONDS = null;':'const EMBEDDED_TIMER_SECONDS = '+JSON.stringify(adminSureOku())+';',
+              'const EMBEDDED_PUAN_OLCEK = null;':'const EMBEDDED_PUAN_OLCEK = '+JSON.stringify(adminPuanOlcekOku())+';',
             };
             for(const [aranan,yeni] of Object.entries(ayarlar)){
               const ilk=html.indexOf(aranan);
@@ -1496,7 +1717,7 @@
             }
             html=html.replace('<body class="bg-gray-50">','<body class="bg-gray-50 player-mode">');
             html=html.replace(/<div id="adminModal" class="modal-backdrop(?: hidden)?"/, '<div id="adminModal" class="modal-backdrop hidden"');
-            html=html.replace(/<div id="baslangicKapsayici" class="[^"]*"/, '<div id="baslangicKapsayici" class="flex flex-col items-center justify-center p-8 space-y-4 h-full w-full absolute top-0 left-0 bg-gray-50 z-20"');
+            html=html.replace(/<div id="baslangicKapsayici" class="[^"]*"[^>]*/, '<div id="baslangicKapsayici" class="hidden" hidden aria-hidden="true" style="display:none!important"');
             html=html.replace(/<div id="oyunKapsayici" class="[^"]*"/, '<div id="oyunKapsayici" class="h-full w-full hidden"');
 
             const blob=new Blob([html],{type:'text/html;charset=utf-8'});
@@ -1567,6 +1788,12 @@
           data[`stage${stageNum}Km`]=Number(mesafeKm);
           data[`stage${stageNum}Selection`]=secimAdi;
           data[`stage${stageNum}Moves`]=Number(hareket||0);
+          // Skor tablosu detayi icin gercek konum adlari (il, ulke)
+          for(let i=1;i<=TOTAL_STAGES;i++){
+            const hedefAd=localStorage.getItem(`${STORAGE_KEY_HEDEF_ISIM_BASE}${i}_hedefIsim`);
+            if(hedefAd && !hedefAd.startsWith('Hedef ')) data[`stage${i}Target`]=hedefAd;
+          }
+          if(hedefAdi) data[`stage${stageNum}Target`]=hedefAdi;
 
           const tamamlanan=[1,2,3].every(i=>Number.isFinite(Number(data[`stage${i}Km`])));
           if(tamamlanan){
@@ -1593,12 +1820,35 @@
           durum.textContent='Sonuçlar yenileniyor...';
           try{
             const snap=await firebaseDb.collection('games').doc(SERIES_ID).collection('players').get();
-            const rows=snap.docs.map(d=>d.data()).sort((a,b)=>Number(a.totalKm??Infinity)-Number(b.totalKm??Infinity));
-            let html='<div class="lider-row lider-head"><div>#</div><div>Oyuncu</div><div>1. Konum</div><div>2. Konum</div><div>3. Konum</div><div>Toplam</div></div>';
-            rows.forEach((r,i)=>{ const me=r.uid===firebaseUser.uid?' lider-me':''; const f=v=>Number.isFinite(Number(v))?Number(v).toLocaleString('tr-TR',{maximumFractionDigits:2})+' km':'-'; html+=`<div class="lider-row${me}"><div>${r.completed?i+1:'•'}</div><div>${guvenliMetin(r.playerName||'Oyuncu')}${me?' (Sen)':''}</div><div>${f(r.stage1Km)}</div><div>${f(r.stage2Km)}</div><div>${f(r.stage3Km)}</div><div>${r.completed?f(r.totalKm):'Devam ediyor'}</div></div>`; });
-            alan.innerHTML=rows.length?html:'<p class="text-sm text-slate-500">Henüz kayıtlı oyuncu yok.</p>'; durum.textContent=`${rows.length} oyuncunun güncel sonucu`;
+            const rows=snap.docs.map(d=>d.data()).sort((a,b)=>{
+              if(a.completed&&!b.completed)return -1; if(!a.completed&&b.completed)return 1;
+              return Number(a.totalKm??Infinity)-Number(b.totalKm??Infinity);
+            });
+            let html='<div class="lider-row lider-head"><div>#</div><div>Oyuncu</div><div>1. Konum</div><div>2. Konum</div><div>3. Konum</div><div>En iyi</div><div>Ortalama</div><div>Toplam</div></div>';
+            const f=v=>Number.isFinite(Number(v))?kmSayi(v)+' km':'-';
+            const asamaHucre=(km,secim)=>{
+              const n=Number(km); if(!Number.isFinite(n)) return '<div><span class="lider-bos">-</span></div>';
+              const sv=mesafeSeviyesi(n);
+              return `<div><div class="lider-km">${f(n)}</div><div class="lider-alt"><span class="lider-nokta" style="background:${sv.renk}"></span>${sv.etiket}</div><div class="lider-yer" title="${guvenliMetin(secim||'')}">${guvenliMetin(secim||'-')}</div></div>`;
+            };
+            rows.forEach((r,i)=>{
+              const me=r.uid===firebaseUser.uid?' lider-me':'';
+              const kms=[r.stage1Km,r.stage2Km,r.stage3Km].map(Number).filter(Number.isFinite);
+              const enIyi=kms.length?Math.min(...kms):NaN;
+              const ort=kms.length?kms.reduce((a,b)=>a+b,0)/kms.length:NaN;
+              html+=`<div class="lider-row${me}"><div class="lider-sira">${r.completed?(MADALYALAR[i]||(i+1)):'•'}</div>`+
+                `<div><b>${guvenliMetin(r.playerName||'Oyuncu')}</b>${me?' <span class="lider-sen">Sen</span>':''}<div class="lider-alt">${r.completed?'Tamamladı':(kms.length+' / 3 aşama')}</div></div>`+
+                asamaHucre(r.stage1Km,r.stage1Selection)+asamaHucre(r.stage2Km,r.stage2Selection)+asamaHucre(r.stage3Km,r.stage3Selection)+
+                `<div class="lider-eniyi">${f(enIyi)}</div><div>${f(ort)}</div>`+
+                `<div class="lider-toplam">${r.completed?f(r.totalKm):'Devam ediyor'}</div></div>`;
+            });
+            alan.innerHTML=rows.length?html:'<p class="text-sm text-slate-500">Henüz kayıtlı oyuncu yok.</p>';
+            const biten=rows.filter(r=>r.completed);
+            const genelOrt=biten.length?biten.reduce((a,b)=>a+Number(b.totalKm||0),0)/biten.length:NaN;
+            durum.textContent=`${rows.length} oyuncu · ${biten.length} tamamladı`+(Number.isFinite(genelOrt)?` · ortalama toplam ${f(genelOrt)}`:'');
           }catch(err){ console.error(err); alan.innerHTML='<p class="text-sm text-red-600">Sonuçlar alınamadı. Firestore kurallarını kontrol edin.</p>'; durum.textContent='Bağlantı hatası'; }
         }
+        const MADALYALAR=['\u{1F947}','\u{1F948}','\u{1F949}'];
         function guvenliMetin(v){ const d=document.createElement('div'); d.textContent=String(v); return d.innerHTML; }
         function googleMapsYukle(){
           // Güvenlik nedeniyle API anahtarı bu HTML sürümünde yer tutucu olarak bırakılmıştır.
@@ -1608,7 +1858,7 @@
             document.getElementById('kodMesaj').textContent='Google Maps API anahtarı oyuncu dosyasına gömülmemiş. Yönetim panelinden yeni oyuncu HTML’si üretin.';
             document.getElementById('kodMesaj').classList.remove('hidden'); return;
           }
-          const sc=document.createElement('script'); sc.src=`https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&libraries=places&callback=initMap`; sc.async=true; sc.defer=true; document.head.appendChild(sc);
+          const sc=document.createElement('script'); sc.src=`https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&libraries=places&language=tr&region=TR&callback=initMap`; sc.async=true; sc.defer=true; document.head.appendChild(sc);
         }
         window.addEventListener('load', async ()=>{ await firebaseBaslat(); googleMapsYukle(); });
 
@@ -1639,7 +1889,7 @@
              localStorage.removeItem(STORAGE_KEY_COMPLETED);
              
              // Sayfayı yeniden yükle
-             window.location.reload();
+             oyunuYenidenYukle();
           }
           
     </script>
@@ -1647,7 +1897,96 @@
 /* TEMIZ FIREBASE OYUN SISTEMI V1 */
 let oyunListesi = [];
 function temizMetin(v){const d=document.createElement('div');d.textContent=String(v||'');return d.innerHTML;}
-function kmYaz(v){return Number.isFinite(Number(v))?Number(v).toLocaleString('tr-TR',{maximumFractionDigits:2})+' km':'-';}
+/* 1000 km ve uzerinde ondalik basamak gosterilmez; altinda iki basamak gosterilir. */
+function kmSayi(v){
+ const n=Number(v);
+ if(!Number.isFinite(n)) return '-';
+ return Math.abs(n)>=1000
+   ? Math.round(n).toLocaleString('tr-TR',{maximumFractionDigits:0})
+   : n.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function kmYaz(v){return Number.isFinite(Number(v))?kmSayi(v)+' km':'-';}
+
+/* =========================================================================
+ * PUANLAMA MOTORU
+ *   Temel puan : mesafeden ustel azalma  -> 5000 * e^(-km/1500)
+ *   Sure bonusu: kalan sureden, temel puanla ORANTILI
+ *                500 * (kalan/120) * (temel/5000)
+ *   Orantinin sebebi: hizli ama kotu tahmin, yavas ama iyi tahminin onune
+ *   gecemesin. Bonus ancak iyi tahmin yapana tam yansir.
+ * ========================================================================= */
+const PUAN_MAX        = 5000;   // bir konumun azami temel puani
+// Puan olcegi: once oynanan/goruntulenen oyunun kendi ayari, yoksa yonetim panelindeki genel ayar.
+const VARSAYILAN_PUAN_OLCEK = 2000;
+let PUAN_OLCEK_KM = (function(){
+  if(typeof EMBEDDED_PUAN_OLCEK!=='undefined' && Number.isFinite(Number(EMBEDDED_PUAN_OLCEK))) return Math.round(Number(EMBEDDED_PUAN_OLCEK));
+  const oyunAyari = Number(localStorage.getItem('haritaAktifOyunPuanOlcek'));
+  if(Number.isFinite(oyunAyari) && oyunAyari>=500 && oyunAyari<=10000) return Math.round(oyunAyari);
+  const genel = Number(localStorage.getItem('haritaBulmacasi_puan_olcek'));
+  if(Number.isFinite(genel) && genel>=500 && genel<=10000) return Math.round(genel);
+  return VARSAYILAN_PUAN_OLCEK;
+})();
+/* Skor tablosu acilirken o oyunun kendi olcegi uygulanir. */
+function puanOlceginiUygula(deger){
+  const n=Number(deger);
+  PUAN_OLCEK_KM = (Number.isFinite(n) && n>=500 && n<=10000) ? Math.round(n) : VARSAYILAN_PUAN_OLCEK;
+}
+const PUAN_SURE_BONUS = 500;    // azami sure bonusu
+let PUAN_SURE_TOPLAM= (typeof TIMER_DURATION_SECONDS!=='undefined') ? TIMER_DURATION_SECONDS : 120;
+/* Skor tablosu acilirken o oyunun kendi suresi uygulanir. */
+function puanSuresiniUygula(deger){
+  const n=Number(deger);
+  PUAN_SURE_TOPLAM = (Number.isFinite(n) && n>=15 && n<=600) ? Math.round(n) : ((typeof TIMER_DURATION_SECONDS!=='undefined')?TIMER_DURATION_SECONDS:120);
+}
+const SURE_DOLDU_KM   = 19000;  // tahmin yapilmadiginda kaydedilen km
+
+function temelPuan(km){
+  const n=Number(km);
+  if(!Number.isFinite(n) || n>=SURE_DOLDU_KM) return 0;
+  return Math.round(PUAN_MAX * Math.exp(-Math.max(0,n)/PUAN_OLCEK_KM));
+}
+function surePuanBonusu(km,saniye){
+  const tp=temelPuan(km), sn=Number(saniye);
+  if(tp===0 || !Number.isFinite(sn)) return 0;
+  const kalan=Math.max(0, PUAN_SURE_TOPLAM-sn);
+  return Math.round(PUAN_SURE_BONUS * (kalan/PUAN_SURE_TOPLAM) * (tp/PUAN_MAX));
+}
+/* Bir konumun toplam puani (temel + sure bonusu). */
+function konumPuani(km,saniye){
+  if(!Number.isFinite(Number(km))) return NaN;
+  return temelPuan(km) + surePuanBonusu(km,saniye);
+}
+/* Oyuncunun uc konumdan aldigi toplam puan. Oynanmamis konum 0 sayilmaz,
+   hic veri yoksa NaN doner; boylece "hic oynamadi" ile "0 aldi" ayrilir. */
+function oyuncuToplamPuan(r){
+  let toplam=0, veriVar=false;
+  for(let i=1;i<=3;i++){
+    const km=Number(r['stage'+i+'Km']);
+    if(!Number.isFinite(km)) continue;
+    veriVar=true;
+    toplam += konumPuani(km, r['stage'+i+'Seconds']);
+  }
+  return veriVar ? toplam : NaN;
+}
+function puanYaz(v){
+  const n=Number(v);
+  return Number.isFinite(n) ? n.toLocaleString('tr-TR',{maximumFractionDigits:0}) : '-';
+}
+/* Bir konumda oyuncularin puanina gore siralama haritasi: uid -> derece */
+function konumSiralamasi(rows,stage){
+  const liste=rows
+    .map(r=>({uid:r.uid, puan:konumPuani(r['stage'+stage+'Km'], r['stage'+stage+'Seconds']), km:Number(r['stage'+stage+'Km'])}))
+    .filter(x=>Number.isFinite(x.puan))
+    .sort((a,b)=>{
+      if(b.puan!==a.puan) return b.puan-a.puan;          // once yuksek puan
+      const ak=Number.isFinite(a.km)?a.km:Infinity;
+      const bk=Number.isFinite(b.km)?b.km:Infinity;
+      return ak-bk;                                       // puan esitse dusuk km once
+    });
+  const harita={};
+  liste.forEach((x,i)=>{ harita[x.uid]=i+1; });
+  return harita;
+}
 function aktifOyunId(){return localStorage.getItem('haritaAktifOyunId')||'';}
 function oyunModu(){return localStorage.getItem('haritaEkranModu')||'home';}
 
@@ -1663,8 +2002,22 @@ async function firebaseBaslat(){
   firebaseHazir=true;
   const uid=document.getElementById('adminFirebaseUid');if(uid)uid.textContent=firebaseUser.uid;
   if(durum){durum.textContent='🟢 Yarış bağlantısı hazır';durum.className='text-xs text-center mt-1 text-emerald-600 font-semibold';}
+  if(typeof adminOyunListesiniYukle==='function')await adminOyunListesiniYukle();
   await acilisKarari();
  }catch(e){console.error(e);if(durum)durum.textContent='🔴 Firebase bağlantısı kurulamadı: '+e.message;anaSayfayiGoster('Firebase bağlantısı kurulamadı.');}
+}
+const GLOBAL_OYUNCU_ADI_KEY='haritaBulmacasi_global_oyuncu_adi';
+function globalOyuncuAdiAl(){return (localStorage.getItem(GLOBAL_OYUNCU_ADI_KEY)||'').trim();}
+function globalOyuncuAdiSor(){
+ let ad=globalOyuncuAdiAl();
+ while(ad.length<2){
+  const giris=prompt('Bütün harita oyunlarında kullanılacak adınızı veya rumuzunuzu girin:',ad);
+  if(giris===null)return '';
+  ad=giris.trim();
+  if(ad.length<2)alert('Ad veya rumuz en az 2 karakter olmalı.');
+ }
+ localStorage.setItem(GLOBAL_OYUNCU_ADI_KEY,ad);
+ return ad;
 }
 async function acilisKarari(){
  const id=aktifOyunId();
@@ -1708,18 +2061,27 @@ async function anaSayfayiYukle(){
  document.getElementById('hubGames').innerHTML=html+(oyunListesi.length?'':'<p>Henüz oyun yok.</p>');
 }
 async function oyunaKatil(id){
- const rumuz=prompt('Adınız veya rumuzunuz:');if(!rumuz||rumuz.trim().length<2)return;
+ const mevcut=globalOyuncuAdiAl();
+ const giris=prompt('Tüm harita oyunlarında kullanılacak adınızı veya rumuzunuzu girin:',mevcut);
+ if(giris===null)return;
+ const rumuz=giris.trim();
+ if(rumuz.length<2){alert('Ad veya rumuz en az 2 karakter olmalı.');return;}
+ localStorage.setItem(GLOBAL_OYUNCU_ADI_KEY,rumuz);
  const ref=firebaseDb.collection('games').doc(id),gs=await ref.get();if(!gs.exists||gs.data().status!=='active'){alert('Bu oyun artık açık değil.');return;}
  const pr=ref.collection('players').doc(firebaseUser.uid),ps=await pr.get();
  if(ps.exists){if(ps.data().completed){alert('Bu oyunu tamamladın. Yalnızca skor tablosunu görebilirsin.');return;}return oyunaDevamEt(id);}
- await pr.set({uid:firebaseUser.uid,gameId:id,playerName:rumuz.trim(),completed:false,createdAt:firebase.firestore.FieldValue.serverTimestamp(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
- oyunuYereldeHazirla(id,gs.data().targets,rumuz.trim(),1);location.reload();
+ await pr.set({uid:firebaseUser.uid,gameId:id,playerName:rumuz,completed:false,createdAt:firebase.firestore.FieldValue.serverTimestamp(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+ localStorage.setItem('haritaAktifOyunSans', gs.data().chanceEnabled===false?'0':'1');
+ oyunAyarlariniYereleYaz(gs.data());
+ oyunuYereldeHazirla(id,gs.data().targets,rumuz,1);oyunuYenidenYukle();
 }
 async function oyunaDevamEt(id){
  const gs=await firebaseDb.collection('games').doc(id).get(),ps=await firebaseDb.collection('games').doc(id).collection('players').doc(firebaseUser.uid).get();
  if(!gs.exists||!ps.exists)return anaSayfayiYukle();if(ps.data().completed)return skorTablosunuAc(id,gs.data().name||id);
  let asama=1;if(Number.isFinite(Number(ps.data().stage1Km)))asama=2;if(Number.isFinite(Number(ps.data().stage2Km)))asama=3;
- oyunuYereldeHazirla(id,gs.data().targets,ps.data().playerName||'Oyuncu',asama,false);location.reload();
+ localStorage.setItem('haritaAktifOyunSans', gs.data().chanceEnabled===false?'0':'1');
+ oyunAyarlariniYereleYaz(gs.data());
+ oyunuYereldeHazirla(id,gs.data().targets,ps.data().playerName||'Oyuncu',asama,false);oyunuYenidenYukle();
 }
 function oyunuYereldeHazirla(id,targets,rumuz,asama,temiz=true){
  if(temiz)Object.keys(localStorage).forEach(k=>{if(k.startsWith(id+'_haritaBulmacasi_'))localStorage.removeItem(k);});
@@ -1727,14 +2089,98 @@ function oyunuYereldeHazirla(id,targets,rumuz,asama,temiz=true){
  localStorage.setItem(id+'_haritaBulmacasi_oyuncu_adi',rumuz);localStorage.setItem(id+'_haritaBulmacasi_current_stage',String(asama));
  (targets||[]).forEach((h,i)=>{const n=i+1,p=String(h.coord).split(',').map(Number),b=id+'_haritaBulmacasi_stage_'+n;localStorage.setItem(b+'_hedefEnlem',String(p[0]));localStorage.setItem(b+'_hedefBoylam',String(p[1]));localStorage.setItem(b+'_hedefKoordinat',String(h.coord));localStorage.setItem(b+'_hedefIsim','Hedef '+(h.code||n));});
 }
-async function skorTablosunuAc(id,name){
+/* =========================================================================
+ * BIREYSEL SKOR TABLOSU
+ * Siralama PUANA gore yapilir (yuksek olan onde).
+ * Sutunlar: Sira | Oyuncu | 1./2./3. Konum | Toplam km | Puan
+ * Her konum hucresinde: km, puan ve o konumdaki derece gosterilir.
+ * ========================================================================= */
+async function skorTablosuOlustur(id,name){
  const snap=await firebaseDb.collection('games').doc(id).collection('players').get();
- const rows=snap.docs.map(d=>d.data()).sort((a,b)=>{if(a.completed&&!b.completed)return-1;if(!a.completed&&b.completed)return 1;return Number(a.totalKm??Infinity)-Number(b.totalKm??Infinity)});
+ const ham=snap.docs.map(d=>d.data());
+
+ // Toplam puan hesaplanir ve siralama buna gore yapilir.
+ const rows=ham.map(r=>({...r, _puan:oyuncuToplamPuan(r)}))
+   .sort((a,b)=>{
+     const ap=Number.isFinite(a._puan)?a._puan:-1;
+     const bp=Number.isFinite(b._puan)?b._puan:-1;
+     if(bp!==ap) return bp-ap;                       // once yuksek puan
+     // Puan esitse toplam km dusuk olan onde; km yoksa asama km toplami kullanilir.
+     const km=r=>{
+       const t=Number(r.totalKm);
+       if(Number.isFinite(t)) return t;
+       const a2=[r.stage1Km,r.stage2Km,r.stage3Km].map(Number).filter(Number.isFinite);
+       return a2.length?a2.reduce((x,y)=>x+y,0):Infinity;
+     };
+     return km(a)-km(b);
+   });
+
+ const biten=rows.filter(r=>r.completed);
+ const enYuksekPuan=rows.length&&Number.isFinite(rows[0]._puan)?rows[0]._puan:NaN;
+ const tumKm=rows.flatMap(r=>[r.stage1Km,r.stage2Km,r.stage3Km]).map(Number).filter(Number.isFinite);
+ const enIyiAtis=tumKm.length?Math.min(...tumKm):NaN;
+ const hedefAdlari=[1,2,3].map(n=>rows.map(r=>r['stage'+n+'Target']).find(Boolean)||('Konum '+n));
+
+ // Her konum icin ayri derece haritasi (o konumun birincisi kim?)
+ const konumSira=[1,2,3].map(n=>konumSiralamasi(rows,n));
+
+ const hucre=(r,stage)=>{
+  const km=Number(r['stage'+stage+'Km']);
+  if(!Number.isFinite(km)) return '<td><span style="color:#94a3b8">-</span></td>';
+  const sv=(typeof mesafeSeviyesi==='function')?mesafeSeviyesi(km):{etiket:'',cls:'',renk:'#64748b'};
+  const secim=r['stage'+stage+'Selection'];
+  const sn=Number(r['stage'+stage+'Seconds']);
+  const hareket=Number(r['stage'+stage+'Moves']);
+  const puan=konumPuani(km, r['stage'+stage+'Seconds']);
+  const derece=konumSira[stage-1][r.uid];
+  const dSinif = derece===1?'kd-1':(derece===2?'kd-2':(derece===3?'kd-3':'kd-n'));
+  const dRozet = derece ? `<span class="konum-derece ${dSinif}">${derece}.</span>` : '';
+  const ek='\u23f1 '+(Number.isFinite(sn)?sn+' sn':'-')+' \u00b7 \u{1F463} '+(Number.isFinite(hareket)?hareket:'-');
+  return `<td>
+    <div class="hucre-ust"><b>${kmYaz(km)}</b>${dRozet}</div>
+    <span class="hucre-puan">${puanYaz(puan)} p</span>
+    <span class="score-rozet ${sv.cls}">${sv.etiket}</span>
+    <span class="score-yer">${temizMetin(secim||'-')}</span>
+    <span class="score-sure">${ek}</span>
+  </td>`;
+ };
+
  const x=document.createElement('div');x.className='score-pop';x.onclick=e=>{if(e.target===x)x.remove()};
- x.innerHTML=`<div class="score-box"><button style="float:right" onclick="this.closest('.score-pop').remove()">✕</button><h2>${temizMetin(name)}</h2><table><tr><th>#</th><th>Oyuncu</th><th>1. Konum</th><th>2. Konum</th><th>3. Konum</th><th>Toplam</th><th>Durum</th></tr>${rows.map((r,i)=>`<tr><td>${r.completed?i+1:'•'}</td><td>${temizMetin(r.playerName)}</td><td>${kmYaz(r.stage1Km)}</td><td>${kmYaz(r.stage2Km)}</td><td>${kmYaz(r.stage3Km)}</td><td><b>${r.completed?kmYaz(r.totalKm):'-'}</b></td><td>${r.completed?'Tamamladı':'Devam ediyor'}</td></tr>`).join('')}</table></div>`;document.body.appendChild(x);
+ x.innerHTML=`<div class="score-box"><button style="float:right" onclick="this.closest('.score-pop').remove()">\u2715</button>
+  <h2>${temizMetin(name)}</h2>
+  <div class="score-ozet"><div>\u{1F465} ${rows.length} oyuncu</div><div>\u2705 ${biten.length} tamamlad\u0131</div><div>\u{1F3C6} En y\u00fcksek puan: ${Number.isFinite(enYuksekPuan)?puanYaz(enYuksekPuan):'-'}</div><div>\u{1F3AF} En iyi tek tahmin: ${Number.isFinite(enIyiAtis)?kmYaz(enIyiAtis):'-'}</div></div>
+  <div style="font-size:12px;color:#475569;margin-bottom:8px">\u{1F30D} Konumlar: <b>${hedefAdlari.map(h=>temizMetin(h)).join('</b> \u00b7 <b>')}</b></div>
+  <table><tr><th>S\u0131ra</th><th>Oyuncu</th><th>1. Konum</th><th>2. Konum</th><th>3. Konum</th><th>Toplam km</th><th>Puan</th></tr>
+  ${rows.map((r,i)=>{
+    const kms=[r.stage1Km,r.stage2Km,r.stage3Km].map(Number).filter(Number.isFinite);
+    const derece=i+1;
+    const siraSinifi = !r.completed ? 'sira-bekliyor' : (derece<=3 ? 'sira-'+derece : 'sira-normal');
+    const satirSinifi = !r.completed ? 'satir-devam' : (derece<=3 ? 'satir-'+derece : '');
+    const siraIc = r.completed
+      ? (derece<=3
+          ? `<span class="sira-mad">${MADALYALAR[i]}</span><span class="sira-no">${derece}.</span>`
+          : `<span class="sira-no">${derece}.</span>`)
+      : '\u2022';
+    const sira = `<span class="sira-rozet ${siraSinifi}">${siraIc}</span>`;
+    const durumMetni = r.completed ? 'Tamamlad\u0131' : (kms.length+' / 3 a\u015fama');
+    const fark = (i>0 && Number.isFinite(enYuksekPuan) && Number.isFinite(r._puan))
+      ? `<span class="puan-fark">-${puanYaz(enYuksekPuan-r._puan)}</span>` : '';
+    return `<tr class="${satirSinifi}"><td>${sira}</td>`+
+      `<td><div class="oyuncu-ad"><b>${temizMetin(r.playerName)}</b><span class="oyuncu-durum ${r.completed?'bitti':''}">${durumMetni}</span></div></td>`+
+      hucre(r,1)+hucre(r,2)+hucre(r,3)+
+      `<td class="toplam-km">${r.completed?kmYaz(r.totalKm):'-'}</td>`+
+      `<td class="toplam-puan"><b>${Number.isFinite(r._puan)?puanYaz(r._puan):'-'}</b>${fark}</td></tr>`;
+  }).join('')}
+  </table>${rows.length?'':'<p>Hen\u00fcz kay\u0131tl\u0131 oyuncu yok.</p>'}
+  <p class="puan-aciklama">Puan = mesafe puan\u0131 (yak\u0131nl\u0131k) + s\u00fcre bonusu. Her konumdan en fazla 5.500 puan al\u0131n\u0131r. S\u0131ralama toplam puana g\u00f6redir; puanlar e\u015fitse toplam km d\u00fc\u015f\u00fck olan \u00f6nde olur.</p>
+  </div>`;
+ document.body.appendChild(x);
 }
+async function skorTablosunuAc(id,name){ return skorTablosuOlustur(id,name); }
+async function bireyselEskiSkorTablosunuAc(id,name){ return skorTablosuOlustur(id,name); }
+
 async function sonucEkraniniAc(id,name){localStorage.setItem('haritaEkranModu','play');oyunEkraniniGoster();try{gosterToplamSonuclari();}catch(e){console.error(e)}await firebaseLiderlikYenile();const b=document.querySelector('.home-btn');if(b){b.onclick=anaSayfayaDon;b.classList.remove('hidden');}}
-function anaSayfayaDon(){localStorage.setItem('haritaEkranModu','home');location.reload();}
+function anaSayfayaDon(){localStorage.setItem('haritaEkranModu','home');oyunuYenidenYukle();}
 function goHome(){anaSayfayaDon();}
 function oyunSonuMenuyeDon(){anaSayfayaDon();}
 function dinamikAnaMenuyeDon(){anaSayfayaDon();}
@@ -1757,7 +2203,47 @@ async function adminYeniOyunAc(){
  if(ekrandaki.length){HEDEF_VERILERI=ekrandaki;localStorage.setItem('haritaBulmacasi_admin_hedefler',JSON.stringify(ekrandaki));}
  const targets=codes.map(c=>HEDEF_VERILERI.find(h=>String(h.code).trim()===String(c).trim()));
  if(targets.some(x=>!x)){msg.textContent='Kodlardan biri koordinat listesinde yok. Önce koordinatın listede göründüğünü kontrol et.';return;}
- try{const all=await firebaseDb.collection('games').get();for(const d of all.docs)if(d.data().status==='active')await d.ref.update({status:'closed',updatedAt:firebase.firestore.FieldValue.serverTimestamp()});const gameId='OYUN_'+Date.now();await firebaseDb.collection('games').doc(gameId).set({gameId,name,status:'active',stageCount:3,targets:targets.map(x=>({code:String(x.code),coord:String(x.coord)})),createdAt:firebase.firestore.FieldValue.serverTimestamp(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});msg.textContent='✅ Yeni oyun açıldı.';setTimeout(()=>{adminPaneliniKapat();anaSayfayiYukle();},300);}catch(e){msg.textContent='❌ '+e.message+' | Admin UID belgesini kontrol et.';}
+ try{const gameId='OYUN_'+Date.now();await firebaseDb.collection('games').doc(gameId).set({gameId,name,status:'active',stageCount:3,targets:targets.map(x=>({code:String(x.code),coord:String(x.coord)})),chanceEnabled:(localStorage.getItem('haritaBulmacasi_sans_aktif')==='1'),timerSeconds:adminSureOku(),puanOlcek:adminPuanOlcekOku(),createdAt:firebase.firestore.FieldValue.serverTimestamp(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});msg.textContent='✅ Oyun kaydedildi.';document.getElementById('yeniOyunAdi').value='';document.getElementById('yeniOyunKodlari').value='';await adminOyunListesiniYukle();}catch(e){msg.textContent='❌ '+e.message+' | Admin UID belgesini kontrol et.';}
+}
+async function adminOyunListesiniYukle(){
+ const alan=document.getElementById('adminOyunListesi');if(!alan)return;
+ if(!firebaseDb||!firebaseHazir){alan.innerHTML='<p>Firebase bağlantısı bekleniyor...</p>';return;}
+ alan.innerHTML='<p>Oyunlar yükleniyor...</p>';
+ try{
+  const snap=await firebaseDb.collection('games').get();
+  const games=snap.docs.map(d=>({id:d.id,...d.data()})).filter(g=>g.id!=='LOBBY').sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+  alan.innerHTML=games.length?games.map(g=>`<div class="archive-item" style="align-items:center"><div><b>${temizMetin(g.name||g.id)}</b><div><small>${g.status==='active'?'🟢 Açık oyun':'🔴 Kapalı oyun'} · ${(g.targets||[]).map(t=>temizMetin(t.code)).join(', ')}</small></div></div><div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><button type="button" onclick="adminOyunuDuzenle('${g.id}')">✏️ Değiştir</button><button type="button" style="background:${g.status==='active'?'#f59e0b':'#16a34a'};color:#fff" onclick="adminOyunDurumuDegistir('${g.id}','${g.status||'active'}')">${g.status==='active'?'⏸️ Kapat':'▶️ Aç'}</button><button type="button" style="background:#fee2e2;color:#b91c1c" onclick="adminOyunuSil('${g.id}','${String(g.name||g.id).replace(/'/g,"\\'")}')">🗑️ Sil</button></div></div>`).join(''):'<p>Henüz oluşturulmuş oyun yok.</p>';
+ }catch(e){console.error('Oyun listesi hatası',e);alan.innerHTML='<p style="color:#b91c1c">Oyunlar yüklenemedi: '+temizMetin(e.message)+'</p><p style="font-size:11px;color:#64748b">Firebase projesi: harita-mini-oyun</p>';}
+}
+async function adminOyunuDuzenle(id){
+ const msg=document.getElementById('oyunYonetimMesaj');
+ try{
+  const snap=await firebaseDb.collection('games').doc(id).get();if(!snap.exists)throw new Error('Oyun bulunamadı.');
+  const g=snap.data(),mevcutKodlar=(g.targets||[]).map(t=>t.code).join(', ');
+  const name=prompt('Oyun adı:',g.name||'');if(name===null)return;
+  const kodMetni=prompt('Üç konum kodu:',mevcutKodlar);if(kodMetni===null)return;
+  const codes=kodMetni.split(/[ ,;]+/).filter(Boolean);
+  if(name.trim().length<2||codes.length!==3||new Set(codes).size!==3){alert('Oyun adı ve üç farklı konum kodu gerekli.');return;}
+  const ekrandaki=ekrandakiKoordinatlariOku();if(ekrandaki.length){HEDEF_VERILERI=ekrandaki;localStorage.setItem('haritaBulmacasi_admin_hedefler',JSON.stringify(ekrandaki));}
+  const targets=codes.map(c=>HEDEF_VERILERI.find(x=>String(x.code).trim()===String(c).trim()));
+  if(targets.some(x=>!x)){alert('Kodlardan biri koordinat listesinde yok.');return;}
+  await firebaseDb.collection('games').doc(id).update({name:name.trim(),targets:targets.map(x=>({code:String(x.code),coord:String(x.coord)})),chanceEnabled:(localStorage.getItem('haritaBulmacasi_sans_aktif')==='1'),timerSeconds:adminSureOku(),puanOlcek:adminPuanOlcekOku(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+  msg.textContent='✅ Oyun değiştirildi.';await adminOyunListesiniYukle();
+ }catch(e){msg.textContent='❌ Oyun değiştirilemedi: '+e.message;}
+}
+async function adminOyunDurumuDegistir(id,status){
+ const msg=document.getElementById('oyunYonetimMesaj'),yeni=status==='active'?'closed':'active';
+ try{await firebaseDb.collection('games').doc(id).update({status:yeni,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});msg.textContent=yeni==='active'?'✅ Oyun açıldı.':'✅ Oyun kapatıldı.';await adminOyunListesiniYukle();}catch(e){msg.textContent='❌ Oyun durumu değiştirilemedi: '+e.message;}
+}
+async function adminOyunuSil(id,name){
+ if(!adminYetkili||!confirm('“'+name+'” oyunu ve tüm oyuncu skorları silinsin mi?'))return;
+ const msg=document.getElementById('oyunYonetimMesaj');
+ try{
+  const players=await firebaseDb.collection('games').doc(id).collection('players').get();
+  const batch=firebaseDb.batch();players.docs.forEach(d=>batch.delete(d.ref));batch.delete(firebaseDb.collection('games').doc(id));await batch.commit();
+  if(aktifOyunId()===id){localStorage.removeItem('haritaAktifOyunId');localStorage.setItem('haritaEkranModu','home');}
+  msg.textContent='✅ Oyun silindi.';await adminOyunListesiniYukle();
+ }catch(e){msg.textContent='❌ Oyun silinemedi: '+e.message;}
 }
 function createNewGame(){return adminYeniOyunAc();}
 document.addEventListener('click',function(e){
@@ -1815,6 +2301,7 @@ tahminGonder=async function(){const asama=Number(localStorage.getItem(STORAGE_KE
     if(yetkili){
       giris.classList.add('hidden'); giris.style.setProperty('display','none','important');
       icerik.classList.remove('hidden'); icerik.style.setProperty('display','block','important');
+      if(typeof adminOyunListesiniYukle==='function')adminOyunListesiniYukle();
     }else{
       icerik.classList.add('hidden'); icerik.style.setProperty('display','none','important');
       giris.classList.remove('hidden'); giris.style.setProperty('display','block','important');
@@ -1833,7 +2320,7 @@ tahminGonder=async function(){const asama=Number(localStorage.getItem(STORAGE_KE
     giris.classList.add('hidden');giris.style.setProperty('display','none','important');
     icerik.classList.remove('hidden');icerik.style.setProperty('display','block','important');
     const uid=(firebaseUser&&firebaseUser.uid)||'Firebase bağlantısı bekleniyor';document.getElementById('adminUid').textContent=uid;document.getElementById('adminFirebaseUid').textContent=uid;
-    if(typeof adminListeyiCiz==='function')adminListeyiCiz();
+    if(typeof adminListeyiCiz==='function')adminListeyiCiz();if(typeof adminOyunListesiniYukle==='function')adminOyunListesiniYukle();
   }
   window.adminPaneliniAc=panelAc;window.adminGirisYap=girisYap;
   document.addEventListener('click',function(e){const b=e.target.closest?.('#adminAcButonu,button[onclick="adminPaneliniAc()"]');if(b){e.preventDefault();e.stopImmediatePropagation();panelAc();}},true);
@@ -1850,9 +2337,13 @@ tahminGonder=async function(){const asama=Number(localStorage.getItem(STORAGE_KE
         if(status!=='OK'||!results?.length){resolve({locationName:`${Number(lat).toFixed(4)}, ${Number(lng).toFixed(4)}`,countryCode:''});return;}
         const comps=results.flatMap(r=>r.address_components||[]);
         const find=types=>comps.find(c=>types.some(t=>c.types?.includes(t)));
-        const city=find(['locality','postal_town','administrative_area_level_2','administrative_area_level_1']);
+        // Once il (administrative_area_level_1), yoksa ilce / sehir bileseni kullanilir.
+        const il=find(['administrative_area_level_1'])||find(['administrative_area_level_2'])||find(['locality','postal_town']);
         const country=find(['country']);
-        const name=[city?.long_name,country?.long_name].filter(Boolean).join(', ')||results[0].formatted_address||`${Number(lat).toFixed(4)}, ${Number(lng).toFixed(4)}`;
+        const parcalar=[];
+        if(il?.long_name) parcalar.push(il.long_name);
+        if(country?.long_name && country.long_name!==il?.long_name) parcalar.push(country.long_name);
+        const name=parcalar.join(', ')||country?.long_name||results[0].formatted_address||`${Number(lat).toFixed(4)}, ${Number(lng).toFixed(4)}`;
         resolve({locationName:name,countryCode:country?.short_name||''});
       });
     });
@@ -1883,5 +2374,1065 @@ tahminGonder=async function(){const asama=Number(localStorage.getItem(STORAGE_KE
   };
 })();
 
-</script></body>
+</script>
+<script id="firebaseProjectMigration">
+(function(){
+  const migrationKey='haritaMiniFirebase_harita-mini-oyun_v1';
+  if(!localStorage.getItem(migrationKey)){
+    localStorage.removeItem('haritaBulmacasi_firebase_config');
+    localStorage.setItem(migrationKey,'1');
+  }
+})();
+</script>
+
+
+
+<style id="sonucSayfasiCss">
+  #sonucSayfasi {
+    position: fixed;
+    inset: 0;
+    z-index: 55000;
+    background: linear-gradient(135deg,#eff6ff 0%,#f8fafc 45%,#ecfdf5 100%);
+    overflow-y: auto;
+    padding: 18px;
+  }
+  #sonucSayfasi.hidden { display: none !important; }
+  .sonuc-sayfa-kart {
+    width: min(1100px,100%);
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 22px 60px rgba(15,23,42,.16);
+    overflow: hidden;
+  }
+  .sonuc-sayfa-ust {
+    padding: 22px 24px;
+    color: #fff;
+    background: linear-gradient(135deg,#1d4ed8,#0f766e);
+    text-align: center;
+  }
+  .sonuc-sayfa-ust h1 { margin:0; font-size:clamp(25px,5vw,38px); font-weight:900; }
+  .sonuc-sayfa-ust p { margin:7px 0 0; opacity:.9; }
+  #sonucSayfasiIcerik { padding: 20px; }
+  #sonucSayfasi #sonucTablosuKapsayici {
+    display:block !important;
+    width:100% !important;
+    min-width:0 !important;
+    max-width:none !important;
+    min-height:0 !important;
+    max-height:none !important;
+    height:auto !important;
+    border:0 !important;
+    border-radius:0 !important;
+    overflow:visible !important;
+    background:transparent !important;
+  }
+  #sonucSayfasi #sonucTablosuKapsayici > div {
+    height:auto !important;
+    overflow:visible !important;
+    padding:0 !important;
+  }
+  #sonucSayfasi .grid.grid-cols-3 { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  #sonucSayfasi .lider-panel { overflow-x:auto; }
+  #sonucSayfasi .lider-row { min-width:820px; }
+  #sonucSayfasi .home-btn { margin-top:10px; }
+  @media (max-width: 700px) {
+    #sonucSayfasi { padding:0; background:#f8fafc; }
+    .sonuc-sayfa-kart { border-radius:0; min-height:100%; box-shadow:none; }
+    .sonuc-sayfa-ust { padding:20px 14px; }
+    #sonucSayfasiIcerik { padding:12px; }
+    #sonucSayfasi .grid.grid-cols-3 { grid-template-columns:1fr; }
+    #sonucSayfasi .stat-box { padding:12px; }
+    #sonucSayfasi .lider-row {
+      min-width:0;
+      display:grid;
+      grid-template-columns:34px minmax(120px,1fr) minmax(92px,1fr);
+      gap:6px;
+      font-size:12px;
+    }
+    #sonucSayfasi .lider-row > :nth-child(4),
+    #sonucSayfasi .lider-row > :nth-child(5),
+    #sonucSayfasi .lider-row > :nth-child(6),
+    #sonucSayfasi .lider-row > :nth-child(7) { display:none !important; }
+    #sonucSayfasi .lider-row > :nth-child(8) { display:block !important; }
+    #sonucSayfasi .lider-yer { max-width:100px; }
+    #sonucSayfasi .result-card .grid { grid-template-columns:1fr !important; }
+  }
+</style>
+<div id="sonucSayfasi" class="hidden" aria-live="polite">
+  <div class="sonuc-sayfa-kart">
+    <div class="sonuc-sayfa-ust">
+      <h1>🏆 Oyun Tamamlandı</h1>
+      <p>Üç konumun sonucu ve yarış sıralaması</p>
+    </div>
+    <main id="sonucSayfasiIcerik"></main>
+  </div>
+</div>
+<script id="ayriSonucSayfasiFix">
+(function(){
+  const eskiGosterToplamSonuclari = window.gosterToplamSonuclari;
+  window.gosterToplamSonuclari = function(){
+    if(typeof eskiGosterToplamSonuclari === 'function'){
+      eskiGosterToplamSonuclari.apply(this, arguments);
+    }
+    const sayfa=document.getElementById('sonucSayfasi');
+    const icerik=document.getElementById('sonucSayfasiIcerik');
+    const panel=document.getElementById('sonucTablosuKapsayici');
+    if(!sayfa || !icerik || !panel) return;
+    if(panel.parentElement!==icerik) icerik.appendChild(panel);
+    document.getElementById('hub')?.classList.add('hidden');
+    document.getElementById('dinamikAnaMenu')?.classList.add('hidden');
+    document.getElementById('baslangicKapsayici')?.classList.add('hidden');
+    document.getElementById('oyunKapsayici')?.classList.add('hidden');
+    document.getElementById('sansModal')?.classList.add('hidden');
+    panel.classList.remove('hidden');
+    sayfa.classList.remove('hidden');
+    document.body.style.overflow='hidden';
+    sayfa.scrollTop=0;
+  };
+  const eskiAnaSayfayaDon=window.anaSayfayaDon;
+  window.anaSayfayaDon=function(){
+    document.getElementById('sonucSayfasi')?.classList.add('hidden');
+    document.body.style.overflow='';
+    if(typeof eskiAnaSayfayaDon==='function') return eskiAnaSayfayaDon.apply(this,arguments);
+  };
+  window.goHome=window.anaSayfayaDon;
+  window.oyunSonuMenuyeDon=window.anaSayfayaDon;
+})();
+</script>
+
+<style id="takimliOyunCss">
+#baslangicKapsayici{display:none!important}
+.takim-modal{position:fixed;inset:0;z-index:70000;background:rgba(15,23,42,.84);display:flex;align-items:center;justify-content:center;padding:16px}
+.takim-modal.hidden{display:none!important}.takim-card{width:min(650px,96vw);max-height:90vh;overflow:auto;background:#fff;border-radius:18px;padding:20px;box-shadow:0 25px 80px #0007}
+.takim-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0}.takim-tabs button,.takim-main-btn{border:0;border-radius:10px;padding:11px;background:#2563eb;color:#fff;font-weight:900;cursor:pointer}.takim-tabs button.passive{background:#e2e8f0;color:#334155}.takim-input{width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:10px;padding:11px;margin:6px 0}.takim-item{display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px solid #cbd5e1;border-radius:12px;padding:12px;margin-top:8px}.takim-item button{border:0;border-radius:8px;padding:8px 12px;background:#16a34a;color:#fff;font-weight:800}.takim-item button:disabled{background:#94a3b8}#takimRozet,.takim-rozet{display:none!important}.takim-rozet{position:absolute;left:50%;transform:translateX(-50%);bottom:58px;z-index:7;background:#0f172a;color:#fff;border-radius:999px;padding:6px 12px;font-size:12px;font-weight:800;box-shadow:0 4px 14px #0005}.takim-skor{border:1px solid #bfdbfe;border-radius:14px;padding:12px;margin-top:10px;background:#f8fafc}.takim-skor-baslik{display:flex;justify-content:space-between;gap:10px;align-items:center;font-weight:900}.takim-asamalar{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:9px}.takim-asamalar div{background:#fff;border:1px solid #e2e8f0;border-radius:9px;padding:8px;text-align:center;font-size:12px}.takim-sira{font-size:20px}.takim-uyeler{font-size:12px;color:#64748b;margin-top:4px}@media(max-width:600px){.takim-card{padding:14px}.takim-item{align-items:flex-start;flex-direction:column}.takim-item button{width:100%}.takim-asamalar{grid-template-columns:1fr 1fr}.takim-rozet{bottom:50px;max-width:88%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
+ .bireysel-btn{background:#0f766e!important;font-size:16px}.takim-ayirici{display:flex;align-items:center;gap:10px;color:#94a3b8;font-size:12px;font-weight:800;margin:10px 0}.takim-ayirici:before,.takim-ayirici:after{content:"";height:1px;background:#cbd5e1;flex:1}
+.bekleme-card{width:min(520px,96vw)}.bekleme-uyeler{display:grid;gap:8px}.bekleme-uye{display:flex;align-items:center;gap:10px;padding:11px;border:1px solid #cbd5e1;border-radius:11px;background:#f8fafc}.bekleme-avatar{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:900}.bekleme-uye small{display:block;color:#64748b}.bekleme-bos{padding:14px;border:1px dashed #94a3b8;border-radius:11px;color:#64748b;text-align:center}
+</style>
+<div id="takimModal" class="takim-modal hidden">
+ <div class="takim-card">
+  <button type="button" onclick="takimPanelKapat()" style="float:right;border:0;background:#e2e8f0;border-radius:8px;padding:7px 10px">✕</button>
+  <h2 style="font-size:24px;font-weight:900;margin:0">👥 Takımlı Oyuna Katıl</h2>
+  <p style="color:#64748b;margin:5px 0">Takım oluştur veya oyuncu sınırı olmadan açık bir takıma katıl.</p>
+  <label style="font-size:12px;font-weight:800">Ad / rumuz</label><input id="takimRumuz" class="takim-input" maxlength="40" placeholder="Adınız veya rumuzunuz">
+  <button id="bireyselGirButonu" class="takim-main-btn bireysel-btn" style="width:100%;margin:12px 0 4px" onclick="bireyselOyunaGir()">👤 Bireysel Gir</button><div class="takim-ayirici"><span>veya takımlı oyna</span></div><div class="takim-tabs"><button id="takimOlusturTab" onclick="takimSekme('olustur')">Takım Oluştur</button><button id="takimGirTab" class="passive" onclick="takimSekme('gir')">Takıma Gir</button></div>
+  <div id="takimOlusturAlan"><input id="yeniTakimAdi" class="takim-input" maxlength="30" placeholder="Takım adı"><button class="takim-main-btn" style="width:100%" onclick="takimOlusturVeGir()">Takımı Kaydet ve Bekleme Odasına Gir</button></div>
+  <div id="takimGirAlan" class="hidden"><div id="takimListesi">Takımlar yükleniyor...</div></div>
+  <p id="takimMesaj" style="font-size:13px;font-weight:800;color:#b91c1c;min-height:20px;margin-top:9px"></p>
+ </div>
+</div>
+<div id="takimBeklemeModal" class="takim-modal hidden">
+ <div class="takim-card bekleme-card">
+  <button type="button" onclick="takimBeklemeKapat()" style="float:right;border:0;background:#e2e8f0;border-radius:8px;padding:7px 10px">✕</button>
+  <h2 style="font-size:24px;font-weight:900;margin:0">⏳ Takım Bekleme Odası</h2>
+  <p id="beklemeTakimAdi" style="color:#1d4ed8;font-size:18px;font-weight:900;margin:8px 0"></p>
+  <p style="color:#64748b;margin:0 0 12px">Takım arkadaşlarının katılması burada anlık gösterilir. Hazır olduğunda oyuna girebilirsin.</p>
+  <div id="beklemeUyeler" class="bekleme-uyeler">Oyuncular yükleniyor...</div>
+  <button id="beklemeOyunaGir" class="takim-main-btn" style="width:100%;margin-top:14px" onclick="takimdanOyunaBasla()">▶️ Oyuna Gir</button>
+  <p id="beklemeMesaj" style="font-size:13px;font-weight:800;color:#b91c1c;min-height:20px;margin-top:9px"></p>
+ </div>
+</div>
+<script id="takimliOyunSistemi">
+(function(){
+ const TEAM_KEY='haritaAktifTakimId', TEAM_NAME_KEY='haritaAktifTakimAdi';
+ let seciliOyunId='', seciliOyun=null, takimDinleyici=null, beklemeDinleyici=null, beklemeTeamId='', beklemeTeamName='', beklemeRumuz='', takimPinDinleyici=null, takimMarkerlar={};
+ const renkler=['#ef4444','#2563eb','#f59e0b','#8b5cf6','#06b6d4','#ec4899'];
+ function yazi(v){const d=document.createElement('div');d.textContent=String(v||'');return d.innerHTML}
+ function rumuzOku(){return (document.getElementById('takimRumuz')?.value||'').trim()}
+ function basHarf(ad){return String(ad||'?').trim().split(/\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase().slice(0,2)||'?'}
+ function renk(uid){let h=0;for(const c of String(uid||''))h=(h*31+c.charCodeAt(0))>>>0;return renkler[h%renkler.length]}
+ function pinIkonu(harf,renkKodu){
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="46" height="54" viewBox="0 0 46 54"><path d="M23 1C11 1 2 10 2 22c0 15 21 31 21 31s21-16 21-31C44 10 35 1 23 1z" fill="${renkKodu}" stroke="#fff" stroke-width="2"/><circle cx="23" cy="22" r="13" fill="#fff" fill-opacity=".2"/><text x="23" y="27" text-anchor="middle" font-family="Arial" font-size="13" font-weight="900" fill="white">${harf}</text></svg>`;
+  return {url:'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(svg),scaledSize:new google.maps.Size(46,54),anchor:new google.maps.Point(23,53)};
+ }
+ window.takimPanelKapat=function(){document.getElementById('takimModal').classList.add('hidden')};
+ window.takimSekme=function(t){
+  document.getElementById('takimOlusturAlan').classList.toggle('hidden',t!=='olustur');document.getElementById('takimGirAlan').classList.toggle('hidden',t!=='gir');
+  document.getElementById('takimOlusturTab').classList.toggle('passive',t!=='olustur');document.getElementById('takimGirTab').classList.toggle('passive',t!=='gir');if(t==='gir')takimlariDinle();
+ };
+ async function panelAc(id){
+  seciliOyunId=id;const gs=await firebaseDb.collection('games').doc(id).get();if(!gs.exists||gs.data().status!=='active'){alert('Bu oyun artık açık değil.');return}seciliOyun=gs.data();
+  document.getElementById('takimRumuz').value=globalOyuncuAdiAl()||'';document.getElementById('yeniTakimAdi').value='';document.getElementById('takimMesaj').textContent='';takimSekme('olustur');document.getElementById('takimModal').classList.remove('hidden');setTimeout(()=>document.getElementById('takimRumuz').focus(),50);
+ }
+ window.oyunaKatil=panelAc;
+ function takimlariDinle(){
+  if(takimDinleyici)takimDinleyici();const alan=document.getElementById('takimListesi');alan.innerHTML='Takımlar yükleniyor...';
+  takimDinleyici=firebaseDb.collection('games').doc(seciliOyunId).collection('teams').onSnapshot(s=>{
+   const teams=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.createdAt?.seconds||0)-(b.createdAt?.seconds||0));
+   alan.innerHTML=teams.length?teams.map(t=>`<div class="takim-item"><div><b>${yazi(t.name)}</b><div style="font-size:12px;color:#64748b">${Number(t.memberCount||0)} oyuncu</div></div><button onclick="takimaGir('${t.id}')">Takıma Gir</button></div>`).join(''):'<p style="color:#64748b">Henüz takım oluşturulmadı.</p>';
+  },e=>alan.innerHTML='<p style="color:#b91c1c">Takımlar alınamadı: '+yazi(e.message)+'</p>');
+ }
+ async function katilimiTamamla(teamId,teamName,rumuz){
+  const gameRef=firebaseDb.collection('games').doc(seciliOyunId),playerRef=gameRef.collection('players').doc(firebaseUser.uid);
+  await playerRef.set({uid:firebaseUser.uid,gameId:seciliOyunId,playerName:rumuz,playMode:'team',teamId,teamName,ready:false,completed:false,updatedAt:firebase.firestore.FieldValue.serverTimestamp(),createdAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+  localStorage.setItem(GLOBAL_OYUNCU_ADI_KEY,rumuz);localStorage.setItem('haritaOyunTuru','team');localStorage.setItem(TEAM_KEY,teamId);localStorage.setItem(TEAM_NAME_KEY,teamName);localStorage.setItem('haritaAktifOyunSans',seciliOyun.chanceEnabled===false?'0':'1');oyunAyarlariniYereleYaz(seciliOyun);
+  beklemeTeamId=teamId;beklemeTeamName=teamName;beklemeRumuz=rumuz;
+  takimPanelKapat();takimBeklemeAc();
+ }
+ function takimBeklemeAc(){
+  const modal=document.getElementById('takimBeklemeModal');
+  document.getElementById('beklemeTakimAdi').textContent='👥 '+beklemeTeamName;
+  document.getElementById('beklemeMesaj').textContent='';
+  modal.classList.remove('hidden');
+  if(beklemeDinleyici)beklemeDinleyici();
+  beklemeDinleyici=firebaseDb.collection('games').doc(seciliOyunId).collection('players').where('teamId','==',beklemeTeamId).onSnapshot(snap=>{
+   const uyeler=snap.docs.map(d=>d.data()).sort((a,b)=>(a.createdAt?.seconds||0)-(b.createdAt?.seconds||0));
+   const alan=document.getElementById('beklemeUyeler');
+   alan.innerHTML=uyeler.length?uyeler.map(u=>`<div class="bekleme-uye"><div class="bekleme-avatar" style="background:${renk(u.uid)}">${basHarf(u.playerName)}</div><div><b>${yazi(u.playerName||'Oyuncu')}</b><small>${u.ready?'Oyuna giriş yaptı':'Bekleme odasında'}</small></div></div>`).join(''):'<div class="bekleme-bos">Henüz oyuncu görünmüyor.</div>';
+  },e=>document.getElementById('beklemeMesaj').textContent='Takım üyeleri alınamadı: '+e.message);
+ }
+ window.takimBeklemeKapat=function(){document.getElementById('takimBeklemeModal').classList.add('hidden');if(beklemeDinleyici){beklemeDinleyici();beklemeDinleyici=null}};
+ window.takimdanOyunaBasla=async function(){
+  const m=document.getElementById('beklemeMesaj'),b=document.getElementById('beklemeOyunaGir');b.disabled=true;m.textContent='Oyun hazırlanıyor...';
+  try{
+   await firebaseDb.collection('games').doc(seciliOyunId).collection('players').doc(firebaseUser.uid).set({ready:true,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+   oyunuYereldeHazirla(seciliOyunId,seciliOyun.targets,beklemeRumuz,1);takimBeklemeKapat();oyunuYenidenYukle();
+  }catch(e){m.textContent='Oyuna girilemedi: '+e.message;b.disabled=false}
+ };
+ window.bireyselOyunaGir=async function(){
+  const rumuz=rumuzOku(),m=document.getElementById('takimMesaj');
+  if(rumuz.length<2){m.textContent='Bireysel giriş için en az 2 karakterlik rumuz gir.';return}
+  try{
+   const gameRef=firebaseDb.collection('games').doc(seciliOyunId),playerRef=gameRef.collection('players').doc(firebaseUser.uid);
+   await playerRef.set({uid:firebaseUser.uid,gameId:seciliOyunId,playerName:rumuz,playMode:'individual',teamId:firebase.firestore.FieldValue.delete(),teamName:firebase.firestore.FieldValue.delete(),completed:false,updatedAt:firebase.firestore.FieldValue.serverTimestamp(),createdAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+   localStorage.setItem(GLOBAL_OYUNCU_ADI_KEY,rumuz);localStorage.removeItem(TEAM_KEY);localStorage.removeItem(TEAM_NAME_KEY);localStorage.setItem('haritaOyunTuru','individual');localStorage.setItem('haritaAktifOyunSans',seciliOyun.chanceEnabled===false?'0':'1');oyunAyarlariniYereleYaz(seciliOyun);
+   oyunuYereldeHazirla(seciliOyunId,seciliOyun.targets,rumuz,1);takimPanelKapat();oyunuYenidenYukle();
+  }catch(e){m.textContent='Bireysel giriş yapılamadı: '+e.message}
+ };
+ window.takimOlusturVeGir=async function(){
+  const rumuz=rumuzOku(),ad=(document.getElementById('yeniTakimAdi').value||'').trim(),m=document.getElementById('takimMesaj');if(rumuz.length<2||ad.length<2){m.textContent='Rumuz ve takım adı en az 2 karakter olmalı.';return}
+  try{const ref=firebaseDb.collection('games').doc(seciliOyunId).collection('teams').doc();await ref.set({name:ad,memberCount:1,createdBy:firebaseUser.uid,createdAt:firebase.firestore.FieldValue.serverTimestamp()});await katilimiTamamla(ref.id,ad,rumuz)}catch(e){m.textContent='Takım oluşturulamadı: '+e.message}
+ };
+ window.takimaGir=async function(teamId){
+  const rumuz=rumuzOku(),m=document.getElementById('takimMesaj');if(rumuz.length<2){m.textContent='Önce en az 2 karakterlik rumuz gir.';return}
+  const ref=firebaseDb.collection('games').doc(seciliOyunId).collection('teams').doc(teamId);try{let ad='';await firebaseDb.runTransaction(async tx=>{const s=await tx.get(ref);if(!s.exists)throw new Error('Takım bulunamadı.');const n=Number(s.data().memberCount||0);ad=s.data().name||'Takım';tx.update(ref,{memberCount:n+1,updatedAt:firebase.firestore.FieldValue.serverTimestamp()})});await katilimiTamamla(teamId,ad,rumuz)}catch(e){m.textContent=e.message}
+ };
+ const eskiDevam=window.oyunaDevamEt;
+ window.oyunaDevamEt=async function(id){const ps=await firebaseDb.collection('games').doc(id).collection('players').doc(firebaseUser.uid).get();if(ps.exists){const p=ps.data();if(p.teamId){localStorage.setItem('haritaOyunTuru','team');localStorage.setItem(TEAM_KEY,p.teamId);localStorage.setItem(TEAM_NAME_KEY,p.teamName||'Takım');if(p.ready!==true){const gs=await firebaseDb.collection('games').doc(id).get();seciliOyunId=id;seciliOyun=gs.data();beklemeTeamId=p.teamId;beklemeTeamName=p.teamName||'Takım';beklemeRumuz=p.playerName||'Oyuncu';takimBeklemeAc();return}}else{localStorage.setItem('haritaOyunTuru','individual');localStorage.removeItem(TEAM_KEY);localStorage.removeItem(TEAM_NAME_KEY)}}return eskiDevam(id)};
+ async function pinYayinla(lat,lng){
+  const gameId=aktifOyunId(),teamId=localStorage.getItem(TEAM_KEY),stage=Number(localStorage.getItem(STORAGE_KEY_STAGE)||0);if(!firebaseHazir||!gameId||!teamId||!stage)return;
+  // gameId alani zorunlu: Firestore kurallari teamPins create/update icin gameId esitligi ariyor.
+  await firebaseDb.collection('games').doc(gameId).collection('teamPins').doc(firebaseUser.uid).set({uid:firebaseUser.uid,gameId,teamId,playerName:globalOyuncuAdiAl()||'Oyuncu',stage,lat:Number(lat),lng:Number(lng),updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true}).catch(e=>{console.error('Takim pini yayinlanamadi',e);const m=document.getElementById('mesajAlani');if(m)m.textContent='⚠️ Takım pini paylaşılamadı: '+(e.code||e.message);});
+ }
+ const eskiPin=window.pinAtVeKoordinatGuncelle;
+ window.pinAtVeKoordinatGuncelle=function(lat,lng){const r=eskiPin.apply(this,arguments);pinYayinla(lat,lng);return r};
+ function pinleriDinle(){
+  if(takimPinDinleyici)takimPinDinleyici();Object.values(takimMarkerlar).forEach(m=>m.setMap(null));takimMarkerlar={};
+  const gameId=aktifOyunId(),teamId=localStorage.getItem(TEAM_KEY);if(!firebaseDb||!gameId||!teamId||!tahminHaritasi)return;
+  takimPinDinleyici=firebaseDb.collection('games').doc(gameId).collection('teamPins').where('teamId','==',teamId).onSnapshot(s=>{
+   const stage=Number(localStorage.getItem(STORAGE_KEY_STAGE)||0),gelen=new Set();s.docs.forEach(d=>{const p=d.data();if(d.id===firebaseUser.uid)return;if(Number(p.stage)!==stage||!Number.isFinite(Number(p.lat))||!Number.isFinite(Number(p.lng)))return;gelen.add(d.id);const pos={lat:Number(p.lat),lng:Number(p.lng)},icon=pinIkonu(basHarf(p.playerName),renk(p.uid));if(takimMarkerlar[d.id]){takimMarkerlar[d.id].setPosition(pos);takimMarkerlar[d.id].setIcon(icon)}else takimMarkerlar[d.id]=new google.maps.Marker({position:pos,map:tahminHaritasi,title:p.playerName||'Takım oyuncusu',icon,zIndex:50});});Object.keys(takimMarkerlar).forEach(id=>{if(!gelen.has(id)){takimMarkerlar[id].setMap(null);delete takimMarkerlar[id]}});
+  },e=>{console.error('Takim pinleri dinlenemedi',e);const m=document.getElementById('mesajAlani');if(m)m.textContent='⚠️ Takım pinleri alınamadı: '+(e.code||e.message);});
+ }
+ const eskiInit=window.initMap;
+ window.initMap=async function(){const r=await eskiInit.apply(this,arguments);setTimeout(pinleriDinle,400);return r};
+ async function takimSkorlari(id){
+  const [ts,ps]=await Promise.all([firebaseDb.collection('games').doc(id).collection('teams').get(),firebaseDb.collection('games').doc(id).collection('players').get()]);
+  const players=ps.docs.map(d=>({id:d.id,...d.data()})),teams=ts.docs.map(d=>({id:d.id,...d.data()}));
+  return teams.map(t=>{
+    const uyeler=players.filter(p=>p.teamId===t.id);
+    // Konum bazinda takim km ortalamasi
+    const avg=n=>{const a=uyeler.map(p=>Number(p['stage'+n+'Km'])).filter(Number.isFinite);return a.length?a.reduce((x,y)=>x+y,0)/a.length:NaN};
+    // Konum bazinda takim PUAN ortalamasi
+    const avgPuan=n=>{const a=uyeler.map(p=>konumPuani(p['stage'+n+'Km'],p['stage'+n+'Seconds'])).filter(Number.isFinite);return a.length?Math.round(a.reduce((x,y)=>x+y,0)/a.length):NaN};
+    const stages=[avg(1),avg(2),avg(3)];
+    const puanlar=[avgPuan(1),avgPuan(2),avgPuan(3)];
+    const total=stages.every(Number.isFinite)?stages.reduce((a,b)=>a+b,0):NaN;
+    const puanToplam=puanlar.some(Number.isFinite)?puanlar.filter(Number.isFinite).reduce((a,b)=>a+b,0):NaN;
+    return {...t,uyeler,stages,puanlar,total,puanToplam,completed:uyeler.length>0&&uyeler.every(p=>p.completed)};
+  }).sort((a,b)=>{
+    // Once yuksek puan; puan esitse dusuk km toplami onde.
+    const ap=Number.isFinite(a.puanToplam)?a.puanToplam:-1;
+    const bp=Number.isFinite(b.puanToplam)?b.puanToplam:-1;
+    if(bp!==ap) return bp-ap;
+    return Number(a.total??Infinity)-Number(b.total??Infinity);
+  });
+ }
+ function oyuncuDetayHtml(p){
+  const f=n=>Number.isFinite(Number(n))?kmSayi(n)+' km':'-';
+  const stages=[1,2,3].map(n=>{const km=Number(p['stage'+n+'Km']),sec=p['stage'+n+'Selection']||'Tahmin yapılmadı',hedef=p['stage'+n+'Target']||('Konum '+n),moves=Number(p['stage'+n+'Moves']||0);const sn=Number(p['stage'+n+'Seconds']);const puan=konumPuani(km,p['stage'+n+'Seconds']);return `<div class="takim-oyuncu-asama"><div class="to-baslik">${n}. Konum <b class="to-puan">${Number.isFinite(puan)?puanYaz(puan)+' p':'-'}</b></div><div class="to-km">${f(km)}</div><div>🎯 Hedef: <b>${yazi(hedef)}</b></div><div>📍 Seçim: <b>${yazi(sec)}</b></div><div>⏱ Süre: <b>${Number.isFinite(sn)?sn+' sn':'-'}</b></div><div>👣 Hareket: <b>${moves}</b></div></div>`}).join('');
+  const kms=[p.stage1Km,p.stage2Km,p.stage3Km].map(Number).filter(Number.isFinite),enIyi=kms.length?Math.min(...kms):NaN,ort=kms.length?kms.reduce((a,b)=>a+b,0)/kms.length:NaN,total=Number(p.totalKm);
+  const oyuncuPuan=oyuncuToplamPuan(p);
+  return `<div class="takim-oyuncu"><div class="takim-oyuncu-head"><b>${yazi(p.playerName||'Oyuncu')}</b><span>${p.completed?'✅ Tamamladı':kms.length+' / 3 konum'}</span></div><div class="takim-oyuncu-ozet"><span class="ozet-puan">Puan: <b>${Number.isFinite(oyuncuPuan)?puanYaz(oyuncuPuan):'-'}</b></span><span>En iyi: <b>${f(enIyi)}</b></span><span>Toplam: <b>${f(total)}</b></span></div><div class="takim-oyuncu-grid">${stages}</div></div>`;
+ }
+ function takimHtml(rows){
+  const f=n=>Number.isFinite(Number(n))?kmSayi(n)+' km':'-';
+  return rows.length?rows.map((t,i)=>{
+   const stageCounts=[1,2,3].map(n=>t.uyeler.map(p=>Number(p['stage'+n+'Km'])).filter(Number.isFinite).length);
+   const pz=v=>Number.isFinite(Number(v))?puanYaz(v)+' p':'-';
+   const kutu=(baslik,puan,km,alt)=>`<div><span class="ta-baslik">${baslik}</span><b class="ta-puan">${pz(puan)}</b><span class="ta-km">${f(km)}</span><small>${alt}</small></div>`;
+   return `<section class="takim-skor"><div class="takim-skor-baslik"><span><span class="takim-sira">${t.completed?(MADALYALAR[i]||(i+1)):'•'}</span> ${yazi(t.name)}</span><span class="takim-toplam-puan">${pz(t.puanToplam)}<small>${t.completed?f(t.total):'Devam ediyor'}</small></span></div><div class="takim-uyeler">${t.uyeler.length} oyuncu · Takım değerleri, o konumda tahmin yapan oyuncuların ortalamasıdır.</div><div class="takim-asamalar">${kutu('1. Konum ort.',t.puanlar[0],t.stages[0],stageCounts[0]+' oyuncu')}${kutu('2. Konum ort.',t.puanlar[1],t.stages[1],stageCounts[1]+' oyuncu')}${kutu('3. Konum ort.',t.puanlar[2],t.stages[2],stageCounts[2]+' oyuncu')}${kutu('Takım toplamı',t.puanToplam,t.total,'3 ortalama toplamı')}</div><details class="takim-detay"><summary>👥 Oyuncu seçimleri ve ayrıntıları</summary>${t.uyeler.map(oyuncuDetayHtml).join('')||'<p>Henüz oyuncu yok.</p>'}</details></section>`
+  }).join(''):'<p>Henüz takım yok.</p>'
+ }
+ const eskiLider=window.firebaseLiderlikYenile;
+ window.firebaseLiderlikYenile=async function(){const alan=document.getElementById('liderlikTablosu'),durum=document.getElementById('liderDurum');if(!alan||!firebaseHazir)return;try{const rows=await takimSkorlari(SERIES_ID);alan.innerHTML=takimHtml(rows);durum.textContent=rows.length+' takım · sıralama takım puan ortalamasına göredir'}catch(e){console.error(e);return eskiLider.apply(this,arguments)}};
+ window.takimSkorTablosunuAc=async function(id,name){
+  const rows=await takimSkorlari(id),x=document.createElement('div');x.className='score-pop';x.onclick=e=>{if(e.target===x)x.remove()};
+  x.innerHTML=`<div class="score-box"><button style="float:right" onclick="this.closest('.score-pop').remove()">\u2715</button><h2>\u{1F3C6} ${yazi(name)} \u00b7 Tak\u0131m Skoru</h2><p style="color:#64748b">Tak\u0131mlar, \u00fc\u00e7 konumdaki tak\u0131m <b>puan ortalamalar\u0131n\u0131n toplam\u0131na</b> g\u00f6re s\u0131ralan\u0131r. Puan = yak\u0131nl\u0131k + s\u00fcre bonusu.</p>${takimHtml(rows)}</div>`;
+  document.body.appendChild(x);
+ };
+ // Sayfa açılışında rumuz isteme; takım seçimi yalnızca Oyuna Gir tıklanınca açılır.
+ window.acilisKarari=async function(){const id=aktifOyunId();if(oyunModu()==='play'&&id){const gs=await firebaseDb.collection('games').doc(id).get(),ps=await firebaseDb.collection('games').doc(id).collection('players').doc(firebaseUser.uid).get();if(gs.exists&&ps.exists&&!ps.data().completed){const p=ps.data();if(p.teamId){localStorage.setItem(TEAM_KEY,p.teamId);localStorage.setItem(TEAM_NAME_KEY,p.teamName||'Takım');if(p.ready!==true){seciliOyunId=id;seciliOyun=gs.data();beklemeTeamId=p.teamId;beklemeTeamName=p.teamName||'Takım';beklemeRumuz=p.playerName||'Oyuncu';anaSayfayiGoster();takimBeklemeAc();return}}oyunEkraniniGoster();return}if(gs.exists&&ps.exists&&ps.data().completed){sonucEkraniniAc(id,gs.data().name||id);return}}await anaSayfayiYukle()};
+})();
+</script>
+<style id="takimSenkronCss">
+#takimBeklemeKatman{position:fixed;inset:0;z-index:65000;background:rgba(15,23,42,.86);display:flex;align-items:center;justify-content:center;padding:16px}
+#takimBeklemeKatman.hidden{display:none!important}
+.tbk-kart{width:min(520px,96vw);background:#fff;border-radius:18px;padding:24px;text-align:center;box-shadow:0 24px 70px #0007}
+.tbk-kart h3{font-size:24px;font-weight:900;color:#0f172a;margin:6px 0}
+.tbk-kart p{color:#475569;margin:6px 0}
+.tbk-sayac{font-size:34px;font-weight:900;color:#1d4ed8;margin:10px 0}
+.tbk-bar{height:10px;border-radius:999px;background:#e2e8f0;overflow:hidden;margin:12px 0}
+.tbk-bar span{display:block;height:100%;background:linear-gradient(90deg,#2563eb,#10b981);width:0;transition:width .3s}
+.tbk-liste{text-align:left;margin-top:12px;display:grid;gap:6px}
+.tbk-uye{display:flex;justify-content:space-between;gap:8px;border:1px solid #e2e8f0;border-radius:10px;padding:8px 10px;font-size:13px}
+.tbk-ok{color:#047857;font-weight:800}.tbk-bekle{color:#b45309;font-weight:800}
+</style>
+<div id="takimBeklemeKatman" class="hidden"><div class="tbk-kart">
+ <div style="font-size:40px">⏳</div>
+ <h3 id="tbkBaslik">Takım arkadaşın bekleniyor</h3>
+ <p id="tbkAciklama">Bu konumu tamamladın. Takımın tamamı tahminini gönderince birlikte devam edeceksiniz.</p>
+ <div class="tbk-sayac" id="tbkSayac">0 / 0</div>
+ <div class="tbk-bar"><span id="tbkBar"></span></div>
+ <div class="tbk-liste" id="tbkListe"></div>
+</div></div>
+<script id="takimliGercekKonumGizle">
+/* TAKIMLI OYUN
+   1) Gercek konum, mesafe ve hedef pini oyun bitene kadar hicbir an gorunmez (innerHTML kilidi).
+   2) Asama senkronu: takimin tamami ayni konumu bitirmeden sonraki konuma gecilmez.
+   3) Sonuc ekrani, takimin tamami 3. konumu bitirmeden acilmaz. */
+(function(){
+ let takimSonucIzin=false, asamaDinleyici=null, aktifBeklemeAsamasi=0;
+
+ window.__takimliOyunAktif=(localStorage.getItem('haritaOyunTuru')==='team' && !!localStorage.getItem('haritaAktifTakimId'));
+ function takimliMi(){
+  if(window.__takimliOyunAktif===true) return true;
+  return localStorage.getItem('haritaOyunTuru')==='team' && !!localStorage.getItem('haritaAktifTakimId');
+ }
+ function oyunBittiMi(){ return localStorage.getItem(STORAGE_KEY_COMPLETED)==='true'; }
+ function gizlensinMi(){ return takimliMi() && !oyunBittiMi(); }
+ function takimId(){ return localStorage.getItem('haritaAktifTakimId')||''; }
+
+ /* ---------- 1. MESAJ KILIDI: gercek konum metni hic yazilamaz ---------- */
+ function guvenliMesajHtml(){
+  const stage=Number(localStorage.getItem(STORAGE_KEY_STAGE)||1);
+  const secim=localStorage.getItem(PREFIX+'haritaBulmacasi_stage_'+stage+'_selectionName')||'-';
+  return '📍 Seçimin kaydedildi: <b class="text-red-600">'+guvenliMetin(secim)+'</b><br><span class="text-slate-500">🔒 Gerçek konum ve mesafe, takım sonucunda açıklanacak.</span>';
+ }
+ const sizintiDeseni=/Gerçek Konum|Hedefe uzaklık|uzaklık:/i;
+ function mesajKilidiKur(){
+  const m=document.getElementById('mesajAlani');
+  if(!m||m.__takimKilit) return;
+  m.__takimKilit=true;
+  const ih=Object.getOwnPropertyDescriptor(Element.prototype,'innerHTML');
+  const tc=Object.getOwnPropertyDescriptor(Node.prototype,'textContent');
+  Object.defineProperty(m,'innerHTML',{configurable:true,
+   get(){return ih.get.call(this)},
+   set(v){ if(gizlensinMi()&&sizintiDeseni.test(String(v))){ ih.set.call(this,guvenliMesajHtml()); return; } ih.set.call(this,v); }});
+  Object.defineProperty(m,'textContent',{configurable:true,
+   get(){return tc.get.call(this)},
+   set(v){ if(gizlensinMi()&&sizintiDeseni.test(String(v))){ ih.set.call(this,guvenliMesajHtml()); return; } tc.set.call(this,v); }});
+ }
+ mesajKilidiKur();
+ document.addEventListener('DOMContentLoaded',mesajKilidiKur);
+
+ /* ---------- 1b. HEDEF PINI HIC CIZILMEZ ---------- */
+ function secimIkonu(stage){
+  const svg='<svg xmlns="http://www.w3.org/2000/svg" width="46" height="46" viewBox="0 0 46 46"><circle cx="23" cy="23" r="20" fill="#ef4444" stroke="#111827" stroke-width="2"/><text x="23" y="28" text-anchor="middle" font-family="Arial,sans-serif" font-size="15" font-weight="900" fill="white">'+stage+'S</text></svg>';
+  return {url:'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(svg),scaledSize:new google.maps.Size(46,46),anchor:new google.maps.Point(23,23)};
+ }
+ const eskiPinGoster=window.gosterPinlerVeHaritayiYakınlaştır;
+ window.gosterPinlerVeHaritayiYakınlaştır=function(tahminEnlem,tahminBoylam){
+  if(!gizlensinMi()) return eskiPinGoster.apply(this,arguments);
+  if(!tahminHaritasi) return;
+  temizleHaritaKatmanlari();
+  const stage=Number(localStorage.getItem(STORAGE_KEY_STAGE)||1);
+  const t={lat:Number(tahminEnlem),lng:Number(tahminBoylam)};
+  tahminMarker=new google.maps.Marker({position:t,map:tahminHaritasi,title:stage+'. Seçim',icon:secimIkonu(stage)});
+  tahminHaritasi.panTo(t); if(tahminHaritasi.getZoom()<4) tahminHaritasi.setZoom(4);
+ };
+ const eskiTumAsama=window.gosterTumAsamaSonuclarini;
+ window.gosterTumAsamaSonuclarini=function(){ if(gizlensinMi()) return; return eskiTumAsama.apply(this,arguments); };
+
+ setInterval(function(){
+  if(!gizlensinMi()) return;
+  try{
+   if(typeof hedefMarker!=='undefined'&&hedefMarker&&hedefMarker.getMap&&hedefMarker.getMap()) hedefMarker.setMap(null);
+   if(typeof mesafeCizgisi!=='undefined'&&mesafeCizgisi&&mesafeCizgisi.getMap&&mesafeCizgisi.getMap()) mesafeCizgisi.setMap(null);
+  }catch(e){}
+ },250);
+
+ /* ---------- 2. ASAMA SENKRONU ---------- */
+ function beklemeGoster(stage,uyeler){
+  const kat=document.getElementById('takimBeklemeKatman');
+  const biten=uyeler.filter(u=>Number.isFinite(Number(u['stage'+stage+'Km']))).length;
+  const toplam=uyeler.length;
+  document.getElementById('tbkBaslik').textContent = stage<TOTAL_STAGES ? 'Takım arkadaşın bekleniyor' : 'Sonuç için takım bekleniyor';
+  document.getElementById('tbkAciklama').textContent = stage<TOTAL_STAGES
+    ? stage+'. konumu tamamladın. Takımın tamamı gönderince '+(stage+1)+'. konum ikinize de aynı anda açılacak.'
+    : 'Son konumu tamamladın. Takımın tamamı bitirince sonuç ekranı açılacak.';
+  document.getElementById('tbkSayac').textContent=biten+' / '+toplam;
+  document.getElementById('tbkBar').style.width=(toplam?Math.round(biten/toplam*100):0)+'%';
+  document.getElementById('tbkListe').innerHTML=uyeler.map(u=>{
+   const ok=Number.isFinite(Number(u['stage'+stage+'Km']));
+   return '<div class="tbk-uye"><span>'+guvenliMetin(u.playerName||'Oyuncu')+'</span><span class="'+(ok?'tbk-ok':'tbk-bekle')+'">'+(ok?'✅ Gönderdi':'⏳ Oynuyor')+'</span></div>';
+  }).join('')||'<div class="tbk-uye"><span>Takım üyeleri yükleniyor…</span></div>';
+  kat.classList.remove('hidden');
+ }
+ function beklemeKapat(){ document.getElementById('takimBeklemeKatman')?.classList.add('hidden'); }
+
+ function asamaGecisYap(next){
+  localStorage.removeItem(STORAGE_KEY_TIMER_START);
+  localStorage.removeItem(STORAGE_KEY_TIMER_DURATION);
+  localStorage.removeItem(STORAGE_KEY_HAREKET_SAYACI);
+  localStorage.setItem(STORAGE_KEY_STAGE,String(next));
+  oyunuYenidenYukle();
+ }
+
+ function asamaSenkronBaslat(stage){
+  if(!takimliMi()||!firebaseHazir||!firebaseUser) return;
+  const gameId=(typeof aktifOyunId==='function')?aktifOyunId():'';
+  const tid=takimId();
+  if(!gameId||!tid||!stage) return;
+  if(aktifBeklemeAsamasi===stage&&asamaDinleyici) return;
+  aktifBeklemeAsamasi=stage;
+  kronometreyiKesinDurdur();
+  document.getElementById('sonrakiAsamaButonu')?.classList.add('hidden');
+  document.getElementById('tahminButonu')?.classList.add('hidden');
+  beklemeGoster(stage,[]);
+  if(asamaDinleyici){asamaDinleyici();asamaDinleyici=null;}
+  asamaDinleyici=firebaseDb.collection('games').doc(gameId).collection('players').where('teamId','==',tid)
+   .onSnapshot(s=>{
+    const uyeler=s.docs.map(d=>d.data());
+    beklemeGoster(stage,uyeler);
+    const toplam=uyeler.length;
+    const biten=uyeler.filter(u=>Number.isFinite(Number(u['stage'+stage+'Km']))).length;
+    if(toplam>0&&biten>=toplam){
+     if(asamaDinleyici){asamaDinleyici();asamaDinleyici=null;}
+     aktifBeklemeAsamasi=0;
+     setTimeout(()=>{
+      beklemeKapat();
+      if(stage<TOTAL_STAGES) asamaGecisYap(stage+1);
+      else { takimSonucIzin=true; window.gosterToplamSonuclari(); }
+     },700);
+    }
+   },e=>{ document.getElementById('tbkAciklama').textContent='Takım bilgisi alınamadı: '+(e.code||e.message); });
+ }
+
+ window.takimAsamaSenkronBaslat=asamaSenkronBaslat;
+ window.takimliOyunModuMu=takimliMi;
+
+ // "Sonraki Konum" butonu takimli oyunda dogrudan gecmez, senkron beklemeye girer.
+ const asilSonraki=window.sonrakiAsamayaGec;
+ window.sonrakiAsamayaGec=function(){
+  if(takimliMi()){ asamaSenkronBaslat(Number(localStorage.getItem(STORAGE_KEY_STAGE)||1)); return; }
+  return asilSonraki.apply(this,arguments);
+ };
+
+ /* ---------- 3. SONUC EKRANI KILIDI ---------- */
+ const asilSonuc=window.gosterToplamSonuclari;
+ window.gosterToplamSonuclari=function(){
+  if(takimliMi()&&!takimSonucIzin){ asamaSenkronBaslat(TOTAL_STAGES); return; }
+  return asilSonuc.apply(this,arguments);
+ };
+
+ /* ---------- BAGLANTI NOKTALARI ---------- */
+ const asilGonder=window.tahminGonder;
+ window.tahminGonder=async function(){
+  const stage=Number(localStorage.getItem(STORAGE_KEY_STAGE)||1);
+  const r=await asilGonder.apply(this,arguments);
+  if(takimliMi()){
+   const m=document.getElementById('mesajAlani'); if(m) m.innerHTML=guvenliMesajHtml();
+   asamaSenkronBaslat(stage);
+  }
+  return r;
+ };
+
+ async function takimModunuDogrula(){
+  try{
+   const gameId=(typeof aktifOyunId==='function')?aktifOyunId():'';
+   if(!firebaseHazir||!firebaseUser||!gameId) return;
+   const ps=await firebaseDb.collection('games').doc(gameId).collection('players').doc(firebaseUser.uid).get();
+   if(!ps.exists) return;
+   const p=ps.data();
+   if(p.teamId){
+    window.__takimliOyunAktif=true;
+    localStorage.setItem('haritaOyunTuru','team');
+    localStorage.setItem('haritaAktifTakimId',p.teamId);
+    if(p.teamName) localStorage.setItem('haritaAktifTakimAdi',p.teamName);
+   } else window.__takimliOyunAktif=false;
+  }catch(e){ console.error('Takim modu dogrulanamadi',e); }
+ }
+
+ const eskiInitMap=window.initMap;
+ window.initMap=async function(){
+  mesajKilidiKur();
+  const r=await eskiInitMap.apply(this,arguments);
+  await takimModunuDogrula();
+  if(takimliMi()&&!oyunBittiMi()&&localStorage.getItem(STORAGE_KEY_TAHMIN)==='true'){
+   const m=document.getElementById('mesajAlani'); if(m) m.innerHTML=guvenliMesajHtml();
+   asamaSenkronBaslat(Number(localStorage.getItem(STORAGE_KEY_STAGE)||1));
+  }
+  return r;
+ };
+
+ // Oyunu tamamlamis ama takimi bitmemis oyuncu sayfayi yenilerse de bekleme ekrani acilir.
+ const eskiSonucEkraniniAc=window.sonucEkraniniAc;
+ window.sonucEkraniniAc=async function(id,name){
+  await takimModunuDogrula();
+  if(takimliMi()&&!takimSonucIzin){
+   localStorage.setItem('haritaEkranModu','play');
+   oyunEkraniniGoster();
+   asamaSenkronBaslat(TOTAL_STAGES);
+   return;
+  }
+  return eskiSonucEkraniniAc.apply(this,arguments);
+ };
+})();
+</script>
+<style id="takimDetayCss">
+.takim-asamalar small{display:block;color:#64748b;margin-top:3px}.takim-detay{margin-top:12px;border-top:1px solid #cbd5e1;padding-top:10px}.takim-detay summary{cursor:pointer;font-weight:900;color:#1e3a8a}.takim-oyuncu{margin-top:10px;border:1px solid #dbeafe;border-radius:12px;padding:10px;background:#fff}.takim-oyuncu-head{display:flex;justify-content:space-between;gap:8px;align-items:center}.takim-oyuncu-head span{font-size:11px;color:#475569}.takim-oyuncu-ozet{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}.takim-oyuncu-ozet span{background:#eff6ff;border-radius:8px;padding:5px 8px;font-size:11px}.takim-oyuncu-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.takim-oyuncu-asama{border:1px solid #e2e8f0;border-radius:9px;padding:8px;font-size:11px;color:#475569}.to-baslik{display:flex;justify-content:space-between;color:#0f172a;margin-bottom:4px}@media(max-width:650px){.takim-oyuncu-grid{grid-template-columns:1fr}.takim-oyuncu-head{align-items:flex-start;flex-direction:column}.takim-asamalar{grid-template-columns:1fr 1fr}}
+</style>
+
+<style id="anaSayfaTakimSkoruCss">.game-score-actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}.takim-skor-ac{background:#0f766e!important}@media(max-width:650px){.game-score-actions{width:100%}.game-score-actions button{flex:1}}</style>
+<script id="anaSayfaTakimSkoruButonFix">
+/* Ana sayfada her oyun kartina ayri "Takim Skoru" butonu ekler.
+   Kart -> oyun eslestirmesi, karttaki mevcut skor butonunun data-game-id degerinden yapilir. */
+(function(){
+ function ekle(){
+  document.querySelectorAll('#hubGames .game-card').forEach(card=>{
+   const kaynak=card.querySelector('.skor-ac');
+   const gameId=kaynak?.dataset.gameId;
+   const gameName=kaynak?.dataset.gameName||gameId;
+   if(!gameId) return;
+   if(card.querySelector('.takim-skor-ac')) return;
+   let alan=card.querySelector('.game-score-actions');
+   if(!alan){
+    alan=document.createElement('div');
+    alan.className='game-score-actions';
+    [...card.querySelectorAll(':scope > button')].forEach(b=>alan.appendChild(b));
+    card.appendChild(alan);
+   }
+   const b=document.createElement('button');
+   b.type='button';
+   b.className='game-action takim-skor-ac';
+   b.textContent='\u{1F465} Tak\u0131m Skoru';
+   b.onclick=()=>takimSkorTablosunuAc(gameId,gameName).catch(e=>alert('Tak\u0131m skoru a\u00e7\u0131lamad\u0131: '+(e.code||e.message)));
+   alan.appendChild(b);
+  });
+ }
+ const hub=()=>document.getElementById('hubGames');
+ new MutationObserver(()=>{ if(hub()) ekle(); }).observe(document.documentElement,{childList:true,subtree:true});
+ document.addEventListener('DOMContentLoaded',ekle);
+ setInterval(()=>{ if(hub()&&!hub().classList.contains('hidden')) ekle(); },800);
+})();
+</script>
+<script id="anaSayfaEskiSkorKesinYonlendirme">
+(function(){
+ document.addEventListener('click',function(e){
+  const b=e.target.closest&&e.target.closest('.skor-ac');
+  if(!b)return;
+  e.preventDefault();
+  e.stopPropagation();
+  e.stopImmediatePropagation();
+  bireyselEskiSkorTablosunuAc(b.dataset.gameId,b.dataset.gameName).catch(err=>{
+   console.error(err);
+   alert('Skor tablosu a\u00e7\u0131lamad\u0131: '+(err.message||err));
+  });
+ },true);
+})();
+</script>
+<style id="ortakBaslangicCss">
+#beklemeOyunaGir:disabled{background:#94a3b8!important;cursor:not-allowed}
+.bekleme-uye.hazir{border-color:#22c55e;background:#f0fdf4}
+.bekleme-sayac{margin-top:10px;font-weight:900;color:#1d4ed8;text-align:center}
+</style>
+<script id="takimOrtakBaslangicFix">
+/* TAKIM BEKLEME ODASI: "Oyuna Gir" tek basina oyunu baslatmaz.
+   Takimdaki butun oyuncular hazir olunca oyun herkeste ayni anda acilir.
+   Bekleme odasindaki oyun kimligi ayri bir anahtarda tutulur; aktifOyunId() bu asamada bos olabilir. */
+(function(){
+ const TEAM_KEY='haritaAktifTakimId', TEAM_NAME_KEY='haritaAktifTakimAdi', BEKLEME_OYUN_KEY='haritaBeklemeOyunId';
+ let hazirDinleyici=null, baslatildi=false, sonUyeler=[];
+
+ function esc(v){const d=document.createElement('div');d.textContent=String(v||'');return d.innerHTML}
+ function basHarf(v){return String(v||'?').trim().split(/\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase().slice(0,2)||'?'}
+ function renk(uid){const a=['#ef4444','#2563eb','#f59e0b','#8b5cf6','#06b6d4','#ec4899'];let h=0;for(const c of String(uid||''))h=(h*31+c.charCodeAt(0))>>>0;return a[h%a.length]}
+ function beklemeOyunId(){ return localStorage.getItem(BEKLEME_OYUN_KEY)||aktifOyunId()||''; }
+ function modalAcikMi(){ const m=document.getElementById('takimBeklemeModal'); return m && !m.classList.contains('hidden'); }
+
+ // Bekleme odasina giris noktalarinda oyun kimligini sakla.
+ const eskiKatil=window.oyunaKatil;
+ window.oyunaKatil=function(id){ if(id) localStorage.setItem(BEKLEME_OYUN_KEY,id); return eskiKatil.apply(this,arguments); };
+ const eskiDevamEt=window.oyunaDevamEt;
+ window.oyunaDevamEt=function(id){ if(id) localStorage.setItem(BEKLEME_OYUN_KEY,id); return eskiDevamEt.apply(this,arguments); };
+ const eskiAcilis=window.acilisKarari;
+ window.acilisKarari=function(){ const id=aktifOyunId(); if(id) localStorage.setItem(BEKLEME_OYUN_KEY,id); return eskiAcilis.apply(this,arguments); };
+
+ function listeYaz(uyeler){
+  sonUyeler=uyeler;
+  const alan=document.getElementById('beklemeUyeler'), btn=document.getElementById('beklemeOyunaGir'), msg=document.getElementById('beklemeMesaj');
+  if(!alan||!btn) return;
+  window.__beklemeYazimIzni=true;
+  const hazirSayisi=uyeler.filter(u=>u.ready===true).length;
+  const ben=uyeler.find(u=>u.uid===firebaseUser.uid);
+  alan.innerHTML=(uyeler.length?uyeler.map(u=>`<div class="bekleme-uye${u.ready?' hazir':''}"><div class="bekleme-avatar" style="background:${renk(u.uid)}">${basHarf(u.playerName)}</div><div><b>${esc(u.playerName||'Oyuncu')}</b><small>${u.ready?'\u2705 Haz\u0131r':'\u23f3 Bekleme odas\u0131nda'}</small></div></div>`).join('')
+    :'<div class="bekleme-bos">Hen\u00fcz oyuncu g\u00f6r\u00fcnm\u00fcyor.</div>')
+   +`<div class="bekleme-sayac">Haz\u0131r: ${hazirSayisi} / ${uyeler.length}</div>`;
+  window.__beklemeYazimIzni=false;
+  if(ben&&ben.ready===true){
+   btn.disabled=true;
+   btn.textContent='\u2705 Haz\u0131rs\u0131n \u00b7 Tak\u0131m bekleniyor';
+   if(msg) msg.textContent='T\u00fcm tak\u0131m haz\u0131r olunca oyun ayn\u0131 anda ba\u015flayacak.';
+  } else {
+   btn.disabled=false;
+   btn.textContent='\u25b6\ufe0f Haz\u0131r\u0131m \u00b7 Oyuna Gir';
+  }
+ }
+
+ async function hepsiHazirBasla(gameId,uyeler){
+  if(baslatildi) return;
+  baslatildi=true;
+  try{
+   const gs=await firebaseDb.collection('games').doc(gameId).get();
+   if(!gs.exists){baslatildi=false;return;}
+   const benim=uyeler.find(u=>u.uid===firebaseUser.uid)||{};
+   localStorage.setItem('haritaOyunTuru','team');
+   localStorage.setItem('haritaAktifOyunSans', gs.data().chanceEnabled===false?'0':'1');
+   oyunAyarlariniYereleYaz(gs.data());
+   if(benim.teamId){localStorage.setItem(TEAM_KEY,benim.teamId);localStorage.setItem(TEAM_NAME_KEY,benim.teamName||'Tak\u0131m');}
+   oyunuYereldeHazirla(gameId,gs.data().targets,benim.playerName||globalOyuncuAdiAl()||'Oyuncu',1);
+   if(hazirDinleyici){hazirDinleyici();hazirDinleyici=null;}
+   document.getElementById('takimBeklemeModal')?.classList.add('hidden');
+   oyunuYenidenYukle();
+  }catch(e){
+   baslatildi=false;
+   const m=document.getElementById('beklemeMesaj'); if(m) m.textContent='Oyun ba\u015flat\u0131lamad\u0131: '+(e.code||e.message);
+  }
+ }
+
+ function odayiDinle(){
+  const gameId=beklemeOyunId(), teamId=localStorage.getItem(TEAM_KEY);
+  const msg=document.getElementById('beklemeMesaj');
+  if(!firebaseHazir||!firebaseUser) return;
+  if(!gameId||!teamId){ if(msg) msg.textContent='Oyun/tak\u0131m bilgisi bulunamad\u0131. L\u00fctfen oday\u0131 kapat\u0131p tekrar kat\u0131l.'; return; }
+  if(hazirDinleyici){hazirDinleyici();hazirDinleyici=null;}
+  baslatildi=false;
+  hazirDinleyici=firebaseDb.collection('games').doc(gameId).collection('players').where('teamId','==',teamId)
+   .onSnapshot(snap=>{
+    const uyeler=snap.docs.map(d=>d.data()).sort((a,b)=>(a.createdAt?.seconds||0)-(b.createdAt?.seconds||0));
+    listeYaz(uyeler);
+    if(uyeler.length>=2 && uyeler.every(u=>u.ready===true)) hepsiHazirBasla(gameId,uyeler);
+   },e=>{ if(msg) msg.textContent='Tak\u0131m bilgisi al\u0131namad\u0131: '+(e.code||e.message); });
+ }
+
+ new MutationObserver(()=>{
+  if(modalAcikMi()){ if(!hazirDinleyici) odayiDinle(); }
+  else if(hazirDinleyici){ hazirDinleyici(); hazirDinleyici=null; }
+ }).observe(document.documentElement,{subtree:true,attributes:true,attributeFilter:['class']});
+
+ // "Oyuna Gir" yalnizca hazir isaretler; oyunu baslatmaz.
+ window.takimdanOyunaBasla=async function(){
+  const gameId=beklemeOyunId(), btn=document.getElementById('beklemeOyunaGir'), msg=document.getElementById('beklemeMesaj');
+  if(!gameId){ if(msg) msg.textContent='Aktif oyun bulunamad\u0131.'; return; }
+  btn.disabled=true;
+  if(msg) msg.textContent='Haz\u0131r i\u015faretlendin. Tak\u0131m arkada\u015flar\u0131n bekleniyor...';
+  try{
+   await firebaseDb.collection('games').doc(gameId).collection('players').doc(firebaseUser.uid)
+    .set({ready:true,readyAt:firebase.firestore.FieldValue.serverTimestamp(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+   if(!hazirDinleyici) odayiDinle();
+   // Tek kisilik takimda beklemeden baslatma yok; digerleri hazir olunca dinleyici tetikler.
+  }catch(e){
+   if(msg) msg.textContent='Haz\u0131r bilgisi kaydedilemedi: '+(e.code||e.message);
+   btn.disabled=false;
+  }
+ };
+
+ // Odadan cikilirsa hazir isareti geri alinir.
+ window.takimBeklemeKapat=function(){
+  if(hazirDinleyici){hazirDinleyici();hazirDinleyici=null;}
+  const gameId=beklemeOyunId();
+  if(firebaseHazir&&firebaseUser&&gameId){
+   firebaseDb.collection('games').doc(gameId).collection('players').doc(firebaseUser.uid)
+    .set({ready:false,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true}).catch(console.error);
+  }
+  document.getElementById('takimBeklemeModal')?.classList.add('hidden');
+ };
+})();
+</script>
+<script id="beklemeOdasiKesinKilit">
+/* BEKLEME ODASI KESIN KILIT
+   1) Eski dinleyici de #beklemeUyeler icine yaziyordu ve yeni listeyi eziyordu.
+      Artik listeyi yalnizca ortak baslangic yoneticisi yazabilir.
+   2) ready=true olan oyuncu, takimin tamami hazir olmadan oyun ekranina giremez. */
+(function(){
+ const BEKLEME_OYUN_KEY='haritaBeklemeOyunId', TEAM_KEY='haritaAktifTakimId', TEAM_NAME_KEY='haritaAktifTakimAdi';
+
+ /* ---- 1) Liste alanini kilitle ---- */
+ function listeKilidiKur(){
+  const alan=document.getElementById('beklemeUyeler');
+  if(!alan||alan.__kilit) return;
+  alan.__kilit=true;
+  const ih=Object.getOwnPropertyDescriptor(Element.prototype,'innerHTML');
+  Object.defineProperty(alan,'innerHTML',{configurable:true,
+   get(){ return ih.get.call(this); },
+   set(v){
+    // Eski dinleyicinin ciktisinda hazir sayaci yoktur; bu yazmalar yok sayilir.
+    if(!window.__beklemeYazimIzni && String(v).indexOf('bekleme-sayac')<0) return;
+    ih.set.call(this,v);
+   }});
+ }
+ listeKilidiKur();
+ document.addEventListener('DOMContentLoaded',listeKilidiKur);
+ new MutationObserver(listeKilidiKur).observe(document.documentElement,{childList:true,subtree:true});
+
+ /* ---- 2) Hazir olsa bile takim tamam degilse oyuna girme ---- */
+ function beklemeOdasiniAc(gameId,teamId,teamName){
+  localStorage.setItem(BEKLEME_OYUN_KEY,gameId);
+  localStorage.setItem(TEAM_KEY,teamId);
+  localStorage.setItem(TEAM_NAME_KEY,teamName||'Tak\u0131m');
+  localStorage.setItem('haritaOyunTuru','team');
+  anaSayfayiGoster();
+  const ad=document.getElementById('beklemeTakimAdi');
+  if(ad) ad.textContent='\u{1F465} '+(teamName||'Tak\u0131m');
+  const msg=document.getElementById('beklemeMesaj'); if(msg) msg.textContent='';
+  document.getElementById('takimBeklemeModal')?.classList.remove('hidden');
+ }
+
+ async function takimTamamHazirMi(gameId,teamId){
+  const snap=await firebaseDb.collection('games').doc(gameId).collection('players').where('teamId','==',teamId).get();
+  const uyeler=snap.docs.map(d=>d.data());
+  return uyeler.length>=2 && uyeler.every(u=>u.ready===true);
+ }
+
+ const eskiAcilis=window.acilisKarari;
+ window.acilisKarari=async function(){
+  try{
+   const id=aktifOyunId();
+   if(oyunModu()==='play' && id && firebaseHazir && firebaseUser){
+    const ps=await firebaseDb.collection('games').doc(id).collection('players').doc(firebaseUser.uid).get();
+    if(ps.exists){
+     const p=ps.data();
+     if(p.teamId && !p.completed){
+      const hepsi=await takimTamamHazirMi(id,p.teamId);
+      if(!hepsi){ beklemeOdasiniAc(id,p.teamId,p.teamName); return; }
+     }
+    }
+   }
+  }catch(e){ console.error('Bekleme odasi kontrolu',e); }
+  return eskiAcilis.apply(this,arguments);
+ };
+})();
+</script>
+<script id="asamaSuresiKaydi">
+/* Her konumda tahminin kac saniyede gonderildigini olcer, yerel ve Firestore'a yazar. */
+(function(){
+ function sureAnahtari(stage){ return PREFIX+'haritaBulmacasi_stage_'+stage+'_sure'; }
+
+ function gecenSaniye(){
+  const bas=Number(localStorage.getItem(STORAGE_KEY_TIMER_START));
+  if(!Number.isFinite(bas)||bas<=0) return NaN;
+  const ayar=Number(localStorage.getItem(STORAGE_KEY_TIMER_ADJUST)||0);
+  const sn=Math.round((Date.now()-bas-(Number.isFinite(ayar)?ayar:0))/1000);
+  return Math.max(0,Math.min(sn,TIMER_DURATION_SECONDS));
+ }
+
+ const asilGonder=window.tahminGonder;
+ window.tahminGonder=async function(){
+  const stage=Number(localStorage.getItem(STORAGE_KEY_STAGE)||1);
+  if(localStorage.getItem(STORAGE_KEY_TAHMIN)!=='true'){
+   const sn=gecenSaniye();
+   // Sure bilgisi yoksa tam sure kullanilmis kabul edilir (sure dolarak gonderim).
+   localStorage.setItem(sureAnahtari(stage), String(Number.isFinite(sn)?sn:TIMER_DURATION_SECONDS));
+  }
+  const r=await asilGonder.apply(this,arguments);
+  sureleriYaz();
+  return r;
+ };
+
+ async function sureleriYaz(){
+  try{
+   const gameId=(typeof aktifOyunId==='function')?aktifOyunId():'';
+   if(!firebaseHazir||!firebaseUser||!gameId) return;
+   const veri={};
+   for(let i=1;i<=TOTAL_STAGES;i++){
+    const v=Number(localStorage.getItem(sureAnahtari(i)));
+    if(Number.isFinite(v)) veri['stage'+i+'Seconds']=v;
+   }
+   if(!Object.keys(veri).length) return;
+   veri.updatedAt=firebase.firestore.FieldValue.serverTimestamp();
+   await firebaseDb.collection('games').doc(gameId).collection('players').doc(firebaseUser.uid).set(veri,{merge:true});
+  }catch(e){ console.error('Asama suresi kaydedilemedi',e); }
+ }
+
+ const asilKaydet=window.firebaseAsamaKaydet;
+ window.firebaseAsamaKaydet=async function(){
+  const r=await asilKaydet.apply(this,arguments);
+  await sureleriYaz();
+  return r;
+ };
+})();
+</script>
+<style id="skorSiralamaCss">
+/* Skor tablosunda sirayi ilk bakista okunur kilan stiller */
+.score-box table { border-collapse:separate; border-spacing:0; }
+.score-box th:first-child, .score-box td:first-child { width:64px; text-align:center; }
+.sira-rozet { display:inline-flex; flex-direction:column; align-items:center; justify-content:center; min-width:46px; padding:5px 6px; border-radius:12px; font-weight:900; line-height:1.1; }
+.sira-rozet .sira-no { font-size:17px; }
+.sira-rozet .sira-mad { font-size:15px; }
+.sira-1 { background:linear-gradient(145deg,#fde68a,#f59e0b); color:#422006; box-shadow:0 3px 8px #f59e0b55; }
+.sira-2 { background:linear-gradient(145deg,#e5e7eb,#9ca3af); color:#1f2937; box-shadow:0 3px 8px #9ca3af55; }
+.sira-3 { background:linear-gradient(145deg,#fdba74,#c2703a); color:#3b1d06; box-shadow:0 3px 8px #c2703a55; }
+.sira-normal { background:#eef2ff; color:#3730a3; }
+.sira-bekliyor { background:#f1f5f9; color:#64748b; font-size:13px; }
+.score-box tr.satir-1 td { background:#fffbeb; }
+.score-box tr.satir-2 td { background:#f8fafc; }
+.score-box tr.satir-3 td { background:#fff7ed; }
+.score-box tr.satir-devam td { background:#fff; opacity:.85; }
+.score-box td b { font-size:15px; }
+.oyuncu-ad { display:flex; flex-direction:column; gap:2px; }
+.oyuncu-ad .oyuncu-durum { font-size:11px; font-weight:800; color:#64748b; }
+.oyuncu-ad .oyuncu-durum.bitti { color:#047857; }
+</style>
+<style id="puanTablosuCss">
+/* --- Bireysel skor tablosu: puan gosterimi --- */
+.hucre-ust { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.hucre-puan { display:block; font-size:13px; font-weight:900; color:#1d4ed8; margin-top:2px; }
+.konum-derece { display:inline-flex; align-items:center; justify-content:center; min-width:22px; height:20px; padding:0 5px; border-radius:999px; font-size:11px; font-weight:900; }
+.konum-derece.kd-1 { background:#fef3c7; color:#92400e; }
+.konum-derece.kd-2 { background:#e5e7eb; color:#374151; }
+.konum-derece.kd-3 { background:#ffedd5; color:#9a3412; }
+.konum-derece.kd-n { background:#eef2ff; color:#4338ca; }
+.score-box td.toplam-km { font-weight:800; color:#334155; white-space:nowrap; }
+.score-box td.toplam-puan { white-space:nowrap; }
+.score-box td.toplam-puan b { font-size:19px; font-weight:900; color:#1d4ed8; }
+.puan-fark { display:block; font-size:11px; font-weight:800; color:#94a3b8; margin-top:2px; }
+.puan-aciklama { margin-top:12px; font-size:11px; color:#64748b; border-top:1px solid #e2e8f0; padding-top:8px; }
+
+/* --- Takim skoru: puan ustte, km altta --- */
+.takim-asamalar div { display:flex; flex-direction:column; gap:1px; }
+.ta-baslik { font-size:11px; color:#64748b; font-weight:800; }
+.ta-puan { font-size:18px; font-weight:900; color:#1d4ed8; }
+.ta-km { font-size:12px; font-weight:800; color:#475569; }
+.takim-toplam-puan { display:flex; flex-direction:column; align-items:flex-end; font-size:20px; font-weight:900; color:#1d4ed8; }
+.takim-toplam-puan small { font-size:11px; font-weight:800; color:#64748b; }
+.takim-oyuncu-ozet .ozet-puan { background:#dbeafe; color:#1e3a8a; font-weight:900; }
+.to-puan { color:#1d4ed8; }
+.to-km { font-size:11px; color:#475569; font-weight:800; margin-bottom:3px; }
+@media(max-width:650px){ .ta-puan { font-size:16px; } }
+</style>
+<style id="haritaYonetimButonuCss">
+/* Ana sayfa basligindaki yonetim butonu: id secicisi, oyuncu modundaki
+   ".hub-head button{display:none}" kuralini ozgullukle gecersiz kilar. */
+.hub-head #haritaYonetimButonu,
+.home-head #haritaYonetimButonu {
+  display:inline-flex !important;
+  align-items:center;
+  gap:6px;
+  border:0;
+  border-radius:10px;
+  padding:11px 16px;
+  background:#7c3aed;
+  color:#fff;
+  font-weight:900;
+  cursor:pointer;
+  box-shadow:0 6px 16px #7c3aed44;
+  white-space:nowrap;
+}
+.hub-head #haritaYonetimButonu:hover,
+.home-head #haritaYonetimButonu:hover { background:#6d28d9; }
+.hub-head, .home-head { gap:12px; }
+@media(max-width:650px){
+  .hub-head #haritaYonetimButonu,
+  .home-head #haritaYonetimButonu { width:100%; justify-content:center; margin-top:10px; }
+}
+</style>
+<script id="haritaYonetimButonuFix">
+/* "Harita Bulmacasi" basliginin en sagina yonetim butonu ekler.
+   Buton, koordinat yonetimini iceren admin panelini acar (parola korumali). */
+(function(){
+ function ekle(){
+  document.querySelectorAll('.hub-head, .home-head').forEach(head=>{
+   if(head.querySelector('#haritaYonetimButonu')) return;
+   const b=document.createElement('button');
+   b.id='haritaYonetimButonu';
+   b.type='button';
+   b.title='1, 2 ve 3 numaral\u0131 konumlar\u0131n koordinatlar\u0131n\u0131 ve oyunlar\u0131 buradan y\u00f6net.';
+   b.innerHTML='\u{1F5FA}\uFE0F Harita Y\u00f6netimi';
+   b.onclick=function(e){
+    e.preventDefault();
+    e.stopPropagation();
+    if(typeof adminPaneliniAc==='function') adminPaneliniAc();
+    else alert('Y\u00f6netim paneli y\u00fcklenemedi.');
+   };
+   head.appendChild(b);
+  });
+ }
+ ekle();
+ document.addEventListener('DOMContentLoaded',ekle);
+ new MutationObserver(ekle).observe(document.documentElement,{childList:true,subtree:true});
+ setInterval(ekle,1000);
+})();
+</script>
+<style id="oyunAyarlariCss">
+.hazir-butonlar { display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
+.hazir-btn { border:1px solid #93c5fd; background:#fff; color:#1d4ed8; border-radius:8px; padding:5px 11px; font-size:12px; font-weight:900; cursor:pointer; }
+.hazir-btn:hover { background:#dbeafe; }
+.hazir-btn.secili { background:#2563eb; color:#fff; border-color:#2563eb; }
+.puan-onizleme { margin-top:12px; background:#fff; border:1px solid #bfdbfe; border-radius:10px; padding:8px 10px; }
+.puan-onizleme table { width:100%; border-collapse:collapse; font-size:12px; }
+.puan-onizleme th { text-align:left; color:#64748b; font-weight:800; padding:3px 6px; border-bottom:1px solid #e2e8f0; }
+.puan-onizleme td { padding:3px 6px; border-bottom:1px solid #f1f5f9; }
+.puan-onizleme td:last-child { text-align:right; font-weight:900; color:#1d4ed8; }
+.puan-onizleme caption { caption-side:top; text-align:left; font-size:11px; color:#1e40af; font-weight:800; padding-bottom:5px; }
+.admin-ayirac { border-top:2px dashed #cbd5e1; padding-top:14px; }
+.admin-ayirac h4 { font-size:16px; font-weight:900; color:#334155; margin:0; }
+</style>
+<script id="oyunAyarlariFix">
+/* Yonetim panelindeki sure ve puan olcegi ayarlari.
+   Degerler hem genel ayar olarak saklanir hem de kaydedilen oyun belgesine yazilir. */
+(function(){
+ const SURE_KEY='haritaBulmacasi_sure_saniye';
+ const OLCEK_KEY='haritaBulmacasi_puan_olcek';
+
+ window.adminSureOku=function(){
+  const v=Number(document.getElementById('adminSureSaniye')?.value);
+  if(Number.isFinite(v)&&v>=15&&v<=600) return Math.round(v);
+  const g=Number(localStorage.getItem(SURE_KEY));
+  return (Number.isFinite(g)&&g>=15&&g<=600)?Math.round(g):120;
+ };
+ window.adminPuanOlcekOku=function(){
+  const v=Number(document.getElementById('adminPuanOlcek')?.value);
+  if(Number.isFinite(v)&&v>=500&&v<=10000) return Math.round(v);
+  const g=Number(localStorage.getItem(OLCEK_KEY));
+  return (Number.isFinite(g)&&g>=500&&g<=10000)?Math.round(g):2000;
+ };
+
+ /* Oyun belgesindeki ayarlari yerel depoya tasir; oyun ekrani bunlari okur. */
+ window.oyunAyarlariniYereleYaz=function(g){
+  if(!g) return;
+  const sn=Number(g.timerSeconds);
+  if(Number.isFinite(sn)&&sn>=15&&sn<=600) localStorage.setItem('haritaAktifOyunSure',String(Math.round(sn)));
+  else localStorage.removeItem('haritaAktifOyunSure');
+  const ol=Number(g.puanOlcek);
+  if(Number.isFinite(ol)&&ol>=500&&ol<=10000) localStorage.setItem('haritaAktifOyunPuanOlcek',String(Math.round(ol)));
+  else localStorage.removeItem('haritaAktifOyunPuanOlcek');
+ };
+
+ function rozetleriIsaretle(){
+  const sn=adminSureOku(), ol=adminPuanOlcekOku();
+  document.querySelectorAll('.hazir-btn').forEach(b=>{
+   const m=String(b.getAttribute('onclick')||'').match(/\((\d+)\)/);
+   if(!m) return;
+   const deger=Number(m[1]);
+   const sureBtn=String(b.getAttribute('onclick')).indexOf('adminSureAyarla')>=0;
+   b.classList.toggle('secili', sureBtn ? deger===sn : deger===ol);
+  });
+ }
+
+ function onizlemeCiz(){
+  const alan=document.getElementById('puanOnizleme');
+  if(!alan||typeof temelPuan!=='function') return;
+  const eskiOlcek=PUAN_OLCEK_KM, eskiSure=PUAN_SURE_TOPLAM;
+  puanOlceginiUygula(adminPuanOlcekOku());
+  puanSuresiniUygula(adminSureOku());
+  const ornekler=[50,250,1000,3000,6000,12000];
+  const satirlar=ornekler.map(km=>`<tr><td>${kmYaz(km)}</td><td>${puanYaz(temelPuan(km))} p</td></tr>`).join('');
+  alan.innerHTML=`<table><caption>Bu ayarlarla mesafe → puan karşılığı (süre bonusu hariç)</caption><tr><th>Mesafe</th><th style="text-align:right">Temel puan</th></tr>${satirlar}</table>`;
+  puanOlceginiUygula(eskiOlcek);
+  puanSuresiniUygula(eskiSure);
+ }
+
+ window.adminSureDegisti=function(){
+  const alan=document.getElementById('adminSureSaniye');
+  let v=Number(alan.value);
+  if(!Number.isFinite(v)||v<15||v>600){
+   const m=document.getElementById('adminSureMesaj');
+   if(m){ m.textContent='⚠️ Süre 15 ile 600 saniye arasında olmalı.'; m.className='text-xs font-bold mt-1 text-red-600'; }
+   return;
+  }
+  v=Math.round(v);
+  localStorage.setItem(SURE_KEY,String(v));
+  const dk=Math.floor(v/60), sn=v%60;
+  const m=document.getElementById('adminSureMesaj');
+  if(m){ m.textContent='✅ Kaydedildi: '+v+' saniye'+(dk?` (${dk} dk ${sn} sn)`:'')+'. Yeni oyunlarda geçerli.'; m.className='text-xs font-bold mt-1 text-emerald-700'; }
+  rozetleriIsaretle(); onizlemeCiz(); sansSuresiniKirp();
+ };
+ window.adminSureAyarla=function(v){
+  const alan=document.getElementById('adminSureSaniye');
+  if(alan){ alan.value=v; adminSureDegisti(); }
+ };
+
+ window.adminPuanOlcekDegisti=function(){
+  const alan=document.getElementById('adminPuanOlcek');
+  let v=Number(alan.value);
+  if(!Number.isFinite(v)||v<500||v>10000){
+   const m=document.getElementById('adminPuanOlcekMesaj');
+   if(m){ m.textContent='⚠️ Ölçek 500 ile 10000 km arasında olmalı.'; m.className='text-xs font-bold mt-1 text-red-600'; }
+   return;
+  }
+  v=Math.round(v);
+  localStorage.setItem(OLCEK_KEY,String(v));
+  const m=document.getElementById('adminPuanOlcekMesaj');
+  if(m){ m.textContent='✅ Kaydedildi: '+v+' km. Yeni oyunlarda geçerli.'; m.className='text-xs font-bold mt-1 text-emerald-700'; }
+  rozetleriIsaretle(); onizlemeCiz();
+ };
+ window.adminPuanOlcekAyarla=function(v){
+  const alan=document.getElementById('adminPuanOlcek');
+  if(alan){ alan.value=v; adminPuanOlcekDegisti(); }
+ };
+
+ /* Sans tetik saniyesi toplam sureden buyuk olamaz. */
+ function sansSuresiniKirp(){
+  const alan=document.getElementById('adminSansSuresi');
+  if(!alan) return;
+  const sure=adminSureOku();
+  alan.max=String(sure-1);
+  if(Number(alan.value)>=sure){
+   alan.value=String(Math.max(1,Math.round(sure/2)));
+   localStorage.setItem('haritaBulmacasi_sans_suresi',alan.value);
+  }
+ }
+
+ /* Panel acildiginda kayitli degerleri forma yaz. */
+ const eskiGiris=window.adminGirisYap;
+ window.adminGirisYap=function(){
+  const r=eskiGiris.apply(this,arguments);
+  setTimeout(function(){
+   const sAlan=document.getElementById('adminSureSaniye');
+   const oAlan=document.getElementById('adminPuanOlcek');
+   if(sAlan) sAlan.value=String(Number(localStorage.getItem(SURE_KEY))||120);
+   if(oAlan) oAlan.value=String(Number(localStorage.getItem(OLCEK_KEY))||2000);
+   rozetleriIsaretle(); onizlemeCiz(); sansSuresiniKirp();
+  },60);
+  return r;
+ };
+})();
+</script>
+<script id="skorPuanOlcekUyumu">
+/* Skor tablolari acilirken o oyunun kendi sure ve olcek ayari uygulanir;
+   boylece eski oyunlar kaydedildikleri ayarla dogru puanlanir. */
+(function(){
+ async function oyunAyariniAl(id){
+  try{
+   const g=await firebaseDb.collection('games').doc(id).get();
+   return g.exists?g.data():null;
+  }catch(e){ console.error('Oyun ayari alinamadi',e); return null; }
+ }
+ function uygula(g){
+  puanOlceginiUygula(g && g.puanOlcek);
+  puanSuresiniUygula(g && g.timerSeconds);
+ }
+ const asilBireysel=window.skorTablosuOlustur;
+ window.skorTablosuOlustur=async function(id,name){
+  uygula(await oyunAyariniAl(id));
+  return asilBireysel.apply(this,arguments);
+ };
+ const asilTakim=window.takimSkorTablosunuAc;
+ window.takimSkorTablosunuAc=async function(id,name){
+  uygula(await oyunAyariniAl(id));
+  return asilTakim.apply(this,arguments);
+ };
+})();
+</script>
+</body>
 </html>
