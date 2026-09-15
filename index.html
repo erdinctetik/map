@@ -1920,7 +1920,7 @@ function kmYaz(v){return Number.isFinite(Number(v))?kmSayi(v)+' km':'-';}
  * ========================================================================= */
 const PUAN_MAX        = 5000;   // bir konumun azami temel puani
 // Puan olcegi: once oynanan/goruntulenen oyunun kendi ayari, yoksa yonetim panelindeki genel ayar.
-const VARSAYILAN_PUAN_OLCEK = 2000;
+const VARSAYILAN_PUAN_OLCEK = 3000;
 let PUAN_OLCEK_KM = (function(){
   // DIKKAT: Number(null) === 0 oldugu icin once null/undefined ve aralik kontrolu yapilir.
   const gomuluOlcek = (typeof EMBEDDED_PUAN_OLCEK!=='undefined') ? Number(EMBEDDED_PUAN_OLCEK) : NaN;
