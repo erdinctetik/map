@@ -142,8 +142,8 @@
 <style id="dinamikOyunCss">.dinamik-home{position:fixed;inset:0;z-index:800;background:linear-gradient(135deg,#eef2ff,#f0fdf4);overflow:auto;padding:24px}.dinamik-home-card{max-width:900px;margin:auto;background:#fff;border-radius:18px;padding:24px;box-shadow:0 20px 60px #0f172a22}.home-head{display:flex;justify-content:space-between;gap:12px;align-items:center;border-bottom:1px solid #e2e8f0;padding-bottom:16px}.home-head h1{font-size:28px;font-weight:900}.home-head button,.dinamik-admin-actions button,.join-btn{border:0;border-radius:10px;padding:11px 16px;background:#4f46e5;color:#fff;font-weight:900;cursor:pointer}.active-game{margin:18px 0;padding:18px;border:2px solid #22c55e;background:#f0fdf4;border-radius:14px}.active-game h2{font-size:22px;font-weight:900;color:#166534}.player-entry{display:flex;gap:8px;margin-top:12px}.player-entry input{flex:1;border:1px solid #86efac;border-radius:9px;padding:11px}.archive-title{font-weight:900;font-size:18px;margin:18px 0 8px}.archive-item{border:1px solid #cbd5e1;border-radius:11px;padding:12px;margin-top:8px;display:flex;justify-content:space-between;gap:10px}.archive-item button{border:0;background:#e0e7ff;color:#3730a3;border-radius:8px;padding:7px 10px;font-weight:800}.dinamik-admin-box{border:2px solid #8b5cf6;background:#f5f3ff;border-radius:14px;padding:14px;margin-bottom:16px}.dinamik-admin-box h4{font-size:20px;font-weight:900}.dinamik-admin-box label{display:block;font-size:12px;font-weight:800;margin:8px 0 4px}.dinamik-admin-actions{display:flex;gap:8px;margin-top:10px}.dinamik-admin-actions .arsiv-btn{background:#334155}.uid-note{font-size:11px;color:#64748b;margin-top:8px}.menu-return{border:0;border-radius:8px;padding:7px 10px;background:#0f766e;color:#fff;font-weight:900;margin-top:5px}.archive-modal{position:fixed;inset:0;z-index:40000;background:#0f172acc;display:flex;align-items:center;justify-content:center;padding:18px}.archive-dialog{width:min(900px,95vw);max-height:85vh;overflow:auto;background:#fff;border-radius:16px;padding:16px}.archive-dialog table{width:100%;border-collapse:collapse}.archive-dialog th,.archive-dialog td{padding:8px;border-bottom:1px solid #e2e8f0;text-align:left}.hidden{display:none!important}@media(max-width:650px){.player-entry{flex-direction:column}.home-head{align-items:flex-start}.archive-item{flex-direction:column}}</style><style>.hub{position:fixed;inset:0;z-index:700;background:linear-gradient(135deg,#eef2ff,#f0fdf4);overflow:auto;padding:24px}.hub-card{max-width:900px;margin:auto;background:white;border-radius:20px;padding:24px;box-shadow:0 20px 60px #0f172a22}.hub-head{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e2e8f0;padding-bottom:15px}.hub-head h1{font-size:28px;font-weight:900}.hub button,.game-admin button,.game-action,.home-btn{border:0;border-radius:9px;padding:10px 14px;background:#4f46e5;color:white;font-weight:900;cursor:pointer}.game-card{margin-top:12px;border:1px solid #cbd5e1;border-radius:13px;padding:14px;display:flex;justify-content:space-between;gap:12px;align-items:center}.game-card.active{border:2px solid #22c55e;background:#f0fdf4}.badge{display:inline-block;border-radius:999px;padding:4px 9px;font-size:11px;font-weight:900}.played{background:#dcfce7;color:#166534}.unplayed{background:#f1f5f9;color:#475569}.progress{background:#fef3c7;color:#92400e}.game-admin{border:2px solid #8b5cf6;background:#f5f3ff;border-radius:13px;padding:14px;margin-bottom:16px}.game-admin input{margin-top:8px}.home-btn{background:#0f766e;margin-left:10px}.score-pop{position:fixed;inset:0;z-index:50000;background:#0f172acc;display:flex;align-items:center;justify-content:center;padding:18px}.score-box{width:min(900px,96vw);max-height:85vh;overflow:auto;background:white;border-radius:16px;padding:16px}.score-box table{width:100%;border-collapse:collapse}.score-box th,.score-box td{padding:8px;border-bottom:1px solid #e2e8f0;text-align:left}@media(max-width:650px){.game-card{align-items:flex-start;flex-direction:column}.hub-head{align-items:flex-start}}</style>
 <script id="surumDamgasi">
 /* SURUM DAMGASI - her yeni surumde asagidaki iki satiri guncelle. */
-window.APP_VERSION='2026-09-15-v19';
-window.APP_VERSION_NOT='Yonetim panelinde sure ve puan olcegi ayari; otomatik koordinat bolumu yukari alindi';
+window.APP_VERSION='2026-09-15-v20';
+window.APP_VERSION_NOT='Duzeltme: gomulu ayar bos (null) iken sure 0 sn ve olcek 0 km oluyordu';
 console.log('%c SURUM: '+window.APP_VERSION+' ','background:#0f766e;color:#fff;font-weight:900;padding:3px 10px;border-radius:5px');
 console.log('Icerik: '+window.APP_VERSION_NOT);
 /* Surum bilgisi yalnizca konsolda gosterilir; ekranda etiket yoktur. */
@@ -390,7 +390,10 @@ console.log('Icerik: '+window.APP_VERSION_NOT);
         // Konum basina sure: once oynanan oyunun kendi ayari, yoksa yonetim panelindeki genel ayar.
         const VARSAYILAN_SURE_SANIYE = 120;
         const TIMER_DURATION_SECONDS = (function(){
-          if(Number.isFinite(Number(EMBEDDED_TIMER_SECONDS))) return Math.round(Number(EMBEDDED_TIMER_SECONDS));
+          // DIKKAT: Number(null) === 0 oldugu icin once null/undefined ve aralik kontrolu yapilir.
+          const gomulu = Number(EMBEDDED_TIMER_SECONDS);
+          if(EMBEDDED_TIMER_SECONDS !== null && EMBEDDED_TIMER_SECONDS !== undefined
+             && Number.isFinite(gomulu) && gomulu>=15 && gomulu<=600) return Math.round(gomulu);
           const oyunAyari = (localStorage.getItem('haritaEkranModu')==='play') ? Number(localStorage.getItem('haritaAktifOyunSure')) : NaN;
           if(Number.isFinite(oyunAyari) && oyunAyari>=15 && oyunAyari<=600) return Math.round(oyunAyari);
           const genel = Number(localStorage.getItem('haritaBulmacasi_sure_saniye'));
@@ -1919,7 +1922,10 @@ const PUAN_MAX        = 5000;   // bir konumun azami temel puani
 // Puan olcegi: once oynanan/goruntulenen oyunun kendi ayari, yoksa yonetim panelindeki genel ayar.
 const VARSAYILAN_PUAN_OLCEK = 2000;
 let PUAN_OLCEK_KM = (function(){
-  if(typeof EMBEDDED_PUAN_OLCEK!=='undefined' && Number.isFinite(Number(EMBEDDED_PUAN_OLCEK))) return Math.round(Number(EMBEDDED_PUAN_OLCEK));
+  // DIKKAT: Number(null) === 0 oldugu icin once null/undefined ve aralik kontrolu yapilir.
+  const gomuluOlcek = (typeof EMBEDDED_PUAN_OLCEK!=='undefined') ? Number(EMBEDDED_PUAN_OLCEK) : NaN;
+  if(typeof EMBEDDED_PUAN_OLCEK!=='undefined' && EMBEDDED_PUAN_OLCEK!==null
+     && Number.isFinite(gomuluOlcek) && gomuluOlcek>=500 && gomuluOlcek<=10000) return Math.round(gomuluOlcek);
   const oyunAyari = Number(localStorage.getItem('haritaAktifOyunPuanOlcek'));
   if(Number.isFinite(oyunAyari) && oyunAyari>=500 && oyunAyari<=10000) return Math.round(oyunAyari);
   const genel = Number(localStorage.getItem('haritaBulmacasi_puan_olcek'));
