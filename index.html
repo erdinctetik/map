@@ -142,8 +142,8 @@
 <style id="dinamikOyunCss">.dinamik-home{position:fixed;inset:0;z-index:800;background:linear-gradient(135deg,#eef2ff,#f0fdf4);overflow:auto;padding:24px}.dinamik-home-card{max-width:900px;margin:auto;background:#fff;border-radius:18px;padding:24px;box-shadow:0 20px 60px #0f172a22}.home-head{display:flex;justify-content:space-between;gap:12px;align-items:center;border-bottom:1px solid #e2e8f0;padding-bottom:16px}.home-head h1{font-size:28px;font-weight:900}.home-head button,.dinamik-admin-actions button,.join-btn{border:0;border-radius:10px;padding:11px 16px;background:#4f46e5;color:#fff;font-weight:900;cursor:pointer}.active-game{margin:18px 0;padding:18px;border:2px solid #22c55e;background:#f0fdf4;border-radius:14px}.active-game h2{font-size:22px;font-weight:900;color:#166534}.player-entry{display:flex;gap:8px;margin-top:12px}.player-entry input{flex:1;border:1px solid #86efac;border-radius:9px;padding:11px}.archive-title{font-weight:900;font-size:18px;margin:18px 0 8px}.archive-item{border:1px solid #cbd5e1;border-radius:11px;padding:12px;margin-top:8px;display:flex;justify-content:space-between;gap:10px}.archive-item button{border:0;background:#e0e7ff;color:#3730a3;border-radius:8px;padding:7px 10px;font-weight:800}.dinamik-admin-box{border:2px solid #8b5cf6;background:#f5f3ff;border-radius:14px;padding:14px;margin-bottom:16px}.dinamik-admin-box h4{font-size:20px;font-weight:900}.dinamik-admin-box label{display:block;font-size:12px;font-weight:800;margin:8px 0 4px}.dinamik-admin-actions{display:flex;gap:8px;margin-top:10px}.dinamik-admin-actions .arsiv-btn{background:#334155}.uid-note{font-size:11px;color:#64748b;margin-top:8px}.menu-return{border:0;border-radius:8px;padding:7px 10px;background:#0f766e;color:#fff;font-weight:900;margin-top:5px}.archive-modal{position:fixed;inset:0;z-index:40000;background:#0f172acc;display:flex;align-items:center;justify-content:center;padding:18px}.archive-dialog{width:min(900px,95vw);max-height:85vh;overflow:auto;background:#fff;border-radius:16px;padding:16px}.archive-dialog table{width:100%;border-collapse:collapse}.archive-dialog th,.archive-dialog td{padding:8px;border-bottom:1px solid #e2e8f0;text-align:left}.hidden{display:none!important}@media(max-width:650px){.player-entry{flex-direction:column}.home-head{align-items:flex-start}.archive-item{flex-direction:column}}</style><style>.hub{position:fixed;inset:0;z-index:700;background:linear-gradient(135deg,#eef2ff,#f0fdf4);overflow:auto;padding:24px}.hub-card{max-width:900px;margin:auto;background:white;border-radius:20px;padding:24px;box-shadow:0 20px 60px #0f172a22}.hub-head{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e2e8f0;padding-bottom:15px}.hub-head h1{font-size:28px;font-weight:900}.hub button,.game-admin button,.game-action,.home-btn{border:0;border-radius:9px;padding:10px 14px;background:#4f46e5;color:white;font-weight:900;cursor:pointer}.game-card{margin-top:12px;border:1px solid #cbd5e1;border-radius:13px;padding:14px;display:flex;justify-content:space-between;gap:12px;align-items:center}.game-card.active{border:2px solid #22c55e;background:#f0fdf4}.badge{display:inline-block;border-radius:999px;padding:4px 9px;font-size:11px;font-weight:900}.played{background:#dcfce7;color:#166534}.unplayed{background:#f1f5f9;color:#475569}.progress{background:#fef3c7;color:#92400e}.game-admin{border:2px solid #8b5cf6;background:#f5f3ff;border-radius:13px;padding:14px;margin-bottom:16px}.game-admin input{margin-top:8px}.home-btn{background:#0f766e;margin-left:10px}.score-pop{position:fixed;inset:0;z-index:50000;background:#0f172acc;display:flex;align-items:center;justify-content:center;padding:18px}.score-box{width:min(900px,96vw);max-height:85vh;overflow:auto;background:white;border-radius:16px;padding:16px}.score-box table{width:100%;border-collapse:collapse}.score-box th,.score-box td{padding:8px;border-bottom:1px solid #e2e8f0;text-align:left}@media(max-width:650px){.game-card{align-items:flex-start;flex-direction:column}.hub-head{align-items:flex-start}}</style>
 <script id="surumDamgasi">
 /* SURUM DAMGASI - her yeni surumde asagidaki iki satiri guncelle. */
-window.APP_VERSION='2026-09-16-v43';
-window.APP_VERSION_NOT='Takim ortak baslangicinda yerel oyun hazirligi senkron tutuldu; Devam Et dongusu giderildi';
+window.APP_VERSION='2026-09-16-v44';
+window.APP_VERSION_NOT='Bireysel oyun sonu Yarış Sıralamasına konum ve toplam puanları eklendi';
 console.log('%c SURUM: '+window.APP_VERSION+' ','background:#0f766e;color:#fff;font-weight:900;padding:3px 10px;border-radius:5px');
 console.log('Icerik: '+window.APP_VERSION_NOT);
 /* Surum bilgisi yalnizca konsolda gosterilir; ekranda etiket yoktur. */
@@ -3700,6 +3700,37 @@ tahminGonder=async function(){const asama=Number(localStorage.getItem(STORAGE_KE
    if(kadro.length&&kadro.every(uid=>map.get(uid)?.completed===true))await tr.update({status:'completed',completedAt:firebase.firestore.FieldValue.serverTimestamp(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
   }catch(e){console.error('Takım tamamlanamadı',e)}
   return r;
+ };
+})();
+</script>
+
+<style id="oyunSonuBireyselPuanCssV44">
+#sonucSayfasi .lider-puan{font-weight:900;color:#1d4ed8;font-size:14px;white-space:nowrap}
+#sonucSayfasi .lider-konum-puan{display:block;font-size:11px;font-weight:900;color:#1d4ed8;margin-top:2px}
+#sonucSayfasi .lider-row{grid-template-columns:40px 1.45fr repeat(3,minmax(112px,1.2fr)) minmax(82px,.8fr) minmax(82px,.8fr) minmax(92px,.9fr) minmax(90px,.85fr)}
+@media(max-width:900px){#sonucSayfasi .lider-row{grid-template-columns:34px 1.2fr repeat(3,minmax(92px,1fr)) minmax(84px,.8fr) minmax(88px,.8fr)}#sonucSayfasi .lider-row > :nth-child(6),#sonucSayfasi .lider-row > :nth-child(7){display:none}}
+</style>
+<script id="oyunSonuBireyselPuanV44">
+(function(){
+ const eski=window.firebaseLiderlikYenile;
+ window.firebaseLiderlikYenile=async function(){
+  if(localStorage.getItem('haritaOyunTuru')==='team') return eski.apply(this,arguments);
+  const alan=document.getElementById('liderlikTablosu'),durum=document.getElementById('liderDurum');
+  if(!alan||!firebaseHazir)return;
+  durum.textContent='Sonuçlar ve puanlar yenileniyor...';
+  try{
+   const id=(typeof aktifOyunId==='function'?aktifOyunId():'')||SERIES_ID;
+   const [gs,snap]=await Promise.all([firebaseDb.collection('games').doc(id).get(),firebaseDb.collection('games').doc(id).collection('players').get()]);
+   if(gs.exists){puanOlceginiUygula(gs.data().puanOlcek);puanSuresiniUygula(gs.data().timerSeconds)}
+   const rows=snap.docs.map(d=>d.data()).map(r=>({...r,_puan:oyuncuToplamPuan(r)})).sort((a,b)=>{const ap=Number.isFinite(a._puan)?a._puan:-1,bp=Number.isFinite(b._puan)?b._puan:-1;if(bp!==ap)return bp-ap;return Number(a.totalKm??Infinity)-Number(b.totalKm??Infinity)});
+   const konumSira=[1,2,3].map(n=>konumSiralamasi(rows,n));
+   const f=v=>Number.isFinite(Number(v))?kmSayi(v)+' km':'-';
+   const hucre=(r,n)=>{const km=Number(r['stage'+n+'Km']);if(!Number.isFinite(km))return '<div><span class="lider-bos">-</span></div>';const p=konumPuani(km,r['stage'+n+'Seconds']),sv=mesafeSeviyesi(km),dr=konumSira[n-1][r.uid],sec=r['stage'+n+'Selection']||'-';return `<div><div class="lider-km">${f(km)}</div><span class="lider-konum-puan">${puanYaz(p)} p${dr?' · '+dr+'.':''}</span><div class="lider-alt"><span class="lider-nokta" style="background:${sv.renk}"></span>${sv.etiket}</div><div class="lider-yer" title="${guvenliMetin(sec)}">${guvenliMetin(sec)}</div></div>`};
+   let html='<div class="lider-row lider-head"><div>#</div><div>Oyuncu</div><div>1. Konum</div><div>2. Konum</div><div>3. Konum</div><div>En iyi</div><div>Ortalama</div><div>Toplam km</div><div>Puan</div></div>';
+   rows.forEach((r,i)=>{const kms=[r.stage1Km,r.stage2Km,r.stage3Km].map(Number).filter(Number.isFinite),en=kms.length?Math.min(...kms):NaN,ort=kms.length?kms.reduce((a,b)=>a+b,0)/kms.length:NaN,me=r.uid===firebaseUser.uid?' lider-me':'';html+=`<div class="lider-row${me}"><div class="lider-sira">${r.completed?(MADALYALAR[i]||(i+1)):"•"}</div><div><b>${guvenliMetin(r.playerName||'Oyuncu')}</b>${me?' <span class="lider-sen">Sen</span>':''}<div class="lider-alt">${r.completed?'Tamamladı':kms.length+' / 3 aşama'}</div></div>${hucre(r,1)}${hucre(r,2)}${hucre(r,3)}<div class="lider-eniyi">${f(en)}</div><div>${f(ort)}</div><div class="lider-toplam">${r.completed?f(r.totalKm):'Devam ediyor'}</div><div class="lider-puan">${Number.isFinite(r._puan)?puanYaz(r._puan)+' p':'-'}</div></div>`});
+   alan.innerHTML=rows.length?html:'<p class="text-sm text-slate-500">Henüz kayıtlı oyuncu yok.</p>';
+   const biten=rows.filter(r=>r.completed),lider=rows.find(r=>Number.isFinite(r._puan));durum.textContent=`${rows.length} oyuncu · ${biten.length} tamamladı`+(lider?' · en yüksek puan '+puanYaz(lider._puan)+' p':'');
+  }catch(e){console.error(e);return eski.apply(this,arguments)}
  };
 })();
 </script>
