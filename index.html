@@ -142,8 +142,8 @@
 <style id="dinamikOyunCss">.dinamik-home{position:fixed;inset:0;z-index:800;background:linear-gradient(135deg,#eef2ff,#f0fdf4);overflow:auto;padding:24px}.dinamik-home-card{max-width:900px;margin:auto;background:#fff;border-radius:18px;padding:24px;box-shadow:0 20px 60px #0f172a22}.home-head{display:flex;justify-content:space-between;gap:12px;align-items:center;border-bottom:1px solid #e2e8f0;padding-bottom:16px}.home-head h1{font-size:28px;font-weight:900}.home-head button,.dinamik-admin-actions button,.join-btn{border:0;border-radius:10px;padding:11px 16px;background:#4f46e5;color:#fff;font-weight:900;cursor:pointer}.active-game{margin:18px 0;padding:18px;border:2px solid #22c55e;background:#f0fdf4;border-radius:14px}.active-game h2{font-size:22px;font-weight:900;color:#166534}.player-entry{display:flex;gap:8px;margin-top:12px}.player-entry input{flex:1;border:1px solid #86efac;border-radius:9px;padding:11px}.archive-title{font-weight:900;font-size:18px;margin:18px 0 8px}.archive-item{border:1px solid #cbd5e1;border-radius:11px;padding:12px;margin-top:8px;display:flex;justify-content:space-between;gap:10px}.archive-item button{border:0;background:#e0e7ff;color:#3730a3;border-radius:8px;padding:7px 10px;font-weight:800}.dinamik-admin-box{border:2px solid #8b5cf6;background:#f5f3ff;border-radius:14px;padding:14px;margin-bottom:16px}.dinamik-admin-box h4{font-size:20px;font-weight:900}.dinamik-admin-box label{display:block;font-size:12px;font-weight:800;margin:8px 0 4px}.dinamik-admin-actions{display:flex;gap:8px;margin-top:10px}.dinamik-admin-actions .arsiv-btn{background:#334155}.uid-note{font-size:11px;color:#64748b;margin-top:8px}.menu-return{border:0;border-radius:8px;padding:7px 10px;background:#0f766e;color:#fff;font-weight:900;margin-top:5px}.archive-modal{position:fixed;inset:0;z-index:40000;background:#0f172acc;display:flex;align-items:center;justify-content:center;padding:18px}.archive-dialog{width:min(900px,95vw);max-height:85vh;overflow:auto;background:#fff;border-radius:16px;padding:16px}.archive-dialog table{width:100%;border-collapse:collapse}.archive-dialog th,.archive-dialog td{padding:8px;border-bottom:1px solid #e2e8f0;text-align:left}.hidden{display:none!important}@media(max-width:650px){.player-entry{flex-direction:column}.home-head{align-items:flex-start}.archive-item{flex-direction:column}}</style><style>.hub{position:fixed;inset:0;z-index:700;background:linear-gradient(135deg,#eef2ff,#f0fdf4);overflow:auto;padding:24px}.hub-card{max-width:900px;margin:auto;background:white;border-radius:20px;padding:24px;box-shadow:0 20px 60px #0f172a22}.hub-head{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e2e8f0;padding-bottom:15px}.hub-head h1{font-size:28px;font-weight:900}.hub button,.game-admin button,.game-action,.home-btn{border:0;border-radius:9px;padding:10px 14px;background:#4f46e5;color:white;font-weight:900;cursor:pointer}.game-card{margin-top:12px;border:1px solid #cbd5e1;border-radius:13px;padding:14px;display:flex;justify-content:space-between;gap:12px;align-items:center}.game-card.active{border:2px solid #22c55e;background:#f0fdf4}.badge{display:inline-block;border-radius:999px;padding:4px 9px;font-size:11px;font-weight:900}.played{background:#dcfce7;color:#166534}.unplayed{background:#f1f5f9;color:#475569}.progress{background:#fef3c7;color:#92400e}.game-admin{border:2px solid #8b5cf6;background:#f5f3ff;border-radius:13px;padding:14px;margin-bottom:16px}.game-admin input{margin-top:8px}.home-btn{background:#0f766e;margin-left:10px}.score-pop{position:fixed;inset:0;z-index:50000;background:#0f172acc;display:flex;align-items:center;justify-content:center;padding:18px}.score-box{width:min(900px,96vw);max-height:85vh;overflow:auto;background:white;border-radius:16px;padding:16px}.score-box table{width:100%;border-collapse:collapse}.score-box th,.score-box td{padding:8px;border-bottom:1px solid #e2e8f0;text-align:left}@media(max-width:650px){.game-card{align-items:flex-start;flex-direction:column}.hub-head{align-items:flex-start}}</style>
 <script id="surumDamgasi">
 /* SURUM DAMGASI - her yeni surumde asagidaki iki satiri guncelle. */
-window.APP_VERSION='2026-09-16-v41';
-window.APP_VERSION_NOT='Cikis butonu player-mode CSS tarafindan gizlenmeyecek sekilde kesin gorunur yapildi';
+window.APP_VERSION='2026-09-16-v42';
+window.APP_VERSION_NOT='Takim yasam dongusu, kadro kilidi, benzersiz ad, eski takim ve pin korumasi';
 console.log('%c SURUM: '+window.APP_VERSION+' ','background:#0f766e;color:#fff;font-weight:900;padding:3px 10px;border-radius:5px');
 console.log('Icerik: '+window.APP_VERSION_NOT);
 /* Surum bilgisi yalnizca konsolda gosterilir; ekranda etiket yoktur. */
@@ -2638,8 +2638,8 @@ tahminGonder=async function(){const asama=Number(localStorage.getItem(STORAGE_KE
  function takimlariDinle(){
   if(takimDinleyici)takimDinleyici();const alan=document.getElementById('takimListesi');alan.innerHTML='Takımlar yükleniyor...';
   takimDinleyici=firebaseDb.collection('games').doc(seciliOyunId).collection('teams').onSnapshot(s=>{
-   const teams=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.createdAt?.seconds||0)-(b.createdAt?.seconds||0));
-   alan.innerHTML=teams.length?teams.map(t=>`<div class="takim-item"><div><b>${yazi(t.name)}</b><div style="font-size:12px;color:#64748b">${Number(t.memberCount||0)} oyuncu</div></div><button onclick="takimaGir('${t.id}')">Takıma Gir</button></div>`).join(''):'<p style="color:#64748b">Henüz takım oluşturulmadı.</p>';
+   const teams=s.docs.map(d=>({id:d.id,...d.data()})).filter(t=>(t.status||'open')==='open').sort((a,b)=>(a.createdAt?.seconds||0)-(b.createdAt?.seconds||0));
+   alan.innerHTML=teams.length?teams.map(t=>{const sayi=Array.isArray(t.memberUids)?t.memberUids.length:Number(t.memberCount||0);return `<div class="takim-item"><div><b>${yazi(t.name)}</b><div style="font-size:12px;color:#64748b">${sayi} oyuncu · Katılıma açık</div></div><button onclick="takimaGir('${t.id}')">Takıma Gir</button></div>`}).join(''):'<p style="color:#64748b">Katılıma açık takım yok. Yeni takım oluşturabilirsin.</p>';
   },e=>alan.innerHTML='<p style="color:#b91c1c">Takımlar alınamadı: '+yazi(e.message)+'</p>');
  }
  async function katilimiTamamla(teamId,teamName,rumuz){
@@ -2680,19 +2680,26 @@ tahminGonder=async function(){const asama=Number(localStorage.getItem(STORAGE_KE
   }catch(e){m.textContent='Bireysel giriş yapılamadı: '+e.message}
  };
  window.takimOlusturVeGir=async function(){
-  const rumuz=rumuzOku(),ad=(document.getElementById('yeniTakimAdi').value||'').trim(),m=document.getElementById('takimMesaj');if(rumuz.length<2||ad.length<2){m.textContent='Rumuz ve takım adı en az 2 karakter olmalı.';return}
-  try{const ref=firebaseDb.collection('games').doc(seciliOyunId).collection('teams').doc();await ref.set({name:ad,memberCount:1,createdBy:firebaseUser.uid,createdAt:firebase.firestore.FieldValue.serverTimestamp()});await katilimiTamamla(ref.id,ad,rumuz)}catch(e){m.textContent='Takım oluşturulamadı: '+e.message}
+  const rumuz=rumuzOku(),ad=(document.getElementById('yeniTakimAdi').value||'').trim().toLocaleUpperCase('tr-TR'),m=document.getElementById('takimMesaj');if(rumuz.length<2||ad.length<2){m.textContent='Rumuz ve takım adı en az 2 karakter olmalı.';return}
+  try{
+   const teamsRef=firebaseDb.collection('games').doc(seciliOyunId).collection('teams');
+   const mevcut=await teamsRef.get();
+   if(mevcut.docs.some(d=>String(d.data().name||'').trim().toLocaleUpperCase('tr-TR')===ad&&(d.data().status||'open')==='open'))throw new Error('Bu isimde açık bir takım zaten var.');
+   const ref=teamsRef.doc(),roundId=seciliOyunId+'_'+Date.now();
+   await ref.set({name:ad,nameCanonical:ad,status:'open',memberUids:[firebaseUser.uid],memberCount:1,roundId,createdBy:firebaseUser.uid,createdAt:firebase.firestore.FieldValue.serverTimestamp(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+   await katilimiTamamla(ref.id,ad,rumuz)
+  }catch(e){m.textContent='Takım oluşturulamadı: '+e.message}
  };
  window.takimaGir=async function(teamId){
   const rumuz=rumuzOku(),m=document.getElementById('takimMesaj');if(rumuz.length<2){m.textContent='Önce en az 2 karakterlik rumuz gir.';return}
-  const ref=firebaseDb.collection('games').doc(seciliOyunId).collection('teams').doc(teamId);try{let ad='';await firebaseDb.runTransaction(async tx=>{const s=await tx.get(ref);if(!s.exists)throw new Error('Takım bulunamadı.');const n=Number(s.data().memberCount||0);ad=s.data().name||'Takım';tx.update(ref,{memberCount:n+1,updatedAt:firebase.firestore.FieldValue.serverTimestamp()})});await katilimiTamamla(teamId,ad,rumuz)}catch(e){m.textContent=e.message}
+  const ref=firebaseDb.collection('games').doc(seciliOyunId).collection('teams').doc(teamId);try{let ad='';await firebaseDb.runTransaction(async tx=>{const s=await tx.get(ref);if(!s.exists)throw new Error('Takım bulunamadı.');const t=s.data(),durum=t.status||'open';if(durum!=='open')throw new Error('Bu takım artık katılıma kapalı.');let uyeler=Array.isArray(t.memberUids)?[...t.memberUids]:[];if(uyeler.includes(firebaseUser.uid))throw new Error('Bu takımda zaten bulunuyorsun.');uyeler.push(firebaseUser.uid);ad=t.name||'Takım';tx.update(ref,{memberUids:uyeler,memberCount:uyeler.length,updatedAt:firebase.firestore.FieldValue.serverTimestamp()})});await katilimiTamamla(teamId,ad,rumuz)}catch(e){m.textContent=e.message}
  };
  const eskiDevam=window.oyunaDevamEt;
  window.oyunaDevamEt=async function(id){const ps=await firebaseDb.collection('games').doc(id).collection('players').doc(firebaseUser.uid).get();if(ps.exists){const p=ps.data();if(p.teamId){localStorage.setItem('haritaOyunTuru','team');localStorage.setItem(TEAM_KEY,p.teamId);localStorage.setItem(TEAM_NAME_KEY,p.teamName||'Takım');if(p.ready!==true){const gs=await firebaseDb.collection('games').doc(id).get();seciliOyunId=id;seciliOyun=gs.data();beklemeTeamId=p.teamId;beklemeTeamName=p.teamName||'Takım';beklemeRumuz=p.playerName||'Oyuncu';takimBeklemeAc();return}}else{localStorage.setItem('haritaOyunTuru','individual');localStorage.removeItem(TEAM_KEY);localStorage.removeItem(TEAM_NAME_KEY)}}return eskiDevam(id)};
  async function pinYayinla(lat,lng){
   const gameId=aktifOyunId(),teamId=localStorage.getItem(TEAM_KEY),stage=Number(localStorage.getItem(STORAGE_KEY_STAGE)||0);if(!firebaseHazir||!gameId||!teamId||!stage)return;
   // gameId alani zorunlu: Firestore kurallari teamPins create/update icin gameId esitligi ariyor.
-  await firebaseDb.collection('games').doc(gameId).collection('teamPins').doc(firebaseUser.uid).set({uid:firebaseUser.uid,gameId,teamId,playerName:globalOyuncuAdiAl()||'Oyuncu',playerAvatar:globalOyuncuAvatarAl(),stage,lat:Number(lat),lng:Number(lng),updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true}).catch(e=>{console.error('Takim pini yayinlanamadi',e);const m=document.getElementById('mesajAlani');if(m)m.textContent='⚠️ Takım pini paylaşılamadı: '+(e.code||e.message);});
+  await firebaseDb.collection('games').doc(gameId).collection('teamPins').doc(firebaseUser.uid).set({uid:firebaseUser.uid,gameId,teamId,roundId:localStorage.getItem('haritaAktifTakimRoundId')||'',active:true,playerName:globalOyuncuAdiAl()||'Oyuncu',playerAvatar:globalOyuncuAvatarAl(),stage,lat:Number(lat),lng:Number(lng),updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true}).catch(e=>{console.error('Takim pini yayinlanamadi',e);const m=document.getElementById('mesajAlani');if(m)m.textContent='⚠️ Takım pini paylaşılamadı: '+(e.code||e.message);});
  }
  const eskiPin=window.pinAtVeKoordinatGuncelle;
  window.pinAtVeKoordinatGuncelle=function(lat,lng){const r=eskiPin.apply(this,arguments);pinYayinla(lat,lng);return r};
@@ -2702,7 +2709,7 @@ tahminGonder=async function(){const asama=Number(localStorage.getItem(STORAGE_KE
   // Liste sorgusu oyun altindaki pinleri alir; yalnizca ayni takim pinleri istemcide cizilir.
   // Firestore kuralinda teamPins list izni, oyuncunun games/{gameId}/players/{uid} kaydina baglanmalidir.
   takimPinDinleyici=firebaseDb.collection('games').doc(gameId).collection('teamPins').onSnapshot(s=>{
-   const stage=Number(localStorage.getItem(STORAGE_KEY_STAGE)||0),gelen=new Set();s.docs.forEach(d=>{const p=d.data();if(p.teamId!==teamId)return;if(d.id===firebaseUser.uid)return;if(Number(p.stage)!==stage||!Number.isFinite(Number(p.lat))||!Number.isFinite(Number(p.lng)))return;gelen.add(d.id);const pos={lat:Number(p.lat),lng:Number(p.lng)},icon=pinIkonu(p.playerAvatar||basHarf(p.playerName),renk(p.uid));if(takimMarkerlar[d.id]){takimMarkerlar[d.id].setPosition(pos);takimMarkerlar[d.id].setIcon(icon)}else takimMarkerlar[d.id]=new google.maps.Marker({position:pos,map:tahminHaritasi,title:p.playerName||'Takım oyuncusu',icon,zIndex:50});});Object.keys(takimMarkerlar).forEach(id=>{if(!gelen.has(id)){takimMarkerlar[id].setMap(null);delete takimMarkerlar[id]}});
+   const stage=Number(localStorage.getItem(STORAGE_KEY_STAGE)||0),gelen=new Set();s.docs.forEach(d=>{const p=d.data();if(p.teamId!==teamId||p.active===false)return;const roundId=localStorage.getItem('haritaAktifTakimRoundId')||'';if(roundId&&p.roundId&&p.roundId!==roundId)return;if(d.id===firebaseUser.uid)return;if(Number(p.stage)!==stage||!Number.isFinite(Number(p.lat))||!Number.isFinite(Number(p.lng)))return;gelen.add(d.id);const pos={lat:Number(p.lat),lng:Number(p.lng)},icon=pinIkonu(p.playerAvatar||basHarf(p.playerName),renk(p.uid));if(takimMarkerlar[d.id]){takimMarkerlar[d.id].setPosition(pos);takimMarkerlar[d.id].setIcon(icon)}else takimMarkerlar[d.id]=new google.maps.Marker({position:pos,map:tahminHaritasi,title:p.playerName||'Takım oyuncusu',icon,zIndex:50});});Object.keys(takimMarkerlar).forEach(id=>{if(!gelen.has(id)){takimMarkerlar[id].setMap(null);delete takimMarkerlar[id]}});
   },e=>{console.error('Takim pinleri dinlenemedi',e);const m=document.getElementById('mesajAlani');if(m)m.textContent='⚠️ Takım pinleri alınamadı: '+(e.code||e.message);});
  }
  const eskiInit=window.initMap;
@@ -3669,6 +3676,62 @@ tahminGonder=async function(){const asama=Number(localStorage.getItem(STORAGE_KE
   });
  }
  document.addEventListener('DOMContentLoaded',()=>setTimeout(ekle,50));setInterval(ekle,1000);
+})();
+</script>
+
+<script id="takimYasamDongusuV42">
+/* V42: Takim yasam dongusu ve kadro kilidi. Mevcut bireysel oyun akisina dokunmaz. */
+(function(){
+ const TK='haritaAktifTakimId', TN='haritaAktifTakimAdi', RK='haritaAktifTakimRoundId', BK='haritaBeklemeOyunId';
+ function gameId(){return localStorage.getItem(BK)||localStorage.getItem('haritaAktifOyunId')||''}
+ async function takimBelgesi(gid,tid){return firebaseDb.collection('games').doc(gid).collection('teams').doc(tid).get()}
+ async function yerelTakimDogrula(){
+  const gid=gameId(),tid=localStorage.getItem(TK);if(!firebaseHazir||!gid||!tid)return null;
+  const s=await takimBelgesi(gid,tid);if(!s.exists)return null;const t=s.data();if(t.roundId)localStorage.setItem(RK,t.roundId);return {ref:s.ref,id:s.id,...t};
+ }
+ async function takimiKilitle(gid,tid){
+  const tr=firebaseDb.collection('games').doc(gid).collection('teams').doc(tid);
+  await firebaseDb.runTransaction(async tx=>{
+   const [ts,ps]=await Promise.all([tx.get(tr),firebaseDb.collection('games').doc(gid).collection('players').where('teamId','==',tid).get()]);
+   if(!ts.exists)throw new Error('Takım bulunamadı.');const t=ts.data(),durum=t.status||'open';if(!['open','locked','playing'].includes(durum))throw new Error('Bu takım artık oynanamaz.');
+   const gercek=ps.docs.map(d=>d.id),kayitli=Array.isArray(t.memberUids)?t.memberUids:gercek,uyeler=[...new Set([...kayitli,...gercek])];
+   const kilitli=Array.isArray(t.lockedMemberUids)&&t.lockedMemberUids.length?t.lockedMemberUids:uyeler;
+   tx.update(tr,{status:'playing',memberUids:uyeler,memberCount:uyeler.length,lockedMemberUids:kilitli,lockedAt:t.lockedAt||firebase.firestore.FieldValue.serverTimestamp(),startedAt:t.startedAt||firebase.firestore.FieldValue.serverTimestamp(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+  });
+ }
+ // Ortak baslangic kodu oyunu yerelde hazirlamadan hemen once tum kadroyu kilitler.
+ const eskiHazirla=window.oyunuYereldeHazirla;
+ window.oyunuYereldeHazirla=async function(id,targets,rumuz,asama,temiz){
+  if(localStorage.getItem('haritaOyunTuru')==='team'&&localStorage.getItem(TK)){
+   try{await takimiKilitle(id,localStorage.getItem(TK));const t=await yerelTakimDogrula();if(t?.roundId)localStorage.setItem(RK,t.roundId)}catch(e){console.error('Takim kilitlenemedi',e);alert(e.message||'Takım kilitlenemedi.');return}
+  }
+  return eskiHazirla.apply(this,arguments);
+ };
+ // Son oyuncu bitirdiginde takim completed olur ve o oyuncunun pini pasiflenir.
+ const eskiKaydet=window.firebaseAsamaKaydet;
+ window.firebaseAsamaKaydet=async function(){
+  const sonuc=await eskiKaydet.apply(this,arguments);
+  try{
+   if(localStorage.getItem('haritaOyunTuru')!=='team')return sonuc;
+   const gid=localStorage.getItem('haritaAktifOyunId'),tid=localStorage.getItem(TK);if(!gid||!tid)return sonuc;
+   const t=await yerelTakimDogrula();if(!t)return sonuc;
+   const ps=await firebaseDb.collection('games').doc(gid).collection('players').where('teamId','==',tid).get();
+   const map=new Map(ps.docs.map(d=>[d.id,d.data()]));const kadro=(t.lockedMemberUids&&t.lockedMemberUids.length)?t.lockedMemberUids:[...map.keys()];
+   const tamam=kadro.length>0&&kadro.every(uid=>map.get(uid)?.completed===true);
+   if(tamam){await t.ref.update({status:'completed',completedAt:firebase.firestore.FieldValue.serverTimestamp(),memberCount:kadro.length,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});}
+   if(map.get(firebaseUser.uid)?.completed===true){await firebaseDb.collection('games').doc(gid).collection('teamPins').doc(firebaseUser.uid).set({active:false,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});}
+  }catch(e){console.error('Takim tamamlama durumu yazilamadi',e)}
+  return sonuc;
+ };
+ // Eski, durum alani olmayan takımlar: herhangi bir üye başlamışsa otomatik kapat.
+ window.takimEskiKayitlariKapat=async function(gid){
+  gid=gid||gameId();if(!gid||!firebaseHazir)return;
+  const [ts,ps]=await Promise.all([firebaseDb.collection('games').doc(gid).collection('teams').get(),firebaseDb.collection('games').doc(gid).collection('players').get()]);
+  const oyuncular=ps.docs.map(d=>d.data());const batch=firebaseDb.batch();let degisti=false;
+  ts.docs.forEach(d=>{const t=d.data();if(t.status)return;const uyeler=oyuncular.filter(p=>p.teamId===d.id),basladi=uyeler.some(p=>p.ready===true||Number.isFinite(Number(p.stage1Km))||p.completed===true);if(basladi){const bitti=uyeler.length>0&&uyeler.every(p=>p.completed===true);batch.update(d.ref,{status:bitti?'completed':'playing',memberUids:uyeler.map(p=>p.uid),lockedMemberUids:uyeler.map(p=>p.uid),memberCount:uyeler.length,migratedAt:firebase.firestore.FieldValue.serverTimestamp()});degisti=true}});
+  if(degisti)await batch.commit();
+ };
+ const eskiKatil=window.oyunaKatil;window.oyunaKatil=async function(id){try{await window.takimEskiKayitlariKapat(id)}catch(e){console.error(e)}return eskiKatil.apply(this,arguments)};
 })();
 </script>
 </body>
