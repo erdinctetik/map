@@ -1766,8 +1766,23 @@ console.log('Icerik: '+window.APP_VERSION_NOT);
 [37.888450169327875,41.13579980023792],
 [37.188803715508385,32.24533173442593],
 [37.28116160121512,27.58211099435789]],DE:[[52.52,13.40],[48.13,11.58],[50.11,8.68],[51.22,6.77]],FR:[[48.85,2.35],[45.76,4.84],[43.30,5.37]],IT:[[41.90,12.49],[45.46,9.19],[45.07,7.68]],ES:[[40.41,-3.70],[41.38,2.17],[37.38,-5.99]],GB:[[51.50,-.12],[53.48,-2.24],[55.86,-4.25]],NL:[[52.37,4.90],[51.92,4.48]],BE:[[50.85,4.35],[51.22,4.40]],AT:[[48.20,16.37],[47.07,15.44]],CH:[[47.37,8.54],[46.20,6.14]],PL:[[52.23,21.01],[50.06,19.94]],CZ:[[50.08,14.43],[49.19,16.61]],HU:[[47.49,19.04]],RO:[[44.43,26.10],[46.77,23.59]],GR:[[37.98,23.72],[40.64,22.94]],PT:[[38.72,-9.13],[41.15,-8.61]],SE:[[59.33,18.07],[57.70,11.97]],NO:[[59.91,10.75]],FI:[[60.17,24.94]],DK:[[55.67,12.56]],US:[[40.71,-74],[34.05,-118.24],[41.87,-87.62]],CA:[[43.65,-79.38],[49.28,-123.12]],AU:[[-33.86,151.20],[-37.81,144.96]],JP:[[35.68,139.69],[34.69,135.50]]};
-        // Yalnizca Dunya + Sehir ici seciminde kullanilir. Yeni merkezleri buraya [enlem, boylam] olarak ekleyin.
+        // Yalnizca Dunya + Sehir ici seciminde kullanilir; yeni noktalar [enlem, boylam] biciminde eklenir.
         const SEHIR_ICI_DUNYA_KOORDINATLARI = [
+          [40.71, -74],
+          [34.05, -118.24],
+          [43.65, -79.38],
+          [19.43, -99.13],
+          [-23.55, -46.63],
+          [-34.60, -58.38],
+          [-33.45, -70.66],
+          [35.68, 139.69],
+          [37.56, 126.97],
+          [1.35, 103.82],
+          [-33.86, 151.20],
+          [-37.81, 144.96],
+          [-36.84, 174.76],
+          [25.20, 55.27],
+          [22.31, 114.17],
           [39.94045969875213, 32.857371732928044],
           [44.81159192928024, 20.463670246609738],
           [45.76357401184094, 4.844715937208962],
@@ -1783,15 +1798,15 @@ console.log('Icerik: '+window.APP_VERSION_NOT);
           [19.411694976157555, -99.11529526761917],
           [41.154888457408774, -8.630689775494737],
           [36.73189175542563, 3.087222158306498],
- [41.92549094055169, 12.488637193359395],
+          [41.92549094055169, 12.488637193359395],
           [47.06667027639993, 15.43884611523378],
           [40.39164486231806, 49.83959437579395],
-  [18.973334101491098, 72.83039531731261],
+          [18.973334101491098, 72.83039531731261],
           [34.38350320266816, 132.45323984493547],
- [30.592324198189736, 114.29831947270371],
+          [30.592324198189736, 114.29831947270371],
           [48.13988521143105, 11.570139790403937],
           [48.20473889319327, 16.36935983168265],
-[60.18124261721552, 24.9261685865867]
+          [60.18124261721552, 24.9261685865867]
         ];
         function otomatikBolgeDegisti(){document.getElementById('otomatikUlke').disabled=document.getElementById('otomatikBolge').value!=='country';}
         function sonrakiOtomatikKod(){const kodlar=[...document.querySelectorAll('#adminKoordinatListesi .admin-code')].map(x=>x.value.trim());let n=1;while(kodlar.includes(String(n)))n++;return String(n);}
@@ -1846,6 +1861,50 @@ console.log('Icerik: '+window.APP_VERSION_NOT);
             const p=raw.split(',').map(Number);return p.length===2&&p.every(Number.isFinite)?p:null;
           }).filter(Boolean);
         }
+        // Dunya + Sehir ici: merkezleri once mesafe kurallarina gore eleyip sinirli sayida dener.
+        async function dunyaSehirIciKonumBul(mesaj){
+          const mevcut=mevcutOtomatikKoordinatlar();
+          const son=mevcut.length?mevcut[mevcut.length-1]:null;
+          const diger=mevcut.slice(0,-1);
+          const merkezler=SEHIR_ICI_DUNYA_KOORDINATLARI.filter(ref=>
+            Array.isArray(ref)&&ref.length===2&&ref.every(Number.isFinite)&&
+            (!son||otomatikMesafeKm(ref[0],ref[1],son[0],son[1])>=901.2)&&
+            diger.every(x=>otomatikMesafeKm(ref[0],ref[1],x[0],x[1])>=251.2)
+          );
+          if(!merkezler.length)throw new Error('Dunya sehir ici: 900 km / 250 km kosullarina uygun referans kalmadi. Mevcut koordinatlari kontrol edin.');
+          const service=new google.maps.StreetViewService(),geocoder=new google.maps.Geocoder();
+          const sinirliBekle=(promise,ms)=>new Promise(resolve=>{
+            let bitti=false;
+            const timer=setTimeout(()=>{if(!bitti){bitti=true;resolve(null);}},ms);
+            Promise.resolve(promise).then(v=>{if(!bitti){bitti=true;clearTimeout(timer);resolve(v);}},()=>{if(!bitti){bitti=true;clearTimeout(timer);resolve(null);}});
+          });
+          const sirala=a=>[...a].sort(()=>Math.random()-.5);
+          const denemeler=[...sirala(merkezler),...sirala(merkezler)];
+          let panoYok=0,mesafeDisi=0,adresUymadi=0;
+          for(let i=0;i<denemeler.length;i++){
+            const ref=denemeler[i];
+            const aday=referansCevresindeAdayAralik(ref,0.15,1.2);
+            mesaj.textContent=`🌍 Sehir ici sokak araniyor (${i+1}/${denemeler.length})...`;
+            const data=await sinirliBekle(panoAra(service,aday,450),4500);
+            if(!data){panoYok++;continue;}
+            const p=data.location.latLng;
+            const km=otomatikMesafeKm(ref[0],ref[1],p.lat(),p.lng());
+            if(km<0.15||km>1.2){mesafeDisi++;continue;}
+            if(son&&otomatikMesafeKm(son[0],son[1],p.lat(),p.lng())<900)continue;
+            if(diger.some(x=>otomatikMesafeKm(x[0],x[1],p.lat(),p.lng())<250))continue;
+            const results=await sinirliBekle(tersGeocode(geocoder,p),4500)||[];
+            const types=new Set(results.flatMap(r=>r.types||[]));
+            const parts=results.flatMap(r=>r.address_components||[]);
+            const sokak=parts.some(c=>c.types?.includes('route'))||['street_address','intersection','premise'].some(t=>types.has(t));
+            const sehir=parts.some(c=>c.types?.some(t=>['locality','postal_town','sublocality','sublocality_level_1'].includes(t)));
+            if(!sokak||!sehir||(data.links||[]).length<1||!panoKabul(data,results,'street','')){adresUymadi++;continue;}
+            koordinatSatiriEkle(sonrakiOtomatikKod(),`${p.lat().toFixed(7)}, ${p.lng().toFixed(7)}`);
+            mesaj.textContent='✅ Dunya sehir ici: referanstan 0,15–1,2 km, onceki konumdan en az 900 km uzakta konum eklendi.';
+            mesaj.className='text-sm mt-3 font-semibold text-emerald-700';
+            return;
+          }
+          throw new Error(`Dunya sehir ici icin uygun sokak bulunamadi. ${denemeler.length} deneme: panorama yok/zaman asimi ${panoYok}, mesafe disi ${mesafeDisi}, adres/sokak filtresi ${adresUymadi}. 900 km kosulunu saglayan ${merkezler.length} merkez vardi.`);
+        }
         async function otomatikKoordinatBul(){
           const mesaj=document.getElementById('adminKayitMesaj'),buton=document.getElementById('otomatikKoordinatButonu');
           if(!adminYetkili){mesaj.textContent='❌ Önce yönetici girişi yapın.';return;}
@@ -1854,6 +1913,7 @@ console.log('Icerik: '+window.APP_VERSION_NOT);
           try{
             const bolge=document.getElementById('otomatikBolge').value,tur=document.getElementById('otomatikTur').value,ulke=document.getElementById('otomatikUlke').value;
             const yerlesim=document.getElementById('otomatikYerlesim')?.value||'mixed';
+            if(bolge==='world'&&yerlesim==='urban'){await dunyaSehirIciKonumBul(mesaj);return;}
             let merkezler=[],beklenen='';
             if(bolge==='country'){
               merkezler=(ULKE_MERKEZLER[ulke]||[]).map(x=>[x[0],x[1],ulke]);beklenen=ulke;
@@ -1872,7 +1932,7 @@ console.log('Icerik: '+window.APP_VERSION_NOT);
                    ...EXCEL_REFERANS_HAVUZU.europe.slice(-20),...EXCEL_REFERANS_HAVUZU.asia.slice(-16),
                    ...EXCEL_REFERANS_HAVUZU.africa.slice(-16),...EXCEL_REFERANS_HAVUZU.america.slice(-16),
                    ...EXCEL_REFERANS_HAVUZU.oceania.slice(0,6)]);
-            if(yerlesim==='urban')merkezler=bolge==='world'?SEHIR_ICI_DUNYA_KOORDINATLARI:sehirMerkezleri;
+            if(yerlesim==='urban')merkezler=sehirMerkezleri;
             if(yerlesim==='rural' && bolge!=='country'){
               merkezler=merkezler.filter(ref=>!sehirMerkezleri.some(c=>otomatikMesafeKm(ref[0],ref[1],c[0],c[1])<8));
             }
