@@ -1909,15 +1909,13 @@ console.log('Icerik: '+window.APP_VERSION_NOT);
             if(km<0.15||km>1.2){mesafeDisi++;continue;}
             if(son&&otomatikMesafeKm(son[0],son[1],p.lat(),p.lng())<900)continue;
             if(diger.some(x=>otomatikMesafeKm(x[0],x[1],p.lat(),p.lng())<250))continue;
-            const results=await sinirliBekle(tersGeocode(geocoder,p),4500)||[];
-            const types=new Set(results.flatMap(r=>r.types||[]));
-            const parts=results.flatMap(r=>r.address_components||[]);
-            const sokak=parts.some(c=>c.types?.includes('route'))||['street_address','intersection','premise'].some(t=>types.has(t));
-            const sehir=parts.some(c=>c.types?.some(t=>['locality','postal_town','sublocality','sublocality_level_1'].includes(t)));
-            if((data.links||[]).length<1 || !panoKabul(data,results,'street','')){
+            // Dünya + Şehir içi: adres veya şehir adı sorgulama.
+// Yalnızca hareket bağlantısı olan panorama kabul et.
+if ((data.links || []).length < 1) {
   adresUymadi++;
   continue;
 }
+
             koordinatSatiriEkle(sonrakiOtomatikKod(),`${p.lat().toFixed(7)}, ${p.lng().toFixed(7)}`);
             mesaj.textContent='✅ Dunya sehir ici: referanstan 0,15–1,2 km, onceki konumdan en az 900 km uzakta konum eklendi.';
             mesaj.className='text-sm mt-3 font-semibold text-emerald-700';
