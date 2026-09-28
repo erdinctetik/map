@@ -328,7 +328,8 @@ console.log('Icerik: '+window.APP_VERSION_NOT);
               <div><label class="block text-xs font-extrabold text-cyan-900 mb-1">Bölge</label><select id="otomatikBolge" onchange="otomatikBolgeDegisti()" class="admin-input"><option value="world">Dünya</option><option value="europe">Avrupa</option><option value="asia">Asya</option><option value="africa">Afrika</option><option value="america">Amerika</option><option value="country">Ülke seç</option></select></div>
               <div><label class="block text-xs font-extrabold text-cyan-900 mb-1">Ülke</label><select id="otomatikUlke" class="admin-input" disabled><option value="TR">Türkiye</option><option value="DE">Almanya</option><option value="FR">Fransa</option><option value="IT">İtalya</option><option value="ES">İspanya</option><option value="GB">Birleşik Krallık</option><option value="NL">Hollanda</option><option value="BE">Belçika</option><option value="AT">Avusturya</option><option value="CH">İsviçre</option><option value="PL">Polonya</option><option value="CZ">Çekya</option><option value="HU">Macaristan</option><option value="RO">Romanya</option><option value="GR">Yunanistan</option><option value="PT">Portekiz</option><option value="SE">İsveç</option><option value="NO">Norveç</option><option value="FI">Finlandiya</option><option value="DK">Danimarka</option><option value="US">ABD</option><option value="CA">Kanada</option><option value="AU">Avustralya</option><option value="JP">Japonya</option></select></div>
               <div><label class="block text-xs font-extrabold text-cyan-900 mb-1">Konum türü</label><select id="otomatikTur" class="admin-input"><option value="street">Sadece sokak / yol</option><option value="outdoor">Dış mekân</option></select></div>
-              <div class="md:col-span-3"><button id="otomatikKoordinatButonu" onclick="otomatikKoordinatBul()" class="w-full px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-700 text-white font-bold">🎲 Otomatik koordinat bul</button><p class="text-xs text-cyan-800 mt-1">Excel referansları kullanılır. Sonuç referanstan 20–150 km uzakta olur. Bir önceki otomatik koordinata uzaklık: <b>Ülke seçiminde en az 250 km</b>, Dünya / Avrupa / Asya / Afrika / Amerika seçiminde <b>en az 900 km</b>.</p></div>
+              <div><label class="block text-xs font-extrabold text-cyan-900 mb-1">Yerleşim</label><select id="otomatikYerlesim" class="admin-input"><option value="mixed">Mevcut (karışık)</option><option value="urban">Şehir içi</option><option value="rural">Kırsal / merkez dışı</option></select></div>
+              <div class="md:col-span-3"><button id="otomatikKoordinatButonu" onclick="otomatikKoordinatBul()" class="w-full px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-700 text-white font-bold">🎲 Otomatik koordinat bul</button><p class="text-xs text-cyan-800 mt-1">Karışık: mevcut havuzdan 1–5 km. Şehir içi: merkezden 0,15–1,2 km ve sokak adresi kontrolü. Kırsal: merkez dışı adaylar (ülke seçiminde merkezden 10–25 km). Görüntü içeriği garanti edilmez. Bir önceki otomatik koordinata uzaklık: <b>Ülke seçiminde en az 250 km</b>, Dünya / Avrupa / Asya / Afrika / Amerika seçiminde <b>en az 900 km</b>.</p></div>
 
             </div>
             <button onclick="adminKoordinatlariKaydet()" class="px-4 py-2 rounded-lg bg-emerald-600 text-white font-bold">Kaydet</button>
@@ -1519,7 +1520,6 @@ console.log('Icerik: '+window.APP_VERSION_NOT);
 [47.02436354780549, 28.837774345852754],
 [59.93747579392169, 30.33170600433493],
 [52.37335248353262, 4.891751791213989],
-[55.78826612611443, 49.10704798527169],
 [60.39146358127183, 5.31896330042916],
 [50.00288415179383, 14.359261847574476],
 [45.25381525717101, 19.85045435509307],
@@ -1535,7 +1535,6 @@ console.log('Icerik: '+window.APP_VERSION_NOT);
 [43.85933268497895, 18.4309720529942],
 [56.9701833140076, 24.045848643169684],
 [59.40739215169118, 24.71832825103073],
- 
 [40.29103463707555, 38.42034437512403],
 [64.29383840478494, 23.9414831043665],
 [54.86270473811383, 24.45750051654336],
@@ -1559,16 +1558,9 @@ console.log('Icerik: '+window.APP_VERSION_NOT);
 [60.069329, 20.094976],
 [40.137758, 18.50856],
 [47.802169, 30.266183],
-[55.657835, 50.10043],
-[52.04296, 59.905782],
-[47.394584, 42.747097],
 [61.681878, 14.176479],
 [51.885521, 33.424025],
 [63.674559, 10.583075],
-[42.903593, 47.626421],
-[51.431751, 28.830612],
-[52.330091, 57.917731],
- 
 [41.0082, 28.9784], [39.9334, 32.8597],
 [52.5200, 13.4050], [48.1351, 11.5820],
 [48.8566, 2.3522], [45.7640, 4.8357],
@@ -1594,7 +1586,6 @@ console.log('Icerik: '+window.APP_VERSION_NOT);
 [33.3165929037182, 44.35499501237403],
 [32.07929301398184, 34.79154889977727],
 [25.30069723454095, 55.44012762370313],
- 
 [22.6449730261729, 90.95477625591283],
 [7.48436198116317, 80.35470081604964],
 [2.7629446299497498, 101.72433069604733],
@@ -1625,7 +1616,6 @@ console.log('Icerik: '+window.APP_VERSION_NOT);
 [36.33131340004707, 59.51866196657969],
 [19.643164, 56.032531],
 [33.316216330521705, 44.35726951633132],
- 
 [35.6762, 139.6503], [34.6937, 135.5023],
 [37.5665, 126.9780], [35.1796, 129.0756],
 [13.7563, 100.5018], [18.7883, 98.9853],
@@ -1814,6 +1804,15 @@ console.log('Icerik: '+window.APP_VERSION_NOT);
           let lng=ref[1]+dLng;if(lng>180)lng-=360;if(lng<-180)lng+=360;
           return {lat:Math.max(-85,Math.min(85,ref[0]+dLat)),lng};
         }
+        function referansCevresindeAdayAralik(ref,minKm,maxKm){
+          const mesafe=Math.sqrt(Math.random()*(maxKm*maxKm-minKm*minKm)+minKm*minKm);
+          const aci=Math.random()*Math.PI*2;
+          const dLat=(mesafe/111)*Math.cos(aci);
+          const cos=Math.max(.15,Math.cos(ref[0]*Math.PI/180));
+          const dLng=(mesafe/(111*cos))*Math.sin(aci);
+          let lng=ref[1]+dLng;if(lng>180)lng-=360;if(lng<-180)lng+=360;
+          return {lat:Math.max(-85,Math.min(85,ref[0]+dLat)),lng};
+        }
         function mevcutOtomatikKoordinatlar(){
           return [...document.querySelectorAll('#adminKoordinatListesi .admin-grid')].map(row=>{
             const raw=(row.dataset.gizliCoord||row.querySelector('.admin-coord')?.value||'').trim();
@@ -1827,13 +1826,30 @@ console.log('Icerik: '+window.APP_VERSION_NOT);
           buton.disabled=true;const eski=buton.textContent;buton.textContent='Uygun sokak aranıyor...';mesaj.textContent='🌍 Excel referans havuzundan Street View konumu aranıyor...';mesaj.className='text-sm mt-3 font-semibold text-blue-700';
           try{
             const bolge=document.getElementById('otomatikBolge').value,tur=document.getElementById('otomatikTur').value,ulke=document.getElementById('otomatikUlke').value;
+            const yerlesim=document.getElementById('otomatikYerlesim')?.value||'mixed';
             let merkezler=[],beklenen='';
             if(bolge==='country'){
               merkezler=(ULKE_MERKEZLER[ulke]||[]).map(x=>[x[0],x[1],ulke]);beklenen=ulke;
             }else{
               merkezler=EXCEL_REFERANS_HAVUZU[bolge]||EXCEL_REFERANS_HAVUZU.world;
             }
-            if(!merkezler.length)throw new Error('Seçilen bölge için referans koordinat bulunamadı.');
+            // Sehir ici yalnizca mevcut listelerdeki belirgin sehir merkezlerini kullanir.
+            // Kirsal secim mevcut referanslari korur, fakat merkezlere yakin panolari eler.
+            const sehirMerkezleri=(bolge==='country')
+              ? (ulke==='TR'?ULKE_MERKEZLER.TR.slice(0,5):ULKE_MERKEZLER[ulke]||[])
+              : (bolge==='europe'?[...OTOMATIK_MERKEZLER.europe,...EXCEL_REFERANS_HAVUZU.europe.slice(-20)]
+                : bolge==='asia'?EXCEL_REFERANS_HAVUZU.asia.slice(-16)
+                : bolge==='africa'?EXCEL_REFERANS_HAVUZU.africa.slice(-16)
+                : bolge==='america'?EXCEL_REFERANS_HAVUZU.america.slice(-16)
+                : [...OTOMATIK_MERKEZLER.europe,...OTOMATIK_MERKEZLER.world,
+                   ...EXCEL_REFERANS_HAVUZU.europe.slice(-20),...EXCEL_REFERANS_HAVUZU.asia.slice(-16),
+                   ...EXCEL_REFERANS_HAVUZU.africa.slice(-16),...EXCEL_REFERANS_HAVUZU.america.slice(-16),
+                   ...EXCEL_REFERANS_HAVUZU.oceania.slice(0,6)]);
+            if(yerlesim==='urban')merkezler=sehirMerkezleri;
+            if(yerlesim==='rural' && bolge!=='country'){
+              merkezler=merkezler.filter(ref=>!sehirMerkezleri.some(c=>otomatikMesafeKm(ref[0],ref[1],c[0],c[1])<8));
+            }
+            if(!merkezler.length)throw new Error('Seçilen bölge ve yerleşim için referans koordinat bulunamadı.');
             const mevcut=mevcutOtomatikKoordinatlar();
             // Bir onceki otomatik koordinata olan minimum uzaklik: ulke secimi 250 km, bolge/dunya secimi 900 km.
             const minAyrimKm = (bolge==='country') ? 250 : 900;
@@ -1842,19 +1858,41 @@ console.log('Icerik: '+window.APP_VERSION_NOT);
             const service=new google.maps.StreetViewService(),geocoder=new google.maps.Geocoder();let kabul=null;
             for(let d=0;d<260&&!kabul;d++){
               const ref=merkezler[Math.floor(Math.random()*merkezler.length)];
-              const aday=referansCevresindeAday(ref);
-              const data=await panoAra(service,aday,tur==='street'?12000:25000);if(!data)continue;
+              const kirsalUlke=yerlesim==='rural'&&bolge==='country';
+              const altKm=yerlesim==='urban'?0.15:(kirsalUlke?10:1);
+              const ustKm=yerlesim==='urban'?1.2:(kirsalUlke?25:5);
+              const aday=yerlesim==='mixed'?referansCevresindeAday(ref):referansCevresindeAdayAralik(ref,altKm,ustKm);
+              const data=await panoAra(service,aday,yerlesim==='urban'?450:(kirsalUlke?1200:(tur==='street'?12000:25000)));if(!data)continue;
               const p=data.location.latLng,refUzaklik=otomatikMesafeKm(ref[0],ref[1],p.lat(),p.lng());
-              if(refUzaklik<1||refUzaklik>5)continue;
+              if(refUzaklik<altKm||refUzaklik>ustKm)continue;
+              if(yerlesim==='rural'&&sehirMerkezleri.some(c=>otomatikMesafeKm(c[0],c[1],p.lat(),p.lng())<8))continue;
               if(sonKoordinat && otomatikMesafeKm(sonKoordinat[0],sonKoordinat[1],p.lat(),p.lng())<minAyrimKm)continue;
               if(digerKoordinatlar.some(x=>otomatikMesafeKm(x[0],x[1],p.lat(),p.lng())<250))continue;
               let results=[];try{results=await tersGeocode(geocoder,p);}catch(e){}
+              if(yerlesim==='urban'){
+                // Ters geocode tahminidir; adres ve sehir bilesenlerini birlikte iste.
+                const turler=new Set(results.flatMap(r=>r.types||[]));
+                const parcalar=results.flatMap(r=>r.address_components||[]);
+                const sokak=parcalar.some(c=>c.types?.includes('route')) ||
+                  ['street_address','intersection','premise'].some(t=>turler.has(t));
+                const sehir=parcalar.some(c=>c.types?.some(t=>['locality','postal_town','sublocality','sublocality_level_1'].includes(t)));
+                if(!sokak||!sehir||(data.links||[]).length<1)continue;
+              }
+              if(bolge==='country'&&yerlesim!=='mixed'){
+                const ulkeKodu=results.flatMap(r=>r.address_components||[]).find(c=>c.types?.includes('country'))?.short_name;
+                if(ulkeKodu!==ulke)continue;
+              }
               if(panoKabul(data,results,tur,beklenen))kabul=p;
             }
             if(!kabul)throw new Error(`Koşullara uygun Street View konumu bulunamadı (bir önceki koordinattan en az ${minAyrimKm} km uzaklık şartı). Bölgeyi değiştirin veya mevcut koordinatlardan bazılarını kaldırın.`);
             const coord=`${kabul.lat().toFixed(7)}, ${kabul.lng().toFixed(7)}`;
             koordinatSatiriEkle(sonrakiOtomatikKod(),coord);
-            mesaj.textContent=`✅ Referanstan 20–150 km uzakta, bir önceki koordinattan en az ${minAyrimKm} km uzakta konum eklendi.`;mesaj.className='text-sm mt-3 font-semibold text-emerald-700';
+            mesaj.textContent=yerlesim==='mixed'
+              ? `✅ Referanstan 1–5 km, önceki koordinattan en az ${minAyrimKm} km uzakta konum eklendi.`
+              : yerlesim==='urban'
+                ? `✅ Şehir içi: merkez referansından 0,15–1,2 km, önceki koordinattan en az ${minAyrimKm} km uzakta konum eklendi.`
+                : `✅ Kırsal / merkez dışı: önceki koordinattan en az ${minAyrimKm} km uzakta konum eklendi.`;
+            mesaj.className='text-sm mt-3 font-semibold text-emerald-700';
           }catch(e){mesaj.textContent='❌ '+(e?.message||'Koordinat bulunamadı.');mesaj.className='text-sm mt-3 font-semibold text-red-600';}
           finally{buton.disabled=false;buton.textContent=eski;}
         }
