@@ -1544,7 +1544,7 @@ console.log('Icerik: '+window.APP_VERSION_NOT);
           return 2*R*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
         }
         function referansCevresindeAday(ref){
-          const minKm=20,maxKm=150;
+          const minKm=1,maxKm=5;
           const mesafe=Math.sqrt(Math.random()*(maxKm*maxKm-minKm*minKm)+minKm*minKm);
           const aci=Math.random()*Math.PI*2;
           const dLat=(mesafe/111)*Math.cos(aci);
@@ -1584,7 +1584,7 @@ console.log('Icerik: '+window.APP_VERSION_NOT);
               const aday=referansCevresindeAday(ref);
               const data=await panoAra(service,aday,tur==='street'?12000:25000);if(!data)continue;
               const p=data.location.latLng,refUzaklik=otomatikMesafeKm(ref[0],ref[1],p.lat(),p.lng());
-              if(refUzaklik<20||refUzaklik>150)continue;
+              if(refUzaklik<1||refUzaklik>5)continue;
               if(sonKoordinat && otomatikMesafeKm(sonKoordinat[0],sonKoordinat[1],p.lat(),p.lng())<minAyrimKm)continue;
               if(digerKoordinatlar.some(x=>otomatikMesafeKm(x[0],x[1],p.lat(),p.lng())<250))continue;
               let results=[];try{results=await tersGeocode(geocoder,p);}catch(e){}
