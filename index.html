@@ -1914,7 +1914,10 @@ console.log('Icerik: '+window.APP_VERSION_NOT);
             const parts=results.flatMap(r=>r.address_components||[]);
             const sokak=parts.some(c=>c.types?.includes('route'))||['street_address','intersection','premise'].some(t=>types.has(t));
             const sehir=parts.some(c=>c.types?.some(t=>['locality','postal_town','sublocality','sublocality_level_1'].includes(t)));
-            if(!sokak||!sehir||(data.links||[]).length<1||!panoKabul(data,results,'street','')){adresUymadi++;continue;}
+            if((data.links||[]).length<1 || !panoKabul(data,results,'street','')){
+  adresUymadi++;
+  continue;
+}
             koordinatSatiriEkle(sonrakiOtomatikKod(),`${p.lat().toFixed(7)}, ${p.lng().toFixed(7)}`);
             mesaj.textContent='✅ Dunya sehir ici: referanstan 0,15–1,2 km, onceki konumdan en az 900 km uzakta konum eklendi.';
             mesaj.className='text-sm mt-3 font-semibold text-emerald-700';
